@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="ecc"
+ targetNamespace="urn:ecc"
+ xmlns:tns="urn:ecc"
+ xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:ecc="urn:ecc"
+ xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/"
+ xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/"
+ xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/"
+ xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/"
+ xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+<types>
+
+ <schema targetNamespace="urn:ecc"
+  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:ecc="urn:ecc"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+  <import namespace="http://schemas.xmlsoap.org/soap/encoding/" schemaLocation="http://schemas.xmlsoap.org/soap/encoding/"/>
+  <!-- operation request element -->
+  <element name="ServerExit">
+   <complexType>
+    <sequence>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="Response">
+   <complexType>
+    <sequence>
+     <element name="ErrorCode" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+     <element name="ErrorMessage" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="GetConfigIDs">
+   <complexType>
+    <sequence>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="ResponseText">
+   <complexType>
+    <sequence>
+     <element name="ErrorCode" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+     <element name="ErrorMessage" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="Text" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Describe">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Prepare">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Configure">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Start">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Stop">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Pause">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Resume">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Breakup">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Undo">
+   <complexType>
+    <sequence>
+     <element name="configID" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="GetState">
+   <complexType>
+    <sequence>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation response element -->
+  <element name="ResponseState">
+   <complexType>
+    <sequence>
+     <element name="ErrorCode" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+     <element name="ErrorMessage" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="State" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+     <element name="Transition" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+  <!-- operation request element -->
+  <element name="Special">
+   <complexType>
+    <sequence>
+     <element name="command" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+     <element name="table" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+   </complexType>
+  </element>
+ </schema>
+
+</types>
+
+<message name="ServerExit">
+ <part name="parameters" element="ecc:ServerExit"/>
+</message>
+
+<message name="Response">
+ <part name="parameters" element="ecc:Response"/>
+</message>
+
+<message name="GetConfigIDs">
+ <part name="parameters" element="ecc:GetConfigIDs"/>
+</message>
+
+<message name="ResponseText">
+ <part name="parameters" element="ecc:ResponseText"/>
+</message>
+
+<message name="Describe">
+ <part name="parameters" element="ecc:Describe"/>
+</message>
+
+<message name="Prepare">
+ <part name="parameters" element="ecc:Prepare"/>
+</message>
+
+<message name="Configure">
+ <part name="parameters" element="ecc:Configure"/>
+</message>
+
+<message name="Start">
+ <part name="parameters" element="ecc:Start"/>
+</message>
+
+<message name="Stop">
+ <part name="parameters" element="ecc:Stop"/>
+</message>
+
+<message name="Pause">
+ <part name="parameters" element="ecc:Pause"/>
+</message>
+
+<message name="Resume">
+ <part name="parameters" element="ecc:Resume"/>
+</message>
+
+<message name="Breakup">
+ <part name="parameters" element="ecc:Breakup"/>
+</message>
+
+<message name="Undo">
+ <part name="parameters" element="ecc:Undo"/>
+</message>
+
+<message name="GetState">
+ <part name="parameters" element="ecc:GetState"/>
+</message>
+
+<message name="ResponseState">
+ <part name="parameters" element="ecc:ResponseState"/>
+</message>
+
+<message name="Special">
+ <part name="parameters" element="ecc:Special"/>
+</message>
+
+<portType name="eccPortType">
+ <operation name="ServerExit">
+  <documentation>Service definition of function ecc__ServerExit</documentation>
+  <input message="tns:ServerExit"/>
+  <output message="tns:Response"/>
+ </operation>
+ <operation name="GetConfigIDs">
+  <documentation>Service definition of function ecc__GetConfigIDs</documentation>
+  <input message="tns:GetConfigIDs"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Describe">
+  <documentation>Service definition of function ecc__Describe</documentation>
+  <input message="tns:Describe"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Prepare">
+  <documentation>Service definition of function ecc__Prepare</documentation>
+  <input message="tns:Prepare"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Configure">
+  <documentation>Service definition of function ecc__Configure</documentation>
+  <input message="tns:Configure"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Start">
+  <documentation>Service definition of function ecc__Start</documentation>
+  <input message="tns:Start"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Stop">
+  <documentation>Service definition of function ecc__Stop</documentation>
+  <input message="tns:Stop"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Pause">
+  <documentation>Service definition of function ecc__Pause</documentation>
+  <input message="tns:Pause"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Resume">
+  <documentation>Service definition of function ecc__Resume</documentation>
+  <input message="tns:Resume"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Breakup">
+  <documentation>Service definition of function ecc__Breakup</documentation>
+  <input message="tns:Breakup"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="Undo">
+  <documentation>Service definition of function ecc__Undo</documentation>
+  <input message="tns:Undo"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+ <operation name="GetState">
+  <documentation>Service definition of function ecc__GetState</documentation>
+  <input message="tns:GetState"/>
+  <output message="tns:ResponseState"/>
+ </operation>
+ <operation name="Special">
+  <documentation>Service definition of function ecc__Special</documentation>
+  <input message="tns:Special"/>
+  <output message="tns:ResponseText"/>
+ </operation>
+</portType>
+
+<binding name="ecc" type="tns:eccPortType">
+ <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+ <operation name="ServerExit">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="GetConfigIDs">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Describe">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Prepare">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Configure">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Start">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Stop">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Pause">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Resume">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Breakup">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Undo">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="GetState">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+ <operation name="Special">
+  <SOAP:operation soapAction=""/>
+  <input>
+     <SOAP:body parts="parameters" use="literal"/>
+  </input>
+  <output>
+     <SOAP:body parts="parameters" use="literal"/>
+  </output>
+ </operation>
+</binding>
+
+<service name="ecc">
+ <documentation>gSOAP 2.7.16 generated service definition</documentation>
+ <port name="ecc" binding="tns:ecc">
+  <SOAP:address location="http://localhost:8083"/>
+ </port>
+</service>
+
+</definitions>

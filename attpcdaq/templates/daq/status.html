@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Status - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+<div class="container">
+    <table class="table table-striped">
+        <tr>
+            <th>Status</th>
+            <th>Source</th>
+            <th>ECC URL</th>
+            <th>Config</th>
+        </tr>
+        {% for source in data_sources %}
+        <tr>
+            <td>{{ source.state }}</td>
+            <td>{{ source.name }}</td>
+            <td>{{ source.ecc_server_url }}</td>
+            <td>{{ source.config }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
