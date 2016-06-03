@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <title>{% block title %}AT-TPC DAQ{% endblock %}</title>
 
-    <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
 </head>
 <body>
     {% block navbar %}
@@ -22,13 +23,16 @@
                 <a class="navbar-brand" href="">AT-TPC DAQ</a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav">
-                    <li class=""><a href="">Status</a></li>
-                </ul>
-            </div><!-- /.navbar-collapse -->
+{#            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">#}
+{#                <ul class="nav navbar-nav">#}
+{#                    <li class=""><a href="">Status</a></li>#}
+{#                </ul>#}
+{#            </div><!-- /.navbar-collapse -->#}
         </div><!-- /.container -->
     </nav>
+    {% endblock %}
+
+    {% block breadcrumbs %}
     {% endblock %}
 
     {% block body %}

@@ -3,21 +3,47 @@
 
 {% block title %}Status - AT-TPC DAQ{% endblock %}
 
+{% block breadcrumbs %}
+<div class="container">
+    <ol class="breadcrumb">
+        <li class="active">Home</li>
+    </ol>
+</div>
+{% endblock %}
+
 {% block body %}
 <div class="container">
-    <table class="table table-striped">
+    <h1>
+        <span>Data Sources</span>
+        <a role='button' class="btn btn-primary pull-right" href="{% url 'daq/add_source' %}">
+            <span class="glyphicon glyphicon-plus"></span> Add
+        </a>
+    </h1>
+
+    <table class="table table-hover">
         <tr>
             <th>Status</th>
             <th>Source</th>
             <th>ECC URL</th>
             <th>Config</th>
+            <th class="shrink"></th>
         </tr>
         {% for source in data_sources %}
         <tr>
-            <td>{{ source.state }}</td>
+            <td><span class="label label-default">{{ source.state_name }}</span></td>
             <td>{{ source.name }}</td>
             <td>{{ source.ecc_server_url }}</td>
             <td>{{ source.config }}</td>
+            <td class="text-right">
+                <a role="button" class="btn btn-sm btn-default"
+                   href="{% url 'daq/update_source' source.pk %}">
+                    <span class="glyphicon glyphicon-wrench"></span> Edit
+                </a>
+                <a role="button" class="btn btn-sm btn-danger"
+                   href="{% url 'daq/remove_source' source.pk %}">
+                    <span class="glyphicon glyphicon-trash"></span> Remove
+                </a>
+            </td>
         </tr>
         {% endfor %}
     </table>

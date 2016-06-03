@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.core.urlresolvers import reverse_lazy
 
 from zeep import Client as SoapClient
 
 from .models import DataSource
-from .forms import AddDataSourceForm
+from .forms import DataSourceForm
 
 
 def get_ecc_server_state(request):
@@ -20,6 +22,21 @@ def status(request):
     return render(request, 'daq/status.html', {'data_sources': sources})
 
 
-def add_data_source(request):
-    form = AddDataSourceForm()
-    return render(request, 'daq/add_source.html', {'form': form})
+class AddDataSourceView(CreateView):
+    model = DataSource
+    form_class = DataSourceForm
+    template_name = 'daq/add_source.html'
+    success_url = reverse_lazy('daq/status')
+
+
+class UpdateDataSourceView(UpdateView):
+    model = DataSource
+    form_class = DataSourceForm
+    template_name = 'daq/add_source.html'
+    success_url = reverse_lazy('daq/status')
+
+
+class RemoveDataSourceView(DeleteView):
+    model = DataSource
+    template_name = 'daq/remove_source.html'
+    success_url = reverse_lazy('daq/status')
