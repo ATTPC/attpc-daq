@@ -13,6 +13,31 @@
 
 {% block body %}
 <div class="container">
+
+    <div class="text-center">
+        <div class="btn-toolbar" id="run-control-toolbar">
+    {#        <div class="btn-group">#}
+                <a class="btn btn-lg btn-default {% if system_state >= 3 %}disabled{% endif %}"
+                   href="{% url 'daq/set_state_all' 3 %}">
+                    <span class="glyphicon glyphicon-off"></span> Init
+                </a>
+                <a class="btn btn-lg btn-default {% if system_state != 3 %}disabled{% endif %}"
+                   href="{% url 'daq/set_state_all' 4 %}">
+                    <span class="glyphicon glyphicon-play"></span> Start
+                </a>
+                <a class="btn btn-lg btn-default {% if system_state != 4 %}disabled{% endif %}"
+                   href="{% url 'daq/set_state_all' 3 %}">
+                    <span class="glyphicon glyphicon-stop"></span> Stop
+                </a>
+                <a class="btn btn-lg btn-default {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
+                   href="{% url 'daq/set_state_all' 0 %}">
+                    <span class="glyphicon glyphicon-repeat"></span> Reset
+                </a>
+    {#        </div>#}
+        </div>
+    </div>
+
+
     <h1>
         <span>Data Sources</span>
         <a role='button' class="btn btn-primary pull-right" href="{% url 'daq/add_source' %}">

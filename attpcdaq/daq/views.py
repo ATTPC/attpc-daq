@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
+from django.db.models import Min
 
 from zeep import Client as SoapClient
 
@@ -19,7 +20,15 @@ def get_ecc_server_state(request):
 
 def status(request):
     sources = DataSource.objects.all()
-    return render(request, 'daq/status.html', {'data_sources': sources})
+    system_state = sources.aggregate(Min('state'))['state__min']
+    return render(request, 'daq/status.html', {'data_sources': sources, 'system_state': system_state})
+
+
+def set_state_all(request, state):
+    for source in DataSource.objects.all():
+        source.state = state
+        source.save()
+    return redirect('daq/status')
 
 
 class AddDataSourceView(CreateView):
