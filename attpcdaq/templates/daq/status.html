@@ -49,7 +49,8 @@
         <tr>
             <th>Status</th>
             <th>Source</th>
-            <th>ECC URL</th>
+            <th>ECC server</th>
+            <th>Data router</th>
             <th>Config</th>
             <th class="shrink"></th>
         </tr>
@@ -57,7 +58,8 @@
         <tr>
             <td><span class="label label-default">{{ source.state_name }}</span></td>
             <td>{{ source.name }}</td>
-            <td>{{ source.ecc_server_url }}</td>
+            <td>{{ source.ecc_server.name|default:'None' }}</td>
+            <td>{{ source.data_router.name|default:'None' }}</td>
             <td>{{ source.config }}</td>
             <td class="text-right">
                 <a role="button" class="btn btn-sm btn-default"
@@ -72,5 +74,62 @@
         </tr>
         {% endfor %}
     </table>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel">
+                <div class="panel-heading">
+                    <h4>
+                        <a class="btn btn-primary pull-right" href="{% url 'daq/add_ecc_server' %}">
+                            <span class="glyphicon glyphicon-plus"></span> Add
+                        </a>
+                        <span>ECC Servers</span>
+                    </h4>
+                </div>
+                <table class="table table-hover">
+                    <tr>
+                        <th>Name</th>
+                        <th>IP Address</th>
+                        <th>Port</th>
+                    </tr>
+                    {% for server in ecc_servers %}
+                    <tr>
+                        <td>{{ server.name }}</td>
+                        <td>{{ server.ip_address }}</td>
+                        <td>{{ server.port }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel">
+                <div class="panel-heading">
+                    <h4>
+                        <a class="btn btn-primary pull-right" href="{% url 'daq/add_data_router' %}">
+                            <span class="glyphicon glyphicon-plus"></span> Add
+                        </a>
+                        <span>Data Routers</span>
+                    </h4>
+                </div>
+                <table class="table table-hover">
+                    <tr>
+                        <th>Name</th>
+                        <th>IP Address</th>
+                        <th>Port</th>
+                        <th>Type</th>
+                    </tr>
+                    {% for server in data_routers %}
+                    <tr>
+                        <td>{{ server.name }}</td>
+                        <td>{{ server.ip_address }}</td>
+                        <td>{{ server.port }}</td>
+                        <td>{{ server.type }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
