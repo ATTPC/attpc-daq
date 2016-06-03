@@ -2,10 +2,28 @@ from django.db import models
 import xml.etree.ElementTree as ET
 
 
+class ECCServer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
+    port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def url(self):
+        return 'http://{}:{}/'.format(self.ip_address, self.port)
+
+
 class ConfigId(models.Model):
     describe = models.CharField(max_length=120)
     prepare = models.CharField(max_length=120)
     configure = models.CharField(max_length=120)
+
+    ecc_server = models.ForeignKey(ECCServer, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
 
     def as_xml(self):
         root = ET.Element('ConfigId')
@@ -16,16 +34,27 @@ class ConfigId(models.Model):
 
         return ET.dump(root)
 
+    @classmethod
+    def from_xml(cls, node):
+        new_config = cls()
 
-class ECCServer(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
-    port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
+        if not ET.iselement(node):
+            node = ET.fromstring(node)
 
-    available_configs = models.ForeignKey(ConfigId, on_delete=models.CASCADE, null=True, blank=True)
+        if node.tag != 'ConfigId':
+            raise ValueError('Not a ConfigId node')
+        for subnode in node.findall('SubConfigId'):
+            config_type = subnode.get('type')
+            if config_type == 'describe':
+                new_config.describe = subnode.text
+            elif config_type == 'prepare':
+                new_config.prepare = subnode.text
+            elif config_type == 'configure':
+                new_config.configure = subnode.text
+            else:
+                raise ValueError('Unknown or missing config type: {:s}'.format(config_type))
 
-    def __str__(self):
-        return self.name
+        return new_config
 
 
 class DataRouter(models.Model):

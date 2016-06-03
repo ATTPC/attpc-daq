@@ -24,4 +24,4 @@ class DataRouterAdmin(admin.ModelAdmin):
 @admin.register(ConfigId)
 class ConfigIdAdmin(admin.ModelAdmin):
     model = ConfigId
-    list_display = ['describe', 'prepare', 'configure']
+    list_display = ['__str__', 'describe', 'prepare', 'configure']

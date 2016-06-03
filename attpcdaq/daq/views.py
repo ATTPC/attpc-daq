@@ -3,19 +3,43 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.core.urlresolvers import reverse_lazy
+from django.core.serializers import serialize
 from django.db.models import Min
 
 from zeep import Client as SoapClient
+import xml.etree.ElementTree as ET
 
-from .models import DataSource, ECCServer, DataRouter
+from .models import DataSource, ECCServer, DataRouter, ConfigId
 from .forms import DataSourceForm, ECCServerForm, DataRouterForm
 
 
-def get_ecc_server_state(request):
-    wsdl_path = 'http://' + request.get_host() + static('daq/ecc.wsdl')
+def _get_soap_client(hostname, ecc_url):
+    wsdl_path = 'http://' + hostname + static('daq/ecc.wsdl')
     client = SoapClient(wsdl_path)
+    client.set_address('ecc', 'ecc', ecc_url)
+    return client
+
+
+def ecc_get_state(request, pk):
+    ecc_server = get_object_or_404(ECCServer, pk=pk)
+    client = _get_soap_client(request.get_host(), ecc_server.url)
     result = client.service.GetState()
     return HttpResponse(str(result))
+
+
+def ecc_get_configs(request, pk):
+    ecc_server = get_object_or_404(ECCServer, pk=pk)
+    client = _get_soap_client(request.get_host(), ecc_server.url)
+    result = client.service.GetConfigIDs()
+
+    config_list_xml = ET.fromstring(result.Text)
+    config_nodes = [ConfigId.from_xml(s) for s in config_list_xml.findall('ConfigId')]
+    for node in config_nodes:
+        node.ecc_server = ecc_server
+        node.save()
+
+    json_repr = serialize('json', config_nodes)
+    return HttpResponse(json_repr)
 
 
 def ecc_configure(request, pk):
