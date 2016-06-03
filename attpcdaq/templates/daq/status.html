@@ -14,22 +14,23 @@
 {% block body %}
 <div class="container">
 
+
     <div class="text-center">
         <div class="btn-toolbar" id="run-control-toolbar">
     {#        <div class="btn-group">#}
-                <a class="btn btn-lg btn-default {% if system_state >= 3 %}disabled{% endif %}"
+                <a class="btn btn-lg btn-info {% if system_state >= 3 %}disabled{% endif %}"
                    href="{% url 'daq/set_state_all' 3 %}">
                     <span class="glyphicon glyphicon-off"></span> Init
                 </a>
-                <a class="btn btn-lg btn-default {% if system_state != 3 %}disabled{% endif %}"
+                <a class="btn btn-lg btn-success {% if system_state != 3 %}disabled{% endif %}"
                    href="{% url 'daq/set_state_all' 4 %}">
                     <span class="glyphicon glyphicon-play"></span> Start
                 </a>
-                <a class="btn btn-lg btn-default {% if system_state != 4 %}disabled{% endif %}"
+                <a class="btn btn-lg btn-danger {% if system_state != 4 %}disabled{% endif %}"
                    href="{% url 'daq/set_state_all' 3 %}">
                     <span class="glyphicon glyphicon-stop"></span> Stop
                 </a>
-                <a class="btn btn-lg btn-default {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
+                <a class="btn btn-lg btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
                    href="{% url 'daq/set_state_all' 0 %}">
                     <span class="glyphicon glyphicon-repeat"></span> Reset
                 </a>
@@ -37,54 +38,56 @@
         </div>
     </div>
 
-
-    <h1>
-        <span>Data Sources</span>
-        <a role='button' class="btn btn-primary pull-right" href="{% url 'daq/add_source' %}">
-            <span class="glyphicon glyphicon-plus"></span> Add
-        </a>
-    </h1>
-
-    <table class="table table-hover">
-        <tr>
-            <th>Status</th>
-            <th>Source</th>
-            <th>ECC server</th>
-            <th>Data router</th>
-            <th>Config</th>
-            <th class="shrink"></th>
-        </tr>
-        {% for source in data_sources %}
-        <tr>
-            <td><span class="label label-default">{{ source.state_name }}</span></td>
-            <td>{{ source.name }}</td>
-            <td>{{ source.ecc_server.name|default:'None' }}</td>
-            <td>{{ source.data_router.name|default:'None' }}</td>
-            <td>{{ source.config }}</td>
-            <td class="text-right">
-                <a role="button" class="btn btn-sm btn-default"
-                   href="{% url 'daq/update_source' source.pk %}">
-                    <span class="glyphicon glyphicon-wrench"></span> Edit
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <span>Data Sources</span>
+                <a role='button' class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_source' %}">
+                    <span class="glyphicon glyphicon-plus"></span> Add
                 </a>
-                <a role="button" class="btn btn-sm btn-danger"
-                   href="{% url 'daq/remove_source' source.pk %}">
-                    <span class="glyphicon glyphicon-trash"></span> Remove
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            </span>
+        </div>
+        <table class="table table-striped">
+            <tr>
+                <th>Status</th>
+                <th>Source</th>
+                <th>ECC server</th>
+                <th>Data router</th>
+                <th>Config</th>
+                <th class="shrink"></th>
+            </tr>
+            {% for source in data_sources %}
+            <tr>
+                <td><span class="label label-default">{{ source.state_name }}</span></td>
+                <td>{{ source.name }}</td>
+                <td>{{ source.ecc_server.name|default:'None' }}</td>
+                <td>{{ source.data_router.name|default:'None' }}</td>
+                <td>{{ source.config }}</td>
+                <td class="text-right">
+                    <a role="button" class="btn btn-xs btn-default"
+                       href="{% url 'daq/update_source' source.pk %}">
+                        <span class="glyphicon glyphicon-wrench"></span> Edit
+                    </a>
+                    <a role="button" class="btn btn-xs btn-danger"
+                       href="{% url 'daq/remove_source' source.pk %}">
+                        <span class="glyphicon glyphicon-trash"></span> Remove
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
     <div class="row">
         <div class="col-md-6">
-            <div class="panel">
+            <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4>
-                        <a class="btn btn-primary pull-right" href="{% url 'daq/add_ecc_server' %}">
+                    <span>
+                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_ecc_server' %}">
                             <span class="glyphicon glyphicon-plus"></span> Add
                         </a>
                         <span>ECC Servers</span>
-                    </h4>
+                    </span>
                 </div>
                 <table class="table table-hover">
                     <tr>
@@ -103,14 +106,14 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="panel">
+            <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4>
-                        <a class="btn btn-primary pull-right" href="{% url 'daq/add_data_router' %}">
+                    <span>
+                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_data_router' %}">
                             <span class="glyphicon glyphicon-plus"></span> Add
                         </a>
                         <span>Data Routers</span>
-                    </h4>
+                    </span>
                 </div>
                 <table class="table table-hover">
                     <tr>
