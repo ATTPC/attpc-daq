@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +13,7 @@
 <body>
     {% block navbar %}
     <nav class="navbar navbar-default" role="navigation">
-        <div class="container">
+        <div class="container-fluid">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
                     <span class="sr-only">Toggle navigation</span>
@@ -22,6 +23,7 @@
                 </button>
                 <a class="navbar-brand" href="">AT-TPC DAQ</a>
             </div>
+
             <!-- Collect the nav links, forms, and other content for toggling -->
 {#            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">#}
 {#                <ul class="nav navbar-nav">#}
@@ -32,10 +34,26 @@
     </nav>
     {% endblock %}
 
-    {% block breadcrumbs %}
-    {% endblock %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3 col-md-2 sidebar">
+                {% block sidebar %}
+                <ul class="nav nav-sidebar">
+                    <li class="{% active request 'status' %}"><a href="{% url 'daq/status' %}">Status</a></li>
+                    <li class="{% active request 'sources' %}"><a href="{% url 'daq/data_source_list' %}">Data sources</a></li>
+                    <li class="{% active request 'data_router' %}"><a href="{% url 'daq/data_router_list' %}">Data routers</a></li>
+                    <li class="{% active request 'ecc' %}"><a href="{% url 'daq/ecc_server_list' %}">ECC servers</a></li>
+                </ul>
+                {% endblock %}
+            </div>
+            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2">
+                 {% block breadcrumbs %}
+                 {% endblock %}
 
-    {% block body %}
-    {% endblock %}
+                {% block body %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
 </body>
 </html>

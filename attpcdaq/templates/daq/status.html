@@ -3,136 +3,87 @@
 
 {% block title %}Status - AT-TPC DAQ{% endblock %}
 
-{% block breadcrumbs %}
-<div class="container">
-    <ol class="breadcrumb">
-        <li class="active">Home</li>
-    </ol>
-</div>
-{% endblock %}
+{#{% block breadcrumbs %}#}
+{#<div class="container">#}
+{#    <ol class="breadcrumb">#}
+{#        <li class="active">Home</li>#}
+{#    </ol>#}
+{#</div>#}
+{#{% endblock %}#}
 
 {% block body %}
-<div class="container">
 
-
-    <div class="text-center">
-        <div class="btn-toolbar" id="run-control-toolbar">
-    {#        <div class="btn-group">#}
-                <a class="btn btn-lg btn-info {% if system_state >= 3 %}disabled{% endif %}"
-                   href="{% url 'daq/set_state_all' 3 %}">
-                    <span class="glyphicon glyphicon-off"></span> Init
-                </a>
-                <a class="btn btn-lg btn-success {% if system_state != 3 %}disabled{% endif %}"
-                   href="{% url 'daq/set_state_all' 4 %}">
-                    <span class="glyphicon glyphicon-play"></span> Start
-                </a>
-                <a class="btn btn-lg btn-danger {% if system_state != 4 %}disabled{% endif %}"
-                   href="{% url 'daq/set_state_all' 3 %}">
-                    <span class="glyphicon glyphicon-stop"></span> Stop
-                </a>
-                <a class="btn btn-lg btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
-                   href="{% url 'daq/set_state_all' 0 %}">
-                    <span class="glyphicon glyphicon-repeat"></span> Reset
-                </a>
-    {#        </div>#}
-        </div>
-    </div>
 
     <div class="panel panel-default">
         <div class="panel-heading">
-            <span>
-                <span>Data Sources</span>
-                <a role='button' class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_source' %}">
-                    <span class="glyphicon glyphicon-plus"></span> Add
-                </a>
-            </span>
+            DAQ Status
+        </div>
+
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Overall status: <span class="label label-success">Idle</span></h4>
+                </div>
+                <div class="col-md-4 text-right">
+                    <div class="btn-toolbar" id="run-control-toolbar">
+                        <a class="btn btn-info {% if system_state >= 3 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 3 %}">
+                            <span class="glyphicon glyphicon-off"></span> Init
+                        </a>
+                        <a class="btn btn-success {% if system_state != 3 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 4 %}">
+                            <span class="glyphicon glyphicon-play"></span> Start
+                        </a>
+                        <a class="btn btn-danger {% if system_state != 4 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 3 %}">
+                            <span class="glyphicon glyphicon-stop"></span> Stop
+                        </a>
+                        <a class="btn btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 0 %}">
+                            <span class="glyphicon glyphicon-repeat"></span> Reset
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         <table class="table table-striped">
             <tr>
+                <th>Name</th>
                 <th>Status</th>
-                <th>Source</th>
-                <th>ECC server</th>
-                <th>Data router</th>
                 <th>Config</th>
                 <th class="shrink"></th>
             </tr>
             {% for source in data_sources %}
             <tr>
-                <td><span class="label label-default">{{ source.state_name }}</span></td>
                 <td>{{ source.name }}</td>
-                <td>{{ source.ecc_server.name|default:'None' }}</td>
-                <td>{{ source.data_router.name|default:'None' }}</td>
+                <td><span class="label label-default">{{ source.state_name }}</span></td>
                 <td>{{ source.config }}</td>
                 <td class="text-right">
-                    <a role="button" class="btn btn-xs btn-default"
-                       href="{% url 'daq/update_source' source.pk %}">
-                        <span class="glyphicon glyphicon-wrench"></span> Edit
-                    </a>
-                    <a role="button" class="btn btn-xs btn-danger"
-                       href="{% url 'daq/remove_source' source.pk %}">
-                        <span class="glyphicon glyphicon-trash"></span> Remove
-                    </a>
+                    <div class="btn-toolbar" id="run-control-toolbar">
+            {#        <div class="btn-group">#}
+                        <a class="btn btn-xs btn-info {% if system_state >= 3 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 3 %}">
+                            <span class="glyphicon glyphicon-off"></span>
+                        </a>
+                        <a class="btn btn-xs btn-success {% if system_state != 3 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 4 %}">
+                            <span class="glyphicon glyphicon-play"></span>
+                        </a>
+                        <a class="btn btn-xs btn-danger {% if system_state != 4 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 3 %}">
+                            <span class="glyphicon glyphicon-stop"></span>
+                        </a>
+                        <a class="btn btn-xs btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
+                           href="{% url 'daq/set_state_all' 0 %}">
+                            <span class="glyphicon glyphicon-repeat"></span>
+                        </a>
+    {#        </div>#}
+        </div>
                 </td>
             </tr>
             {% endfor %}
         </table>
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <span>
-                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_ecc_server' %}">
-                            <span class="glyphicon glyphicon-plus"></span> Add
-                        </a>
-                        <span>ECC Servers</span>
-                    </span>
-                </div>
-                <table class="table table-hover">
-                    <tr>
-                        <th>Name</th>
-                        <th>IP Address</th>
-                        <th>Port</th>
-                    </tr>
-                    {% for server in ecc_servers %}
-                    <tr>
-                        <td>{{ server.name }}</td>
-                        <td>{{ server.ip_address }}</td>
-                        <td>{{ server.port }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <span>
-                        <a class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_data_router' %}">
-                            <span class="glyphicon glyphicon-plus"></span> Add
-                        </a>
-                        <span>Data Routers</span>
-                    </span>
-                </div>
-                <table class="table table-hover">
-                    <tr>
-                        <th>Name</th>
-                        <th>IP Address</th>
-                        <th>Port</th>
-                        <th>Type</th>
-                    </tr>
-                    {% for server in data_routers %}
-                    <tr>
-                        <td>{{ server.name }}</td>
-                        <td>{{ server.ip_address }}</td>
-                        <td>{{ server.port }}</td>
-                        <td>{{ server.type }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+
 {% endblock %}

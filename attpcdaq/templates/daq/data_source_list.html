@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Data Sources - AT-TPC DAQ{% endblock %}
+
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <a class="btn btn-primary btn-xs pull-right" href="{% url 'daq/add_source' %}">
+                    <span class="glyphicon glyphicon-plus"></span> Add
+                </a>
+                <span>Data Sources</span>
+            </span>
+        </div>
+        <table class="table table-hover">
+            <tr>
+                <th>Name</th>
+                <th>ECC server</th>
+                <th>Data router</th>
+                <th>Config</th>
+                <th></th>
+            </tr>
+            {% for source in datasource_list %}
+            <tr>
+                <td>{{ source.name }}</td>
+                <td>{{ source.ecc_server.name|default:'None' }}</td>
+                <td>{{ source.data_router.name|default:'None' }}</td>
+                <td>{{ source.config }}</td>
+                <td class="text-right">
+                    <a role="button" class="btn btn-xs btn-default"
+                       href="{% url 'daq/update_source' source.pk %}">
+                        <span class="glyphicon glyphicon-wrench"></span> Edit
+                    </a>
+                    <a role="button" class="btn btn-xs btn-danger"
+                       href="{% url 'daq/remove_source' source.pk %}">
+                        <span class="glyphicon glyphicon-trash"></span> Remove
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'attpcdaq.daq',
+    'attpcdaq.tags',
 ]
 
 MIDDLEWARE_CLASSES = [

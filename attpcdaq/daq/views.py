@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse_lazy
 from django.core.serializers import serialize
 from django.db.models import Min
@@ -91,6 +92,11 @@ class AddDataSourceView(CreateView):
     success_url = reverse_lazy('daq/status')
 
 
+class ListDataSourcesView(ListView):
+    model = DataSource
+    template_name = 'daq/data_source_list.html'
+
+
 class UpdateDataSourceView(UpdateView):
     model = DataSource
     form_class = DataSourceForm
@@ -111,6 +117,11 @@ class AddECCServerView(CreateView):
     success_url = reverse_lazy('daq/status')
 
 
+class ListECCServersView(ListView):
+    model = ECCServer
+    template_name = 'daq/ecc_server_list.html'
+
+
 class UpdateECCServerView(UpdateView):
     model = ECCServer
     form_class = ECCServerForm
@@ -129,6 +140,11 @@ class AddDataRouterView(CreateView):
     form_class = DataRouterForm
     template_name = 'daq/add_or_edit_item.html'
     success_url = reverse_lazy('daq/status')
+
+
+class ListDataRoutersView(ListView):
+    model = DataRouter
+    template_name = 'daq/data_router_list.html'
 
 
 class UpdateDataRouterView(UpdateView):
