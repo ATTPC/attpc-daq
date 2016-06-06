@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
@@ -64,7 +64,16 @@ def ecc_start(request, pk):
         return HttpResponseBadRequest('Cannot start an ECC server that is not configured.')
 
 
-def source_change_state(request, pk, target_state):
+def source_change_state(request):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    try:
+        pk = request.POST['pk']
+        target_state = request.POST['target_state']
+    except KeyError:
+        return HttpResponseBadRequest("Provide pk and target_state")
+
     source = get_object_or_404(DataSource, pk=pk)
 
     # Make sure the transition requested is valid
