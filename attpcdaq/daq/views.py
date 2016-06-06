@@ -63,18 +63,15 @@ def ecc_start(request, pk):
         return HttpResponseBadRequest('Cannot start an ECC server that is not configured.')
 
 
-def step_state(request):
-    pass
+# def ecc_change_state(request, pk, target):
+#     source = get_object_or_404(DataSource, pk=pk)
+#
 
 
 def status(request):
     sources = DataSource.objects.all()
-    ecc_servers = ECCServer.objects.all()
-    data_routers = DataRouter.objects.all()
     system_state = sources.aggregate(Min('state'))['state__min']
     return render(request, 'daq/status.html', {'data_sources': sources,
-                                               'ecc_servers': ecc_servers,
-                                               'data_routers': data_routers,
                                                'system_state': system_state})
 
 
