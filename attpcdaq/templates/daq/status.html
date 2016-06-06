@@ -26,19 +26,19 @@
                 </div>
                 <div class="col-md-4 text-right">
                     <div class="btn-toolbar" id="run-control-toolbar">
-                        <a class="btn btn-info {% if system_state >= 3 %}disabled{% endif %}"
+                        <a class="btn btn-info"
                            href="{% url 'daq/set_state_all' 3 %}">
                             <span class="glyphicon glyphicon-off"></span> Init
                         </a>
-                        <a class="btn btn-success {% if system_state != 3 %}disabled{% endif %}"
+                        <a class="btn btn-success"
                            href="{% url 'daq/set_state_all' 4 %}">
                             <span class="glyphicon glyphicon-play"></span> Start
                         </a>
-                        <a class="btn btn-danger {% if system_state != 4 %}disabled{% endif %}"
+                        <a class="btn btn-danger"
                            href="{% url 'daq/set_state_all' 3 %}">
                             <span class="glyphicon glyphicon-stop"></span> Stop
                         </a>
-                        <a class="btn btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
+                        <a class="btn btn-warning"
                            href="{% url 'daq/set_state_all' 0 %}">
                             <span class="glyphicon glyphicon-repeat"></span> Reset
                         </a>
@@ -61,20 +61,20 @@
                 <td class="text-right">
                     <div class="btn-toolbar" id="run-control-toolbar">
             {#        <div class="btn-group">#}
-                        <a class="btn btn-xs btn-info {% if system_state >= 3 %}disabled{% endif %}"
-                           href="{% url 'daq/set_state_all' 3 %}">
+                        <a class="btn btn-xs btn-info"
+                           href="{% url 'daq/source_change_state' source.pk source.CONFIGURED %}">
                             <span class="glyphicon glyphicon-off"></span>
                         </a>
-                        <a class="btn btn-xs btn-success {% if system_state != 3 %}disabled{% endif %}"
-                           href="{% url 'daq/set_state_all' 4 %}">
+                        <a class="btn btn-xs btn-success"
+                           href="{% url 'daq/source_change_state' source.pk source.RUNNING %}">
                             <span class="glyphicon glyphicon-play"></span>
                         </a>
-                        <a class="btn btn-xs btn-danger {% if system_state != 4 %}disabled{% endif %}"
-                           href="{% url 'daq/set_state_all' 3 %}">
+                        <a class="btn btn-xs btn-danger"
+                           href="{% url 'daq/source_change_state' source.pk source.CONFIGURED %}">
                             <span class="glyphicon glyphicon-stop"></span>
                         </a>
-                        <a class="btn btn-xs btn-warning {% if system_state == 4 or system_state == 0 %}disabled{% endif %}"
-                           href="{% url 'daq/set_state_all' 0 %}">
+                        <a class="btn btn-xs btn-warning"
+                           href="{% url 'daq/source_change_state' source.pk source.IDLE %}">
                             <span class="glyphicon glyphicon-repeat"></span>
                         </a>
     {#        </div>#}

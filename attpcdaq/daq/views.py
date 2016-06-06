@@ -9,6 +9,7 @@ from django.db.models import Min
 
 from zeep import Client as SoapClient
 import xml.etree.ElementTree as ET
+import json
 
 from .models import DataSource, ECCServer, DataRouter, ConfigId
 from .forms import DataSourceForm, ECCServerForm, DataRouterForm
@@ -63,9 +64,57 @@ def ecc_start(request, pk):
         return HttpResponseBadRequest('Cannot start an ECC server that is not configured.')
 
 
-# def ecc_change_state(request, pk, target):
-#     source = get_object_or_404(DataSource, pk=pk)
-#
+def source_change_state(request, pk, target_state):
+    source = get_object_or_404(DataSource, pk=pk)
+
+    # Make sure the transition requested is valid
+    if not isinstance(target_state, int):
+        target_state = int(target_state)
+    if source.state == target_state:
+        raise NotImplementedError("No transition")
+
+    # Get the information needed for the request
+    try:
+        ecc_url = source.ecc_server.url
+    except AttributeError:
+        raise AttributeError("Data source has no ECC server.")
+
+    try:
+        config_xml = source.config.as_xml()
+    except AttributeError:
+        raise AttributeError("Data source has no config associated with it.")
+
+    try:
+        datalink_xml = source.get_data_link_xml()
+    except AttributeError:
+        raise AttributeError("Data source has no data router.")
+
+    # Create the SOAP service client
+    client = _get_soap_client(request.get_host(), ecc_url)
+
+    # Dictionaries of transition functions. Dictionary key is *target* state.
+    if source.state < target_state:  # This will be a forward transition
+        transition_dict = {
+            DataSource.DESCRIBED: client.service.Describe,
+            DataSource.PREPARED: client.service.Prepare,
+            DataSource.CONFIGURED: client.service.Configure,
+            DataSource.RUNNING: client.service.Start,
+        }
+    else:  # This will be a backward transition
+        transition_dict = {
+            DataSource.CONFIGURED: client.service.Stop,
+            DataSource.PREPARED: client.service.Breakup,
+            DataSource.DESCRIBED: client.service.Undo,
+            DataSource.IDLE: client.service.Undo,
+        }
+
+    # Get the function corresponding to the requested transition
+    transition = transition_dict[target_state]
+
+    # Finally, perform the transition
+    res = transition(config_xml, datalink_xml)
+
+    return HttpResponse(json.dumps(res.__dict__))
 
 
 def status(request):

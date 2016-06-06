@@ -32,7 +32,7 @@ class ConfigId(models.Model):
             node = ET.SubElement(root, 'SubConfigId', attrib={'type': tag})
             node.text = value
 
-        return ET.dump(root)
+        return ET.tostring(root, encoding='unicode')
 
     @classmethod
     def from_xml(cls, node):
@@ -105,3 +105,13 @@ class DataSource(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_data_link_xml(self):
+        dl_set = ET.Element('DataLinkSet')
+        dl = ET.SubElement(dl_set, 'DataLink')
+        ET.SubElement(dl, 'DataSender', attrib={'id': self.name})
+        ET.SubElement(dl, 'DataRouter', attrib={'name': self.data_router.name,
+                                                'ipAddress': self.data_router.ip_address,
+                                                'port': str(self.data_router.port),
+                                                'type': self.data_router.type})
+        return ET.tostring(dl_set, encoding='unicode')

@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^sources/add/$', views.AddDataSourceView.as_view(), name='daq/add_source'),
     url(r'^sources/edit/(?P<pk>\d+)$', views.UpdateDataSourceView.as_view(), name='daq/update_source'),
     url(r'^sources/remove/(?P<pk>\d+)$', views.RemoveDataSourceView.as_view(), name='daq/remove_source'),
+    url(r'^sources/change_state/(?P<pk>\d+)/(?P<target_state>\d+)/$', views.source_change_state, name='daq/source_change_state'),
 
     url(r'^ecc/$', views.ListECCServersView.as_view(), name='daq/ecc_server_list'),
     url(r'^ecc/add/$', views.AddECCServerView.as_view(), name='daq/add_ecc_server'),
