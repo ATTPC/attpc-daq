@@ -45,36 +45,36 @@
             {% for source in data_sources %}
             <tr>
                 <td>{{ source.name }}</td>
-                <td id="{{ source.name }}-status-cell">
-                    <span class="label label-default" data-pk="{{ source.pk }}" id="{{ source.name }}-status-label">
+                <td id="{{ source.name }}-status-cell" data-daq-source-id="{{ source.pk }}">
+                    <span class="label label-default" data-daq-source-id="{{ source.pk }}" id="{{ source.name }}-status-label">
                         {{ source.get_state_display }}
                     </span>
-                    <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner"></span>
+                    <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner" data-daq-source-id="{{ source.pk }}"></span>
                 </td>
                 <td>{{ source.config }}</td>
                 <td class="text-right">
                     <div class="btn-toolbar" id="{{ source.name }}-source-controls">
-                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.DESCRIBED }}"
+                        <button class="btn btn-xs btn-info" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.DESCRIBED }}"
                                 title="Describe" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-server"></span>
                         </button>
-                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.PREPARED }}"
+                        <button class="btn btn-xs btn-info" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.PREPARED }}"
                                 title="Prepare" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-link"></span>
                         </button>
-                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.READY }}"
+                        <button class="btn btn-xs btn-info" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.READY }}"
                                 title="Configure" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-cog"></span>
                         </button>
-                        <button class="btn btn-xs btn-success" data-pk="{{ source.pk }}" data-target="{{ source.RUNNING }}"
+                        <button class="btn btn-xs btn-success" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.RUNNING }}"
                                 title="Start" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-play"></span>
                         </button>
-                        <button class="btn btn-xs btn-danger" data-pk="{{ source.pk }}" data-target="{{ source.READY }}"
+                        <button class="btn btn-xs btn-danger" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.READY }}"
                                 title="Stop" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-stop"></span>
                         </button>
-                        <button class="btn btn-xs btn-warning" data-pk="{{ source.pk }}" data-target="{{ source.IDLE }}"
+                        <button class="btn btn-xs btn-warning" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.IDLE }}"
                                 title="Reset" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-repeat"></span>
                         </button>
@@ -90,43 +90,69 @@
 
 {% block scripts %}
 <script>
+    function redraw_status($label, $spinner, state_res) {
+        // Update label
+        $label.text(state_res.state_name);
+        $label.removeClass();
+        $label.addClass('label');
+        {% with aSource=data_sources.first %}
+        if (state_res.state == {{ aSource.IDLE }}) {
+            $label.addClass('label-default');
+        }
+        else if (state_res.state < {{ aSource.READY }}) {
+            $label.addClass('label-success');
+        }
+        else if (state_res.state == {{ aSource.READY }}) {
+            $label.addClass('label-success');
+        }
+        else if (state_res.state == {{ aSource.RUNNING }}) {
+            $label.addClass('label-primary');
+        }
+        {% endwith %}
+
+        // Update spinner and visibility
+        if (state_res.transitioning) {
+            $spinner.show();
+            $label.hide();
+        }
+        else {
+            $spinner.hide();
+            $label.show();
+        }
+    }
+
+    function update_state(status_cell) {
+        var $status_cell = $(status_cell);
+        var $label = $status_cell.children('[id*="status-label"]');
+        var $spinner = $status_cell.children('[id*="status-spinner"]');
+
+        // Get new state
+        var pk = $label.data('daq-source-id');
+        $.get("{% url 'daq/source_get_state' %}", {pk: pk})
+                .success(function (data) { redraw_status($label, $spinner, data) });
+    }
+
     $(document).ready(function() {
         // Set up the control buttons
         $("div[id*='source-controls'] > button").click(function () {
-            var pk = $(this).data('pk');
-            var target = $(this).data('target');
+            var pk = $(this).data('daq-source-id');
+            console.log($(this).data);
+            var target = $(this).data('daq-state-target');
             $.post("{% url 'daq/source_change_state' %}", {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'},
                     function (data) {
                         console.log(data);
                     });
         });
 
-        // Hide spinners
-        $('[id*="spinner"]').hide();
+        // Update the labels
+        $('[id*="status-cell"]').each(function () { update_state(this); });
 
         // Enable tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
         // Update the state of the sources
         setInterval(function () {
-            $('[id*="status-cell"]').each(function () {
-                var label = $(this).children('[id*="status-label"]');
-                var pk = label.data('pk');
-                var spinner = $(this).children('[id*="status-spinner"]');
-                $.get("{% url 'daq/source_get_state' %}", {pk: pk}, function (data) {
-                    $(label).text(data.state_name);
-                    if (data.transitioning) {
-                        spinner.show();
-                        label.hide();
-                    }
-                    else {
-                        spinner.hide();
-                        label.show();
-                    }
-                });
-            });
-
-
+            $('[id*="status-cell"]').each(function () { update_state(this); });
         }, 5000);
     });
 </script>
