@@ -75,17 +75,27 @@ def source_get_state(request):
 
     client = _get_soap_client(request.get_host(), ecc_url)
 
-    result = client.service.GetState()
-    current_state = int(result.State)
-    trans = bool(int(result.Transition))
+    try:
+        result = client.service.GetState()
+    except Exception as e:
+        current_state = source.state
+        trans = False
+        success = False
+        error_message = str(e)
+    else:
+        current_state = int(result.State)
+        trans = bool(int(result.Transition))
+        success = True
+        error_message = result.ErrorMessage
 
     if source.state != current_state:
         source.state = current_state
         source.save()
 
     output = {
-        'success': True,
-        'error_message': None,
+        'success': success,
+        'pk': pk,
+        'error_message': error_message,
         'state': current_state,
         'state_name': source.get_state_display(),
         'transitioning': trans,
@@ -153,7 +163,14 @@ def source_change_state(request):
     # Finally, perform the transition
     res = transition(config_xml, datalink_xml)
 
-    return HttpResponse(json.dumps(res.__dict__))
+    output = {
+        'success': int(res.ErrorCode) == 0,
+        'error_message': res.ErrorMessage,
+        'result': res.Text,
+        'pk': pk,
+    }
+
+    return HttpResponse(json.dumps(output), content_type='application/json')
 
 
 def status(request):

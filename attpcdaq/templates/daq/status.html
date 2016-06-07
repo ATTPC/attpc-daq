@@ -85,6 +85,9 @@
         </table>
     </div>
 
+    <div id="alerts">
+    </div>
+
 
 {% endblock %}
 
@@ -92,11 +95,19 @@
 <script>
     function redraw_status($label, $spinner, state_res) {
         // Update label
-        $label.text(state_res.state_name);
+        if (state_res.success) {
+            $label.text(state_res.state_name);
+        }
+        else {
+            $label.text('Error');
+        }
         $label.removeClass();
         $label.addClass('label');
         {% with aSource=data_sources.first %}
-        if (state_res.state == {{ aSource.IDLE }}) {
+        if (!state_res.success) {
+            $label.addClass('label-danger');
+        }
+        else if (state_res.state == {{ aSource.IDLE }}) {
             $label.addClass('label-default');
         }
         else if (state_res.state < {{ aSource.READY }}) {
@@ -121,39 +132,73 @@
         }
     }
 
-    function update_state(status_cell) {
-        var $status_cell = $(status_cell);
-        var $label = $status_cell.children('[id*="status-label"]');
-        var $spinner = $status_cell.children('[id*="status-spinner"]');
+    function get_state(pk) {
+        return $.get("{% url 'daq/source_get_state' %}", {pk: pk});
+    }
 
-        // Get new state
-        var pk = $label.data('daq-source-id');
-        $.get("{% url 'daq/source_get_state' %}", {pk: pk})
-                .success(function (data) { redraw_status($label, $spinner, data) });
+    function check_for_state_changes() {
+        $('[id*="status-cell"]').each(function () {
+            var pk = $(this).data('daq-source-id');
+            get_state(pk).success(handle_state_change_result);
+        });
+    }
+
+    function change_state(pk, target) {
+        return $.post("{% url 'daq/source_change_state' %}",
+                {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
+    }
+
+    function add_alert(message) {
+        var alert_html = '<div class="alert alert-dismissable alert-danger fade in">Error: ' + message + '</div>';
+        var $alerts = $('#alerts');
+        if ($alerts.children('.alert').size() >= 5) {
+            $alerts.children('.alert:first-child').alert('close');
+        }
+        $alerts.append(alert_html);
+    }
+
+    function add_error_popover(pk, message) {
+        var $label = $('[id*="status-label"][data-daq-source-id=' + pk + ']');
+        $label.data('title', 'Error message');
+        $label.data('content', message);
+        $label.data('toggle', 'popover');
+        $label.data('trigger', 'hover');
+        $label.popover();
+    }
+
+    function remove_error_popover(pk) {
+        $('[id*="status-label"][data-daq-source-id=' + pk + ']').popover('destroy');
+    }
+
+    function handle_state_change_result(data) {
+        var pk = data.pk;
+        var $label = $('[id*="status-label"][data-daq-source-id=' + pk + ']');
+        var $spinner = $('[id*="status-spinner"][data-daq-source-id=' + pk + ']');
+
+        if (!data.success) {
+            add_error_popover(pk, data.error_message);
+        }
+        else {
+            remove_error_popover(pk);
+        }
+
+        redraw_status($label, $spinner, data);
     }
 
     $(document).ready(function() {
         // Set up the control buttons
         $("div[id*='source-controls'] > button").click(function () {
             var pk = $(this).data('daq-source-id');
-            console.log($(this).data);
             var target = $(this).data('daq-state-target');
-            $.post("{% url 'daq/source_change_state' %}", {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'},
-                    function (data) {
-                        console.log(data);
-                    });
+            change_state(pk, target).success(handle_state_change_result);
         });
-
-        // Update the labels
-        $('[id*="status-cell"]').each(function () { update_state(this); });
 
         // Enable tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
-        // Update the state of the sources
-        setInterval(function () {
-            $('[id*="status-cell"]').each(function () { update_state(this); });
-        }, 5000);
+        // Check periodically for changes in state
+        check_for_state_changes();
+        setInterval(check_for_state_changes, 5000);
     });
 </script>
 {% endblock %}
