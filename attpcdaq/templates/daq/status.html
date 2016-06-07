@@ -15,22 +15,32 @@
                 </div>
                 <div class="col-md-4 text-right">
                     <div class="btn-toolbar" id="run-control-toolbar">
-                        <a class="btn btn-info"
-                           href="{% url 'daq/set_state_all' 3 %}">
-                            <span class="glyphicon glyphicon-off"></span> Init
-                        </a>
-                        <a class="btn btn-success"
-                           href="{% url 'daq/set_state_all' 4 %}">
-                            <span class="glyphicon glyphicon-play"></span> Start
-                        </a>
-                        <a class="btn btn-danger"
-                           href="{% url 'daq/set_state_all' 3 %}">
-                            <span class="glyphicon glyphicon-stop"></span> Stop
-                        </a>
-                        <a class="btn btn-warning"
-                           href="{% url 'daq/set_state_all' 0 %}">
-                            <span class="glyphicon glyphicon-repeat"></span> Reset
-                        </a>
+                        {% with aSource=data_sources.first %}
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.DESCRIBED }}"
+                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-server"></span>
+                        </button>
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.PREPARED }}"
+                                title="Prepare" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-link"></span>
+                        </button>
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.READY }}"
+                                title="Prepare" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-cog"></span>
+                        </button>
+                        <button class="btn btn-success" data-daq-state-target="{{ aSource.RUNNING }}"
+                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-play"></span>
+                        </button>
+                        <button class="btn btn-danger" data-daq-state-target="{{ aSource.READY }}"
+                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-stop"></span>
+                        </button>
+                        <button class="btn btn-warning" data-daq-state-target="{{ aSource.IDLE }}"
+                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-repeat"></span>
+                        </button>
+                        {% endwith %}
                     </div>
                 </div>
             </div>
@@ -68,15 +78,15 @@
                         </button>
                         <button class="btn btn-xs btn-success" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.RUNNING }}"
                                 title="Start" data-toggle="tooltip" data-placement="bottom">
-                            <span class="glyphicon glyphicon-play"></span>
+                            <span class="fa fa-play"></span>
                         </button>
                         <button class="btn btn-xs btn-danger" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.READY }}"
                                 title="Stop" data-toggle="tooltip" data-placement="bottom">
-                            <span class="glyphicon glyphicon-stop"></span>
+                            <span class="fa fa-stop"></span>
                         </button>
                         <button class="btn btn-xs btn-warning" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.IDLE }}"
                                 title="Reset" data-toggle="tooltip" data-placement="bottom">
-                            <span class="glyphicon glyphicon-repeat"></span>
+                            <span class="fa fa-repeat"></span>
                         </button>
                     </div>
                 </td>
@@ -187,10 +197,15 @@
 
     $(document).ready(function() {
         // Set up the control buttons
-        $("div[id*='source-controls'] > button").click(function () {
+        $("[id*='source-controls'] > button").click(function () {
             var pk = $(this).data('daq-source-id');
             var target = $(this).data('daq-state-target');
             change_state(pk, target).success(handle_state_change_result);
+        });
+
+        $("#run-control-toolbar > button").click(function () {
+            var target = $(this).data('daq-state-target');
+            $("[id*='source-controls'] > button[data-daq-state-target=" + target + ']').trigger("click");
         });
 
         // Enable tooltips
