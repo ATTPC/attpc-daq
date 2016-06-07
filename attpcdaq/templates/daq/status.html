@@ -49,16 +49,28 @@
                 <td>{{ source.config }}</td>
                 <td class="text-right">
                     <div class="btn-toolbar" id="{{ source.name }}-source-controls">
-                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}">
-                            <span class="glyphicon glyphicon-off"></span>
+                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.DESCRIBED }}"
+                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-server"></span>
                         </button>
-                        <button class="btn btn-xs btn-success" data-pk="{{ source.pk }}" data-target="{{ source.RUNNING }}">
+                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.PREPARED }}"
+                                title="Prepare" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-link"></span>
+                        </button>
+                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}"
+                                title="Configure" data-toggle="tooltip" data-placement="bottom">
+                            <span class="fa fa-cog"></span>
+                        </button>
+                        <button class="btn btn-xs btn-success" data-pk="{{ source.pk }}" data-target="{{ source.RUNNING }}"
+                                title="Start" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-play"></span>
                         </button>
-                        <button class="btn btn-xs btn-danger" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}">
+                        <button class="btn btn-xs btn-danger" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}"
+                                title="Stop" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-stop"></span>
                         </button>
-                        <button class="btn btn-xs btn-warning" data-pk="{{ source.pk }}" data-target="{{ source.IDLE }}">
+                        <button class="btn btn-xs btn-warning" data-pk="{{ source.pk }}" data-target="{{ source.IDLE }}"
+                                title="Reset" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-repeat"></span>
                         </button>
                     </div>
@@ -83,6 +95,8 @@
                         console.log(data);
                     });
         });
+
+        $('[data-toggle="tooltip"]').tooltip();
     });
 </script>
 {% endblock %}
