@@ -22,13 +22,6 @@ def _get_soap_client(hostname, ecc_url):
     return client
 
 
-def ecc_get_state(request, pk):
-    ecc_server = get_object_or_404(ECCServer, pk=pk)
-    client = _get_soap_client(request.get_host(), ecc_server.url)
-    result = client.service.GetState()
-    return HttpResponse(str(result))
-
-
 def ecc_get_configs(request, pk):
     ecc_server = get_object_or_404(ECCServer, pk=pk)
     client = _get_soap_client(request.get_host(), ecc_server.url)
@@ -46,22 +39,59 @@ def ecc_get_configs(request, pk):
 
 def ecc_configure(request, pk):
     source = get_object_or_404(DataSource, pk=pk)
-    if source.state < DataSource.CONFIGURED:
+    if source.state < DataSource.READY:
         # Placeholder
-        source.state = DataSource.CONFIGURED
+        source.state = DataSource.READY
         source.save()
     return redirect('daq/status')
 
 
 def ecc_start(request, pk):
     source = get_object_or_404(DataSource, pk=pk)
-    if source.state == DataSource.CONFIGURED:
+    if source.state == DataSource.READY:
         # Placeholder
         source.state = DataSource.RUNNING
         source.save()
         return redirect('daq/status')
     else:
         return HttpResponseBadRequest('Cannot start an ECC server that is not configured.')
+
+
+def source_get_state(request):
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+
+    try:
+        pk = request.GET['pk']
+    except KeyError:
+        return HttpResponseBadRequest("Provide data source pk")
+
+    source = get_object_or_404(DataSource, pk=pk)
+
+    try:
+        ecc_url = source.ecc_server.url
+    except AttributeError:
+        return HttpResponseBadRequest("Requested data source has no ECC server")
+
+    client = _get_soap_client(request.get_host(), ecc_url)
+
+    result = client.service.GetState()
+    current_state = int(result.State)
+    trans = bool(int(result.Transition))
+
+    if source.state != current_state:
+        source.state = current_state
+        source.save()
+
+    output = {
+        'success': True,
+        'error_message': None,
+        'state': current_state,
+        'state_name': source.get_state_display(),
+        'transitioning': trans,
+    }
+
+    return HttpResponse(json.dumps(output), content_type='application/json')
 
 
 def source_change_state(request):
@@ -106,12 +136,12 @@ def source_change_state(request):
         transition_dict = {
             DataSource.DESCRIBED: client.service.Describe,
             DataSource.PREPARED: client.service.Prepare,
-            DataSource.CONFIGURED: client.service.Configure,
+            DataSource.READY: client.service.Configure,
             DataSource.RUNNING: client.service.Start,
         }
     else:  # This will be a backward transition
         transition_dict = {
-            DataSource.CONFIGURED: client.service.Stop,
+            DataSource.READY: client.service.Stop,
             DataSource.PREPARED: client.service.Breakup,
             DataSource.DESCRIBED: client.service.Undo,
             DataSource.IDLE: client.service.Undo,

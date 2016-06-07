@@ -6,7 +6,7 @@ from .models import DataSource, ECCServer, DataRouter, ConfigId
 @admin.register(DataSource)
 class DataSourceAdmin(admin.ModelAdmin):
     model = DataSource
-    list_display = ['name', 'ecc_server', 'data_router', 'config', 'state_name']
+    list_display = ['name', 'ecc_server', 'data_router', 'config', 'get_state_display']
 
 
 @admin.register(ECCServer)

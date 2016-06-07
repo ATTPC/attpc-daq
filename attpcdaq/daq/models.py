@@ -82,26 +82,18 @@ class DataSource(models.Model):
     data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True, blank=True)
     config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
 
-    IDLE = 0
-    DESCRIBED = 1
-    PREPARED = 2
-    CONFIGURED = 3
-    RUNNING = 4
+    IDLE = 1
+    DESCRIBED = 2
+    PREPARED = 3
+    READY = 4
+    RUNNING = 5
     STATE_CHOICES = ((IDLE, 'Idle'),
                      (DESCRIBED, 'Described'),
                      (PREPARED, 'Prepared'),
-                     (CONFIGURED, 'Configured'),
+                     (READY, 'Ready'),
                      (RUNNING, 'Running'))
+    STATE_DICT = dict(STATE_CHOICES)
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
-
-    @property
-    def state_name(self):
-        state_map = {0: 'Idle',
-                     1: 'Described',
-                     2: 'Prepared',
-                     3: 'Configured',
-                     4: 'Running'}
-        return state_map.get(self.state, 'Error')
 
     def __str__(self):
         return self.name

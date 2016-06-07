@@ -45,7 +45,12 @@
             {% for source in data_sources %}
             <tr>
                 <td>{{ source.name }}</td>
-                <td><span class="label label-default">{{ source.state_name }}</span></td>
+                <td id="{{ source.name }}-status-cell">
+                    <span class="label label-default" data-pk="{{ source.pk }}" id="{{ source.name }}-status-label">
+                        {{ source.get_state_display }}
+                    </span>
+                    <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner"></span>
+                </td>
                 <td>{{ source.config }}</td>
                 <td class="text-right">
                     <div class="btn-toolbar" id="{{ source.name }}-source-controls">
@@ -57,7 +62,7 @@
                                 title="Prepare" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-link"></span>
                         </button>
-                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}"
+                        <button class="btn btn-xs btn-info" data-pk="{{ source.pk }}" data-target="{{ source.READY }}"
                                 title="Configure" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-cog"></span>
                         </button>
@@ -65,7 +70,7 @@
                                 title="Start" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-play"></span>
                         </button>
-                        <button class="btn btn-xs btn-danger" data-pk="{{ source.pk }}" data-target="{{ source.CONFIGURED }}"
+                        <button class="btn btn-xs btn-danger" data-pk="{{ source.pk }}" data-target="{{ source.READY }}"
                                 title="Stop" data-toggle="tooltip" data-placement="bottom">
                             <span class="glyphicon glyphicon-stop"></span>
                         </button>
@@ -96,7 +101,33 @@
                     });
         });
 
+        // Hide spinners
+        $('[id*="spinner"]').hide();
+
+        // Enable tooltips
         $('[data-toggle="tooltip"]').tooltip();
+
+        // Update the state of the sources
+        setInterval(function () {
+            $('[id*="status-cell"]').each(function () {
+                var label = $(this).children('[id*="status-label"]');
+                var pk = label.data('pk');
+                var spinner = $(this).children('[id*="status-spinner"]');
+                $.get("{% url 'daq/source_get_state' %}", {pk: pk}, function (data) {
+                    $(label).text(data.state_name);
+                    if (data.transitioning) {
+                        spinner.show();
+                        label.hide();
+                    }
+                    else {
+                        spinner.hide();
+                        label.show();
+                    }
+                });
+            });
+
+
+        }, 5000);
     });
 </script>
 {% endblock %}
