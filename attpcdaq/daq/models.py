@@ -1,8 +1,23 @@
+"""AT-TPC DAQ Models
+
+This module defines the internal representation of the DAQ used by this control program.
+Each subclass of Model is an object that will be stored in the database, and the Field
+subclasses attached as attributes will be the columns in the database table.
+
+"""
+
 from django.db import models
 import xml.etree.ElementTree as ET
 
 
 class ECCServer(models.Model):
+    """An ECC server.
+
+    Fields
+    ------
+    name :
+
+    """
     name = models.CharField(max_length=100, unique=True)
     ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
     port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
