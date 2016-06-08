@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, JsonResponse
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
@@ -9,7 +9,6 @@ from django.db.models import Min
 
 from zeep import Client as SoapClient
 import xml.etree.ElementTree as ET
-import json
 
 from .models import DataSource, ECCServer, DataRouter, ConfigId
 from .forms import DataSourceForm, ECCServerForm, DataRouterForm
@@ -57,6 +56,19 @@ def ecc_start(request, pk):
         return HttpResponseBadRequest('Cannot start an ECC server that is not configured.')
 
 
+def _make_status_response(success=True, pk=None, error_message=None, state=None,
+                          state_name=None, transitioning=False):
+    output = {
+        'success': success,
+        'pk': pk,
+        'error_message': error_message,
+        'state': state,
+        'state_name': state_name,
+        'transitioning': transitioning,
+    }
+    return JsonResponse(output)
+
+
 def source_get_state(request):
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
@@ -64,14 +76,16 @@ def source_get_state(request):
     try:
         pk = request.GET['pk']
     except KeyError:
-        return HttpResponseBadRequest("Provide data source pk")
+        resp = _make_status_response(success=False, error_message="No data source pk provided")
+        resp.status_code = 400
+        return resp
 
     source = get_object_or_404(DataSource, pk=pk)
 
     try:
         ecc_url = source.ecc_server.url
     except AttributeError:
-        return HttpResponseBadRequest("Requested data source has no ECC server")
+        return _make_status_response(success=False, error_message="Data source has no ECC server", pk=pk)
 
     client = _get_soap_client(request.get_host(), ecc_url)
 
@@ -92,16 +106,8 @@ def source_get_state(request):
         source.state = current_state
         source.save()
 
-    output = {
-        'success': success,
-        'pk': pk,
-        'error_message': error_message,
-        'state': current_state,
-        'state_name': source.get_state_display(),
-        'transitioning': trans,
-    }
-
-    return HttpResponse(json.dumps(output), content_type='application/json')
+    return _make_status_response(success=success, pk=pk, error_message=error_message, state=current_state,
+                                 state_name=source.get_state_display(), transitioning=trans)
 
 
 def source_change_state(request):
@@ -112,31 +118,40 @@ def source_change_state(request):
         pk = request.POST['pk']
         target_state = request.POST['target_state']
     except KeyError:
-        return HttpResponseBadRequest("Provide pk and target_state")
+        resp = _make_status_response(success=False,
+                                     error_message="Must provide data source pk and target state")
+        resp.status_code = 400
+        return resp
 
     source = get_object_or_404(DataSource, pk=pk)
 
-    # Make sure the transition requested is valid
+    # Cast the target_state to an integer for comparisons
     if not isinstance(target_state, int):
         target_state = int(target_state)
-    if source.state == target_state:
-        raise NotImplementedError("No transition")
 
-    # Get the information needed for the request
+    # If the target = the current state, no transition is needed
+    if source.state == target_state:
+        return _make_status_response(success=True, pk=pk, state=source.state,
+                                     state_name=source.get_state_display(), transitioning=False)
+
+    # Get the information needed for the transition request
     try:
         ecc_url = source.ecc_server.url
     except AttributeError:
-        raise AttributeError("Data source has no ECC server.")
+        return _make_status_response(success=False, error_message="Data source does not have an ECC server",
+                                     pk=pk, state=source.state, state_name=source.get_state_display())
 
     try:
         config_xml = source.config.as_xml()
     except AttributeError:
-        raise AttributeError("Data source has no config associated with it.")
+        return _make_status_response(success=False, error_message="Data source has no config set",
+                                     pk=pk, state=source.state, state_name=source.get_state_display())
 
     try:
         datalink_xml = source.get_data_link_xml()
     except AttributeError:
-        raise AttributeError("Data source has no data router.")
+        return _make_status_response(success=False, error_message="Data source has no data router",
+                                     pk=pk, state=source.state, state_name=source.get_state_display())
 
     # Create the SOAP service client
     client = _get_soap_client(request.get_host(), ecc_url)
@@ -163,14 +178,9 @@ def source_change_state(request):
     # Finally, perform the transition
     res = transition(config_xml, datalink_xml)
 
-    output = {
-        'success': int(res.ErrorCode) == 0,
-        'error_message': res.ErrorMessage,
-        'result': res.Text,
-        'pk': pk,
-    }
-
-    return HttpResponse(json.dumps(output), content_type='application/json')
+    return _make_status_response(success=int(res.ErrorCode) == 0, error_message=res.ErrorMessage,
+                                 pk=pk, state=source.state, state_name=source.get_state_display(),
+                                 transitioning=True)
 
 
 def status(request):
