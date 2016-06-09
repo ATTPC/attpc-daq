@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import ECCServer, DataRouter, DataSource
+from .models import ECCServer, DataRouter, DataSource, ConfigId
 
 
 class ECCServerModelTestCase(TestCase):
@@ -16,9 +16,11 @@ class ECCServerModelTestCase(TestCase):
 
 
 class StatusViewTestCase(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        eccs = [ECCServer.objects.create(name='ECC{}'.format(i),
-                                         ip_address='192.168.41.{}'.format(i+60),
-                                         port=8083,
-                                         ) for i in range(10)]
+    def setUp(self):
+        self.ecc = ECCServer.objects.create(name='ECC0', ip_address='127.0.0.1', port='8083')
+        self.data_router = DataRouter.objects.create(name='dataRouter0', ip_address='127.0.0.1',
+                                                     port='46005', type='TCP')
+        self.config = ConfigId(describe='desc', prepare='prep', configure='conf', ecc_server=self.ecc)
+
+    def test_template_render(self):
+        pass
