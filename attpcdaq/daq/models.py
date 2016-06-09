@@ -240,3 +240,36 @@ class DataSource(models.Model):
                                                 'port': str(self.data_router.port),
                                                 'type': self.data_router.type})
         return ET.tostring(dl_set, encoding='unicode')
+
+
+class RunMetadata(models.Model):
+    """Represents the metadata describing a data run.
+
+    Attributes
+    ----------
+    run_number : models.PositiveIntegerField
+        The run number
+    start_datetime : models.DateTimeField
+        The date and time when the run started.
+    stop_datetime : models.DateTimeField
+        The date and time when the run ended.
+
+    """
+
+    class Meta:
+        verbose_name = 'run'
+
+    run_number = models.PositiveIntegerField()
+    start_datetime = models.DateTimeField(null=True, blank=True)
+    stop_datetime = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def duration(self):
+        """Get the duration of the run.
+
+        Returns
+        -------
+        datetime.timedelta
+            Object representing the duration of the run.
+        """
+        return str(self.stop_datetime - self.start_datetime)

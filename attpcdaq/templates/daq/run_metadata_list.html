@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Run Metadata - AT-TPC DAQ{% endblock %}
+
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>Run information</span>
+        </div>
+        <table class="table table-hover">
+            <tr>
+                <th>Run number</th>
+                <th>Start</th>
+                <th>Stop</th>
+                <th>Duration</th>
+            </tr>
+            {% for run in runmetadata_list %}
+            <tr>
+                <td>{{ run.run_number }}</td>
+                <td>{{ run.start_datetime|date:'d-M-Y H:i:s' }}</td>
+                <td>{{ run.stop_datetime|date:'d-M-Y H:i:s' }}</td>
+                <td>{{ run.duration }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

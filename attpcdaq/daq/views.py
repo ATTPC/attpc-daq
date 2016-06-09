@@ -18,7 +18,7 @@ from django.db.models import Min
 from zeep import Client as SoapClient
 import xml.etree.ElementTree as ET
 
-from .models import DataSource, ECCServer, DataRouter, ConfigId
+from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata
 from .forms import DataSourceForm, ECCServerForm, DataRouterForm
 
 
@@ -401,3 +401,8 @@ class RemoveDataRouterView(DeleteView):
     template_name = 'daq/add_or_edit_item.html'
     success_url = reverse_lazy('daq/status')
 
+
+class ListRunMetadataView(ListView):
+    """List the run information for all runs."""
+    model = RunMetadata
+    template_name = 'daq/run_metadata_list.html'
