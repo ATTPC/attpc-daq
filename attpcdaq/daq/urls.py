@@ -22,6 +22,4 @@ urlpatterns = [
     url(r'^data_router/add/$', views.AddDataRouterView.as_view(), name='daq/add_data_router'),
     url(r'^data_router/edit/(?P<pk>\d+)$', views.UpdateDataRouterView.as_view(), name='daq/update_data_router'),
     url(r'^data_router/remove/(?P<pk>\d+)$', views.RemoveDataRouterView.as_view(), name='daq/remove_data_router'),
-
-    url(r'^state/set_all/(\d)$', views.set_state_all, name='daq/set_state_all'),
 ]

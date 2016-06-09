@@ -176,7 +176,7 @@ def source_get_state(request):
         error_message = str(e)
     else:
         current_state = int(result.State)
-        trans = int(result.Transition) == 0
+        trans = int(result.Transition) != 0
         success = True
         error_message = result.ErrorMessage
 
