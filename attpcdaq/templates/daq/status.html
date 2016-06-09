@@ -4,6 +4,51 @@
 {% block title %}Status - AT-TPC DAQ{% endblock %}
 
 {% block body %}
+{#    <div class="panel panel-default">#}
+{#        <div class="panel-heading">#}
+{#            Run Control#}
+{#        </div>#}
+{#        <div class="panel-body">#}
+{#            Current run:#}
+{#        </div>#}
+{#    </div>#}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Run Timer
+                </div>
+                <table class="table">
+                    <tr>
+                        <th>Start time:</th>
+                        <td>14:00</td>
+                    </tr>
+                    <tr>
+                        <th>Current run duration:</th>
+                        <td>2:25</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Run Information
+                </div>
+                <table class="table">
+                    <tr>
+                        <th>Experiment name:</th>
+                        <td>Test</td>
+                    </tr>
+                    <tr>
+                        <th>Run number:</th>
+                        <td>0</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="panel panel-default">
         <div class="panel-heading">
             DAQ Status

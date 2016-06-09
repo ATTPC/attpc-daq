@@ -13,7 +13,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse_lazy
 from django.core.serializers import serialize
-from django.db.models import Min
+from django.db.models import Min, Max
 
 from zeep import Client as SoapClient
 import xml.etree.ElementTree as ET
@@ -303,7 +303,10 @@ def status(request):
     """
     sources = DataSource.objects.all()
     system_state = sources.aggregate(Min('state'))['state__min']
+    current_run = RunMetadata.objects.all().aggregate(Max('run_number'))['run_number__max']
+
     return render(request, 'daq/status.html', {'data_sources': sources,
+                                               'current_run': current_run,
                                                'system_state': system_state})
 
 
