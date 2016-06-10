@@ -7,13 +7,11 @@
         <div class="login-app-name">AT-TPC DAQ</div>
         <form class="form" action="{% url 'accounts/login' %}" method="POST">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}"/>
             {{ form|crispy }}
             <input class="btn btn-primary" name="submit" type="submit" value="Submit">
         </form>
     </div>
 
 </div>
-
-
-
 {% endblock %}

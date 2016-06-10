@@ -1,18 +1,24 @@
 body {
-  padding-top: 80px;
+  padding-top: 10px;
   background-color: #eff0f4;
   font-family: "Lato", "Helvetica", "Arial", sans-serif;
+}
+.navbar-default {
+  background-color: #eff0f4;
+  margin-bottom: 10px;
 }
 #run-control-toolbar {
   display: inline-block;
 }
-.navbar {
+.navbar.navbar-default {
   border-radius: 0;
   height: 50px;
   border: none;
 }
-.navbar-inverse {
-  background-color: #f5f6f8;
+.navbar.navbar-default .navbar-nav > .open > a,
+.navbar.navbar-default .navbar-nav > .open > a:focus,
+.navbar.navbar-default .navbar-nav > .open > a:hover {
+  background-color: #fefefe;
 }
 .sidebar-app-name {
   font-size: 150%;

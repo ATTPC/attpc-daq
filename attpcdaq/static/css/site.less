@@ -12,23 +12,30 @@
 
 
 body {
-  padding-top: 80px;
+  padding-top: 10px;
   background-color: @bgcolor;
   font-family: "Lato", "Helvetica", "Arial", sans-serif;
+}
+
+.navbar-default {
+  background-color: @bgcolor;
+  margin-bottom: 10px;
 }
 
 #run-control-toolbar {
     display: inline-block;
 }
 
-.navbar {
+.navbar.navbar-default {
   border-radius: 0;
   height: @top-navbar-height;
   border: none;
-}
 
-.navbar-inverse {
-  background-color: lighten(@navcolor, 80%);
+  .navbar-nav > .open > a,
+  .navbar-nav > .open > a:focus,
+  .navbar-nav > .open > a:hover {
+    background-color: lighten(@bgcolor, 5%);
+  }
 }
 
 .sidebar-app-name {
