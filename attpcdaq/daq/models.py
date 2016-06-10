@@ -253,11 +253,24 @@ class Experiment(models.Model):
         try:
             return self.runmetadata_set.latest('start_datetime')
         except RunMetadata.DoesNotExist:
-            return 0
+            return None
 
     @property
     def is_running(self):
-        return self.runmetadata_set.latest('start_datetime').stop_datetime is None
+        latest_run = self.latest_run
+        if latest_run is not None:
+            return latest_run.stop_datetime is None
+        else:
+            return False
+
+    @property
+    def next_run_number(self):
+        latest_run = self.latest_run
+        if latest_run is not None:
+            return latest_run.run_number + 1
+        else:
+            return 0
+
 
 
 class RunMetadata(models.Model):

@@ -13,11 +13,11 @@
                 <table class="table">
                     <tr>
                         <th>Start time:</th>
-                        <td>{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
+                        <td id="start-time">{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
                     </tr>
                     <tr>
                         <th>Current run duration:</th>
-                        <td>{{ latest_run.duration|default:'No runs' }}</td>
+                        <td id="run-duration">{{ latest_run.duration|default:'No runs' }}</td>
                     </tr>
                 </table>
             </div>
@@ -34,7 +34,7 @@
                     </tr>
                     <tr>
                         <th>Run number:</th>
-                        <td>{{ latest_run.run_number|default:'None' }}</td>
+                        <td id="run-number">{{ latest_run.run_number|default:'None' }}</td>
                     </tr>
                 </table>
             </div>
@@ -53,27 +53,27 @@
                 <div class="col-md-4 text-right">
                     <div class="btn-toolbar" id="run-control-toolbar">
                         {% with aSource=data_sources.first %}
-                        <button class="btn btn-info" data-daq-state-target="{{ aSource.DESCRIBED }}"
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.DESCRIBED }}" id="btn-describe-all"
                                 title="Describe" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-server"></span>
                         </button>
-                        <button class="btn btn-info" data-daq-state-target="{{ aSource.PREPARED }}"
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.PREPARED }}" id="btn-prepare-all"
                                 title="Prepare" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-link"></span>
                         </button>
-                        <button class="btn btn-info" data-daq-state-target="{{ aSource.READY }}"
+                        <button class="btn btn-info" data-daq-state-target="{{ aSource.READY }}" id="btn-configure-all"
                                 title="Configure" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-cog"></span>
                         </button>
-                        <button class="btn btn-success" data-daq-state-target="{{ aSource.RUNNING }}"
+                        <button class="btn btn-success" data-daq-state-target="{{ aSource.RUNNING }}" id="btn-start-all"
                                 title="Start" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-play"></span>
                         </button>
-                        <button class="btn btn-danger" data-daq-state-target="{{ aSource.READY }}"
+                        <button class="btn btn-danger" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all"
                                 title="Stop" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-stop"></span>
                         </button>
-                        <button class="btn btn-warning" data-daq-state-target="{{ aSource.IDLE }}"
+                        <button class="btn btn-warning" data-daq-state-target="{{ aSource.IDLE }}" id="btn-reset-all"
                                 title="Reset" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-repeat"></span>
                         </button>
@@ -232,6 +232,19 @@
         redraw_status($label, $spinner, data);
     }
 
+    function start_run() {
+        return $.post("{% url 'daq/start_run' %}", {csrfmiddlewaretoken: "{{ csrf_token }}"});
+    }
+
+    function handle_run_start_stop(response) {
+        $("#start-time").text(response.start_time);
+        $("#run-number").text(response.run_number);
+    }
+
+    function stop_run() {
+        return $.post("{% url 'daq/stop_run' %}", {csrfmiddlewaretoken: "{{ csrf_token }}"});
+    }
+
     $(document).ready(function() {
         // Set up the control buttons
         $("[id*='source-controls'] > button").click(function () {
@@ -243,6 +256,14 @@
         $("#run-control-toolbar > button").click(function () {
             var target = $(this).data('daq-state-target');
             $("[id*='source-controls'] > button[data-daq-state-target=" + target + ']').trigger("click");
+        });
+
+        $("#btn-start-all").click(function () {
+            start_run().success(handle_run_start_stop);
+        });
+
+        $("#btn-stop-all").click(function () {
+            stop_run().success(handle_run_start_stop);
         });
 
         // Enable tooltips
