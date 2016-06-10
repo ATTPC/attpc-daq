@@ -70,19 +70,19 @@
                             <span class="fa fa-link"></span>
                         </button>
                         <button class="btn btn-info" data-daq-state-target="{{ aSource.READY }}"
-                                title="Prepare" data-toggle="tooltip" data-placement="bottom">
+                                title="Configure" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-cog"></span>
                         </button>
                         <button class="btn btn-success" data-daq-state-target="{{ aSource.RUNNING }}"
-                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                                title="Start" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-play"></span>
                         </button>
                         <button class="btn btn-danger" data-daq-state-target="{{ aSource.READY }}"
-                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                                title="Stop" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-stop"></span>
                         </button>
                         <button class="btn btn-warning" data-daq-state-target="{{ aSource.IDLE }}"
-                                title="Describe" data-toggle="tooltip" data-placement="bottom">
+                                title="Reset" data-toggle="tooltip" data-placement="bottom">
                             <span class="fa fa-repeat"></span>
                         </button>
                         {% endwith %}
@@ -90,7 +90,7 @@
                 </div>
             </div>
         </div>
-        <table class="table table-striped">
+        <table class="table">
             <tr>
                 <th>Name</th>
                 <th>Status</th>
