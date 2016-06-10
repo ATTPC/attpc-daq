@@ -305,10 +305,13 @@ def status(request):
     """
     sources = DataSource.objects.all()
     system_state = sources.aggregate(Min('state'))['state__min']
-    current_run = RunMetadata.objects.all().aggregate(Max('run_number'))['run_number__max']
+
+    experiment = get_object_or_404(Experiment, user=request.user)
+    latest_run = experiment.latest_run
 
     return render(request, 'daq/status.html', {'data_sources': sources,
-                                               'current_run': current_run,
+                                               'latest_run': latest_run,
+                                               'experiment': experiment,
                                                'system_state': system_state})
 
 

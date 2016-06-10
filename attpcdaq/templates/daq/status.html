@@ -13,11 +13,11 @@
                 <table class="table">
                     <tr>
                         <th>Start time:</th>
-                        <td>14:00</td>
+                        <td>{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
                     </tr>
                     <tr>
                         <th>Current run duration:</th>
-                        <td>2:25</td>
+                        <td>{{ latest_run.duration|default:'No runs' }}</td>
                     </tr>
                 </table>
             </div>
@@ -30,11 +30,11 @@
                 <table class="table">
                     <tr>
                         <th>Experiment name:</th>
-                        <td>Test</td>
+                        <td>{{ experiment.name }}</td>
                     </tr>
                     <tr>
                         <th>Run number:</th>
-                        <td>0</td>
+                        <td>{{ latest_run.run_number|default:'None' }}</td>
                     </tr>
                 </table>
             </div>

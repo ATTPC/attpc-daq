@@ -249,16 +249,15 @@ class Experiment(models.Model):
     target_run_duration = models.PositiveIntegerField(default=3600)
 
     @property
-    def current_run_number(self):
-        latest_run = self.runmetadata_set.latest()
-        if latest_run.stop_datetime is None:
-            return latest_run
-        else:
-            return latest_run + 1
+    def latest_run(self):
+        try:
+            return self.runmetadata_set.latest('start_datetime')
+        except RunMetadata.DoesNotExist:
+            return 0
 
     @property
     def is_running(self):
-        return self.runmetadata_set.latest().stop_datetime is None
+        return self.runmetadata_set.latest('start_datetime').stop_datetime is None
 
 
 class RunMetadata(models.Model):
