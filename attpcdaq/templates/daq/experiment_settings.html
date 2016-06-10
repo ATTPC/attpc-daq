@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Experiment settings - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        Experiment settings
+    </div>
+    <div class="panel-body">
+        {% crispy form %}
+    </div>
+</div>
+{% endblock %}

@@ -39,6 +39,13 @@ body {
   text-align: center;
 }
 
+.login-app-name {
+  font-size: 180%;
+  padding-bottom: 20px;
+  color: black;
+  text-align: center;
+}
+
 .sidebar {
     position: fixed;
     top: 0;
@@ -97,4 +104,24 @@ body {
     color: @titlecolor;
     font-size: 120%;
   }
+}
+
+.login-page {
+  background-color: @navcolor;
+}
+
+.center-on-page() {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+#login-panel {
+  width: 400px;
+  height: 300px;
+  padding: 10px 20px;
+  .center-on-page;
 }

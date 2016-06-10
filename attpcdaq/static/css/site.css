@@ -21,6 +21,12 @@ body {
   padding-top: 10px;
   text-align: center;
 }
+.login-app-name {
+  font-size: 180%;
+  padding-bottom: 20px;
+  color: black;
+  text-align: center;
+}
 .sidebar {
   position: fixed;
   top: 0;
@@ -92,4 +98,18 @@ body {
   font-weight: 300;
   color: #555555;
   font-size: 120%;
+}
+.login-page {
+  background-color: #222733;
+}
+#login-panel {
+  width: 400px;
+  height: 300px;
+  padding: 10px 20px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
 }

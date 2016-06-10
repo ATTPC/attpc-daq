@@ -15,11 +15,15 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.views.generic import RedirectView
 
 from .daq import urls as daq_urls
+from .accounts import urls as account_urls
 
 
 urlpatterns = [
+    url(r'^$', RedirectView.as_view(url='daq')),
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/', include(account_urls)),
     url(r'^daq/', include(daq_urls)),
 ]

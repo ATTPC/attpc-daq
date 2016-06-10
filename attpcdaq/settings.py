@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'attpcdaq.daq',
     'attpcdaq.tags',
+    'attpcdaq.accounts',
 ]
 
 MIDDLEWARE_CLASSES = [

@@ -1,8 +1,10 @@
 from django.conf.urls import include, url
+from django.views.generic import RedirectView
 
 from . import views
 
 urlpatterns = [
+    url(r'^$', RedirectView.as_view(pattern_name='daq/status')),
     url(r'^status/$', views.status, name='daq/status'),
 
     url(r'^sources/$', views.ListDataSourcesView.as_view(), name='daq/data_source_list'),
@@ -24,4 +26,6 @@ urlpatterns = [
     url(r'^data_router/remove/(?P<pk>\d+)$', views.RemoveDataRouterView.as_view(), name='daq/remove_data_router'),
 
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
+
+    url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),
 ]

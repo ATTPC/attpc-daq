@@ -7,6 +7,7 @@ subclasses attached as attributes will be the columns in the database table.
 """
 
 from django.db import models
+from django.contrib.auth.models import User
 import xml.etree.ElementTree as ET
 
 
@@ -242,6 +243,24 @@ class DataSource(models.Model):
         return ET.tostring(dl_set, encoding='unicode')
 
 
+class Experiment(models.Model):
+    user = models.OneToOneField(User)
+    name = models.CharField(max_length=100, unique=True)
+    target_run_duration = models.PositiveIntegerField(default=3600)
+
+    @property
+    def current_run_number(self):
+        latest_run = self.runmetadata_set.latest()
+        if latest_run.stop_datetime is None:
+            return latest_run
+        else:
+            return latest_run + 1
+
+    @property
+    def is_running(self):
+        return self.runmetadata_set.latest().stop_datetime is None
+
+
 class RunMetadata(models.Model):
     """Represents the metadata describing a data run.
 
@@ -259,6 +278,7 @@ class RunMetadata(models.Model):
     class Meta:
         verbose_name = 'run'
 
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     run_number = models.PositiveIntegerField()
     start_datetime = models.DateTimeField(null=True, blank=True)
     stop_datetime = models.DateTimeField(null=True, blank=True)

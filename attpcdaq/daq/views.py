@@ -6,20 +6,21 @@ This module contains the main logic of the DAQ controller. The function here are
     3) Adding, editing, and removing objects from the program's internal representation of the DAQ.
 
 """
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.serializers import serialize
 from django.db.models import Min, Max
 
 from zeep import Client as SoapClient
 import xml.etree.ElementTree as ET
 
-from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata
-from .forms import DataSourceForm, ECCServerForm, DataRouterForm
+from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata, Experiment
+from .forms import DataSourceForm, ECCServerForm, DataRouterForm, ExperimentSettingsForm
 
 
 # ================
@@ -287,6 +288,7 @@ def source_change_state(request):
 # found later in this module.
 # =========================================================================================================
 
+@login_required
 def status(request):
     """Renders the main status page.
 
@@ -308,6 +310,20 @@ def status(request):
     return render(request, 'daq/status.html', {'data_sources': sources,
                                                'current_run': current_run,
                                                'system_state': system_state})
+
+
+@login_required
+def experiment_settings(request):
+
+    experiment = get_object_or_404(Experiment, user=request.user)
+
+    if request.method == 'POST':
+        form = ExperimentSettingsForm(request.POST, instance=experiment)
+        form.save()
+        return redirect(reverse('daq/experiment_settings'))
+    else:
+        form = ExperimentSettingsForm(instance=experiment)
+        return render(request, 'daq/experiment_settings.html', {'form': form})
 
 
 # ===============================================================================================
@@ -409,3 +425,10 @@ class ListRunMetadataView(ListView):
     """List the run information for all runs."""
     model = RunMetadata
     template_name = 'daq/run_metadata_list.html'
+
+
+class UpdateExperimentView(UpdateView):
+    """Update experiment settings"""
+    model = Experiment
+    form_class = ExperimentSettingsForm
+    template_name = 'daq/experiment_settings.html'

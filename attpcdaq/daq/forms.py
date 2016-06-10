@@ -2,7 +2,7 @@ from django.forms import ModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import DataSource, DataRouter, ECCServer
+from .models import DataSource, DataRouter, ECCServer, Experiment
 
 
 class DataSourceForm(ModelForm):
@@ -44,4 +44,17 @@ class ECCServerForm(ModelForm):
         self.helper.form_id = 'add-ecc-server-form'
         self.helper.form_method = 'post'
 
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class ExperimentSettingsForm(ModelForm):
+    class Meta:
+        model = Experiment
+        fields = ['name', 'target_run_duration']
+
+    def __init__(self, *args, **kwargs):
+        super(ExperimentSettingsForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'experiment-settings-form'
+        self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))

@@ -58,6 +58,7 @@
                     </li>
                     <li class=""><a><span class="fa fa-wrench"></span> Setup</a>
                         <ul class="nav nav-sidebar-subnav">
+                            <li class="{% active request 'experiment_settings' %}"><a href="{% url 'daq/experiment_settings' %}">Experiment settings</a></li>
                             <li class="{% active request 'sources' %}"><a href="{% url 'daq/data_source_list' %}">Data sources</a></li>
                             <li class="{% active request 'data_router' %}"><a href="{% url 'daq/data_router_list' %}">Data routers</a></li>
                             <li class="{% active request 'ecc' %}"><a href="{% url 'daq/ecc_server_list' %}">ECC servers</a></li>

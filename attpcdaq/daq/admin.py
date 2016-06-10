@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata
+from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata, Experiment
 
 
 @admin.register(DataSource)
@@ -31,3 +31,9 @@ class ConfigIdAdmin(admin.ModelAdmin):
 class RunMetadataAdmin(admin.ModelAdmin):
     model = RunMetadata
     list_display = ['run_number', 'start_datetime', 'stop_datetime']
+
+
+@admin.register(Experiment)
+class ExperimentAdmin(admin.ModelAdmin):
+    model = Experiment
+    list_display = ['name', 'user']
