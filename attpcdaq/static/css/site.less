@@ -1,22 +1,48 @@
+
+@top-navbar-height: 50px;
+@navcolor: #2B2D42;
+@sidebar-color: #404040;
+@bgcolor: #efefef;
+
+body {
+  padding-top: 80px;
+  background-color: @bgcolor;
+  font-family: "Lato", "Helvetica", "Arial", sans-serif;
+}
+
 #run-control-toolbar {
     display: inline-block;
 }
 
 .navbar {
   border-radius: 0;
+  height: @top-navbar-height;
+  border: none;
+}
+
+.navbar-inverse {
+  background-color: lighten(@navcolor, 80%);
+}
+
+.sidebar-app-name {
+  font-size: 150%;
+  height: @top-navbar-height;
+  color: white;
+  padding-top: 10px;
+  text-align: center;
 }
 
 .sidebar {
     position: fixed;
-    top: 60px;
+    top: 0;
     bottom: 0;
     left: 0;
     z-index: 1000;
     display: block;
-    padding: 20px;
+    padding: 10px 20px;
     overflow-x: hidden;
     overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-    background-color: #ecf0f1;
+    background-color: @navcolor;
     border-right: 1px solid #eee;
 }
 
@@ -30,12 +56,28 @@
   li > a {
       padding-right: 20px;
       padding-left: 20px;
+      color: lighten(@navcolor, 50%);
+  }
+
+  li:hover, li > a:hover {
+    background-color: @navcolor;
+    border: none;
+    color: white;
   }
 
   .active {
       a, a:hover, a:active {
-        color: #fff;
-        background-color: #18bc9c;
+        color: white;
+        background-color: @navcolor;
       }
   }
+}
+
+.nav-sidebar-subnav {
+  .nav-sidebar;
+  padding-left: 50px;
+}
+
+.btn {
+  border-radius: 0;
 }

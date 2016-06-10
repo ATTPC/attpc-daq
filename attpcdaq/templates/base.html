@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <title>{% block title %}AT-TPC DAQ{% endblock %}</title>
 
-    <link rel="stylesheet" href="{% static 'css/flatly.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
 
@@ -18,38 +18,51 @@
 </head>
 <body>
     {% block navbar %}
-    <nav class="navbar navbar-default" role="navigation">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="">AT-TPC DAQ</a>
-            </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
+{#    <nav class="navbar navbar-inverse navbar-fixed-top">#}
+{#        <div class="container-fluid">#}
+{#            <div class="navbar-header">#}
+{#                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">#}
+{#                    <span class="sr-only">Toggle navigation</span>#}
+{#                    <span class="icon-bar"></span>#}
+{#                    <span class="icon-bar"></span>#}
+{#                    <span class="icon-bar"></span>#}
+{#                </button>#}
+{#                <a class="navbar-brand" href="">AT-TPC DAQ</a>#}
+{#            </div>#}
+{##}
+{#            <!-- Collect the nav links, forms, and other content for toggling -->#}
 {#            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">#}
 {#                <ul class="nav navbar-nav">#}
 {#                    <li class=""><a href="">Status</a></li>#}
 {#                </ul>#}
 {#            </div><!-- /.navbar-collapse -->#}
-        </div><!-- /.container -->
-    </nav>
+{#        </div><!-- /.container -->#}
+{#    </nav>#}
     {% endblock %}
 
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-3 col-md-2 sidebar">
                 {% block sidebar %}
+                <div class="sidebar-app-name">AT-TPC DAQ</div>
                 <ul class="nav nav-sidebar">
-                    <li class="{% active request 'status' %}"><a href="{% url 'daq/status' %}">Status</a></li>
-                    <li class="{% active request 'run' %}"><a href="{% url 'daq/run_list' %}">Run metadata</a></li>
-                    <li class="{% active request 'sources' %}"><a href="{% url 'daq/data_source_list' %}">Data sources</a></li>
-                    <li class="{% active request 'data_router' %}"><a href="{% url 'daq/data_router_list' %}">Data routers</a></li>
-                    <li class="{% active request 'ecc' %}"><a href="{% url 'daq/ecc_server_list' %}">ECC servers</a></li>
+                    <li class="{% active request 'status' %}">
+                        <a href="{% url 'daq/status' %}">
+                            <span class="fa fa-home"></span> Status
+                        </a>
+                    </li>
+                    <li class="{% active request 'run' %}">
+                        <a href="{% url 'daq/run_list' %}">
+                            <span class="fa fa-table"></span> Run metadata
+                        </a>
+                    </li>
+                    <li class=""><a><span class="fa fa-wrench"></span> Setup</a>
+                        <ul class="nav nav-sidebar-subnav">
+                            <li class="{% active request 'sources' %}"><a href="{% url 'daq/data_source_list' %}">Data sources</a></li>
+                            <li class="{% active request 'data_router' %}"><a href="{% url 'daq/data_router_list' %}">Data routers</a></li>
+                            <li class="{% active request 'ecc' %}"><a href="{% url 'daq/ecc_server_list' %}">ECC servers</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 {% endblock %}
             </div>
