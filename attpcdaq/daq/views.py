@@ -8,47 +8,22 @@ This module contains the main logic of the DAQ controller. The function here are
 """
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.serializers import serialize
-from django.db.models import Min, Max
+from django.db.models import Min
 from datetime import datetime
 
-from zeep import Client as SoapClient
-import xml.etree.ElementTree as ET
-
-from .models import DataSource, ECCServer, DataRouter, ConfigId, RunMetadata, Experiment
-from .forms import DataSourceForm, ECCServerForm, DataRouterForm, ExperimentSettingsForm
+from .models import DataSource, DataRouter, ConfigId, RunMetadata, Experiment
+from .models import ECCError
+from .forms import DataSourceForm, DataRouterForm, ExperimentSettingsForm
 
 
 # ================
 # Helper functions
 # ================
-
-def _get_soap_client(hostname, ecc_url):
-    """Returns the SOAP protocol client object for making ECC server requests.
-
-    Parameters
-    ----------
-    hostname : str
-        The URL of this server. This is used for retrieving the WSDL file.
-    ecc_url : str
-        The URL of the ECC server to which we want to send a request.
-
-    Returns
-    -------
-    client : zeep.client.Client
-        The SOAP client object for the ECC server.
-
-    """
-    wsdl_path = 'http://' + hostname + static('daq/ecc.wsdl')
-    client = SoapClient(wsdl_path)
-    client.set_address('ecc', 'ecc', ecc_url)
-    return client
-
 
 def _make_status_response(success=True, pk=None, error_message=None, state=None,
                           state_name=None, transitioning=False):
@@ -124,17 +99,11 @@ def ecc_get_configs(request, pk):
         The response contains a JSON array of the configurations.
 
     """
-    ecc_server = get_object_or_404(ECCServer, pk=pk)
-    client = _get_soap_client(request.get_host(), ecc_server.url)
-    result = client.service.GetConfigIDs()
+    source = get_object_or_404(DataSource, pk=pk)
+    source.refresh_configs()
+    config_list = source.configid_set.all()
 
-    config_list_xml = ET.fromstring(result.Text)
-    config_nodes = [ConfigId.from_xml(s) for s in config_list_xml.findall('ConfigId')]
-    for node in config_nodes:
-        node.ecc_server = ecc_server
-        node.save()
-
-    json_repr = serialize('json', config_nodes)
+    json_repr = serialize('json', config_list)
     return JsonResponse(json_repr)
 
 
@@ -169,36 +138,18 @@ def source_get_state(request):
 
     source = get_object_or_404(DataSource, pk=pk)
 
-    # Get the ECC server associated with the data source
     try:
-        ecc_url = source.ecc_server.url
-    except AttributeError:
-        return _make_status_response(success=False, error_message="Data source has no ECC server", pk=pk)
-
-    # Make the GetState request
-    client = _get_soap_client(request.get_host(), ecc_url)
-
-    try:
-        result = client.service.GetState()
+        source.refresh_state()
     except Exception as e:
-        # This would likely be a ConnectionError, indicating that the ECC server is not running.
-        current_state = source.state
-        trans = False
+        # This could be a ConnectionError, indicating that the ECC server is not running.
         success = False
         error_message = str(e)
     else:
-        current_state = int(result.State)
-        trans = int(result.Transition) != 0
         success = True
-        error_message = result.ErrorMessage
+        error_message = ""
 
-    # Update the source's state in the database if needed.
-    if source.state != current_state:
-        source.state = current_state
-        source.save()
-
-    return _make_status_response(success=success, pk=pk, error_message=error_message, state=current_state,
-                                 state_name=source.get_state_display(), transitioning=trans)
+    return _make_status_response(success=success, pk=pk, error_message=error_message, state=source.state,
+                                 state_name=source.get_state_display(), transitioning=source.is_transitioning)
 
 
 def source_change_state(request):
@@ -243,53 +194,19 @@ def source_change_state(request):
         return _make_status_response(success=True, pk=pk, state=source.state,
                                      state_name=source.get_state_display(), transitioning=False)
 
-    # Get the information needed for the transition request
+    # Request the transition
     try:
-        ecc_url = source.ecc_server.url
-    except AttributeError:
-        return _make_status_response(success=False, error_message="Data source does not have an ECC server",
-                                     pk=pk, state=source.state, state_name=source.get_state_display())
+        source.change_state(target_state)
+    except ECCError as err:
+        success = False
+        error_message = str(err)
+    else:
+        success = True
+        error_message = ""
 
-    try:
-        config_xml = source.config.as_xml()
-    except AttributeError:
-        return _make_status_response(success=False, error_message="Data source has no config set",
-                                     pk=pk, state=source.state, state_name=source.get_state_display())
-
-    try:
-        datalink_xml = source.get_data_link_xml()
-    except AttributeError:
-        return _make_status_response(success=False, error_message="Data source has no data router",
-                                     pk=pk, state=source.state, state_name=source.get_state_display())
-
-    # Create the SOAP service client
-    client = _get_soap_client(request.get_host(), ecc_url)
-
-    # Dictionaries of transition functions. Dictionary key is *target* state.
-    if source.state < target_state:  # This will be a forward transition
-        transition_dict = {
-            DataSource.DESCRIBED: client.service.Describe,
-            DataSource.PREPARED: client.service.Prepare,
-            DataSource.READY: client.service.Configure,
-            DataSource.RUNNING: client.service.Start,
-        }
-    else:  # This will be a backward transition
-        transition_dict = {
-            DataSource.READY: client.service.Stop,
-            DataSource.PREPARED: client.service.Breakup,
-            DataSource.DESCRIBED: client.service.Undo,
-            DataSource.IDLE: client.service.Undo,
-        }
-
-    # Get the function corresponding to the requested transition
-    transition = transition_dict[target_state]
-
-    # Finally, perform the transition
-    res = transition(config_xml, datalink_xml)
-
-    return _make_status_response(success=int(res.ErrorCode) == 0, error_message=res.ErrorMessage,
+    return _make_status_response(success=success, error_message=error_message,
                                  pk=pk, state=source.state, state_name=source.get_state_display(),
-                                 transitioning=True)
+                                 transitioning=source.is_transitioning)
 
 
 # =========================================================================================================
@@ -409,35 +326,6 @@ class UpdateDataSourceView(UpdateView):
 class RemoveDataSourceView(DeleteView):
     """Delete a data source."""
     model = DataSource
-    template_name = 'daq/remove_source.html'
-    success_url = reverse_lazy('daq/status')
-
-
-class AddECCServerView(CreateView):
-    """Add an ECC server."""
-    model = ECCServer
-    form_class = ECCServerForm
-    template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
-
-
-class ListECCServersView(ListView):
-    """List all ECC servers."""
-    model = ECCServer
-    template_name = 'daq/ecc_server_list.html'
-
-
-class UpdateECCServerView(UpdateView):
-    """Change parameters on an ECC server."""
-    model = ECCServer
-    form_class = ECCServerForm
-    template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
-
-
-class RemoveECCServerView(DeleteView):
-    """Delete an ECC server."""
-    model = ECCServer
     template_name = 'daq/remove_source.html'
     success_url = reverse_lazy('daq/status')
 

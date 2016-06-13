@@ -2,13 +2,13 @@ from django.forms import ModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import DataSource, DataRouter, ECCServer, Experiment
+from .models import DataSource, DataRouter, Experiment
 
 
 class DataSourceForm(ModelForm):
     class Meta:
         model = DataSource
-        fields = ['name', 'ecc_server', 'data_router', 'config']
+        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router', 'selected_config']
 
     def __init__(self, *args, **kwargs):
         super(DataSourceForm, self).__init__(*args, **kwargs)
@@ -28,20 +28,6 @@ class DataRouterForm(ModelForm):
         super(DataRouterForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'add-data-router-form'
-        self.helper.form_method = 'post'
-
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-class ECCServerForm(ModelForm):
-    class Meta:
-        model = ECCServer
-        fields = ['name', 'ip_address', 'port']
-
-    def __init__(self, *args, **kwargs):
-        super(ECCServerForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'add-ecc-server-form'
         self.helper.form_method = 'post'
 
         self.helper.add_input(Submit('submit', 'Submit'))

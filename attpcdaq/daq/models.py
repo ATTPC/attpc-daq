@@ -8,34 +8,14 @@ subclasses attached as attributes will be the columns in the database table.
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.conf import settings
 import xml.etree.ElementTree as ET
+from zeep.client import Client as SoapClient
 
 
-class ECCServer(models.Model):
-    """An ECC server.
-
-    Attributes
-    ----------
-    name : models.CharField
-        A unique name to identify the ECC server.
-    ip_address : models.GenericIPAddressField
-        The IP address of the ECC server.
-    port : models.PositiveIntegerField
-        The TCP port the ECC server listens on.
-
-    """
-    name = models.CharField(max_length=100, unique=True)
-    ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
-    port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def url(self):
-        """Get the URL of the ECC server as a string.
-        """
-        return 'http://{}:{}/'.format(self.ip_address, self.port)
+class ECCError(Exception):
+    pass
 
 
 class ConfigId(models.Model):
@@ -58,7 +38,7 @@ class ConfigId(models.Model):
     prepare = models.CharField(max_length=120)
     configure = models.CharField(max_length=120)
 
-    ecc_server = models.ForeignKey(ECCServer, on_delete=models.CASCADE, null=True, blank=True)
+    data_source = models.ForeignKey('DataSource', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
@@ -191,9 +171,10 @@ class DataSource(models.Model):
 
     """
     name = models.CharField(max_length=50, unique=True)
-    ecc_server = models.OneToOneField(ECCServer, on_delete=models.SET_NULL, null=True, blank=True)
+    ecc_ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
+    ecc_port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
     data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True, blank=True)
-    config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
+    selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
 
     IDLE = 1
     DESCRIBED = 2
@@ -207,6 +188,7 @@ class DataSource(models.Model):
                      (RUNNING, 'Running'))
     STATE_DICT = dict(STATE_CHOICES)
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
+    is_transitioning = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -241,6 +223,77 @@ class DataSource(models.Model):
                                                 'port': str(self.data_router.port),
                                                 'type': self.data_router.type})
         return ET.tostring(dl_set, encoding='unicode')
+
+    @property
+    def ecc_url(self):
+        """Get the URL of the ECC server as a string.
+        """
+        return 'http://{}:{}/'.format(self.ip_address, self.port)
+
+    def _get_soap_client(self):
+        wsdl_url = 'http://' + settings.HOST_NAME + static('daq/ecc.wsdl')
+        client = SoapClient(wsdl_url)
+        client.set_address('ecc', 'ecc', self.ecc_url)
+        return client
+
+    def refresh_configs(self):
+        client = self._get_soap_client()
+        result = client.service.GetConfigIDs()
+
+        config_list_xml = ET.fromstring(result.Text)
+        configs = [ConfigId.from_xml(s) for s in config_list_xml.findall('ConfigId')]
+        for config in configs:
+            config.data_source = self
+            config.save()
+
+    def refresh_state(self):
+        client = self._get_soap_client()
+        result = client.service.GetState()
+
+        self.state = int(result.State)
+        self.is_transitioning = int(result.Transition) != 0
+
+    def change_state(self, target_state):
+        # Get transition arguments
+        try:
+            config_xml = self.config.as_xml()
+        except AttributeError:
+            raise RuntimeError("Data source has no config associated with it.")
+
+        try:
+            datalink_xml = self.get_data_link_xml()
+        except AttributeError:
+            raise RuntimeError("Data source has no data router associated with it.")
+
+        client = self._get_soap_client()
+
+        # Dictionaries of transition functions. Dictionary key is *target* state.
+        if self.state < target_state:  # This will be a forward transition
+            transition_dict = {
+                DataSource.DESCRIBED: client.service.Describe,
+                DataSource.PREPARED: client.service.Prepare,
+                DataSource.READY: client.service.Configure,
+                DataSource.RUNNING: client.service.Start,
+            }
+        else:  # This will be a backward transition
+            transition_dict = {
+                DataSource.READY: client.service.Stop,
+                DataSource.PREPARED: client.service.Breakup,
+                DataSource.DESCRIBED: client.service.Undo,
+                DataSource.IDLE: client.service.Undo,
+            }
+
+        # Get the function corresponding to the requested transition
+        transition = transition_dict[target_state]
+
+        # Finally, perform the transition
+        res = transition(config_xml, datalink_xml)
+
+        if int(res.ErrorCode) != 0:
+            self.is_transitioning = False
+            raise ECCError(res.ErrorMessage)
+        else:
+            self.is_transitioning = True
 
 
 class Experiment(models.Model):
