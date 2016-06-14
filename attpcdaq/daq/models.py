@@ -256,7 +256,7 @@ class DataSource(models.Model):
     def change_state(self, target_state):
         # Get transition arguments
         try:
-            config_xml = self.config.as_xml()
+            config_xml = self.selected_config.as_xml()
         except AttributeError:
             raise RuntimeError("Data source has no config associated with it.")
 

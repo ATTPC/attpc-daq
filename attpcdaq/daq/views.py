@@ -71,6 +71,34 @@ def _make_runcontrol_response(success, run_number=None, start_time=None, error_m
     return JsonResponse(output)
 
 
+def _calculate_overall_state(source_list):
+    """Find the overall state of the system.
+
+    Parameters
+    ----------
+    source_list : QuerySet
+        A set of DataSource objects.
+
+    Returns
+    -------
+    overall_state : int or None
+        The overall state of the system. Returns `None` if the state is mixed.
+    overall_state_name : str
+        The name of the system state. The value 'Mixed' is returned if the system is not in a
+        consistent state.
+
+    """
+    if len(set(s.state for s in source_list)) == 1:
+        # All states are the same
+        overall_state = source_list.first().state
+        overall_state_name = source_list.first().get_state_display()
+    else:
+        overall_state = None
+        overall_state_name = 'Mixed'
+
+    return overall_state, overall_state_name
+
+
 # =====================================================================================================
 # ECC Server Communication:
 #
@@ -193,14 +221,7 @@ def refresh_state_all(request):
 
         results.append(source_res)
 
-    all_states = [s['state'] for s in results]
-    if len(set(all_states)) == 1:
-        # All states are the same
-        overall_state = all_states[0]
-        overall_state_name = results[0]['state_name']
-    else:
-        overall_state = None
-        overall_state_name = 'Mixed'
+    overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
 
     output = {
         'overall_state': overall_state,
@@ -265,6 +286,78 @@ def source_change_state(request):
     return _make_status_response(success=success, error_message=error_message,
                                  pk=pk, state=source.state, state_name=source.get_state_display(),
                                  transitioning=source.is_transitioning)
+
+
+@login_required
+def source_change_state_all(request):
+    """Change the state of all sources.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request method must be POST, and it must contain an integer representing the target state.
+
+    Returns
+    -------
+    JsonResponse
+        A JSON array containing status information about all sources.
+
+    """
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    # Get target state
+    try:
+        target_state = int(request.POST['target_state'])
+    except (KeyError, TypeError):
+        resp = _make_status_response(success=False,
+                                     error_message="Must provide target state as integer.")
+        resp.status_code = 400
+        return resp
+
+    results = []
+    for source in DataSource.objects.all():
+        try:
+            source.change_state(target_state)
+        except ECCError as err:
+            success = False
+            error_message = str(err)
+        else:
+            success = True
+            error_message = ""
+
+        source_result = {
+            'success': success,
+            'error_message': error_message,
+            'pk': source.pk,
+            'state': source.state,
+            'state_name': source.get_state_display(),
+            'transitioning': source.is_transitioning,
+        }
+
+        results.append(source_result)
+
+    experiment = get_object_or_404(Experiment, user=request.user)
+    if target_state == DataSource.RUNNING and not experiment.is_running:
+        current_run = RunMetadata.objects.create(experiment=experiment,
+                                                 run_number=experiment.next_run_number,
+                                                 start_datetime=datetime.now())
+        current_run.save()
+    else:
+        current_run = experiment.latest_run
+
+    overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
+
+    output = {
+        'success': all((s['success'] for s in results)),
+        'run_number': current_run.run_number,
+        'start_time': current_run.start_datetime,
+        'overall_state': overall_state,
+        'overall_state_name': overall_state_name,
+        'individual_results': results,
+    }
+
+    return JsonResponse(output)
 
 
 # =========================================================================================================

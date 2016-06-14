@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^sources/get_state/$', views.source_get_state, name='daq/source_get_state'),
     url(r'^sources/refresh_state_all', views.refresh_state_all, name='daq/source_refresh_state_all'),
     url(r'^sources/change_state/$', views.source_change_state, name='daq/source_change_state'),
+    url(r'^sources/change_state_all/$', views.source_change_state_all, name='daq/source_change_state_all'),
 
     url(r'^ecc/get_configs/(\d+)$', views.ecc_get_configs, name='daq/ecc_get_configs'),
 

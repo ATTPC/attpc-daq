@@ -210,6 +210,11 @@
                 {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
     }
 
+    function change_state_all(target) {
+        return $.post("{% url 'daq/source_change_state_all' %}",
+                      {target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
+    }
+
     function add_alert(message) {
         var alert_html = '<div class="alert alert-dismissable alert-danger fade in">Error: ' + message + '</div>';
         var $alerts = $('#alerts');
@@ -247,17 +252,9 @@
         redraw_status($label, $spinner, data);
     }
 
-    function start_run() {
-        return $.post("{% url 'daq/start_run' %}", {csrfmiddlewaretoken: "{{ csrf_token }}"});
-    }
-
     function handle_run_start_stop(response) {
         $("#start-time").text(response.start_time);
         $("#run-number").text(response.run_number);
-    }
-
-    function stop_run() {
-        return $.post("{% url 'daq/stop_run' %}", {csrfmiddlewaretoken: "{{ csrf_token }}"});
     }
 
     $(document).ready(function() {
@@ -268,17 +265,12 @@
             change_state(pk, target).success(handle_state_change_result);
         });
 
-        $("#run-control-toolbar > button").click(function () {
+        $("#run-control-toolbar").children("button").click(function () {
             var target = $(this).data('daq-state-target');
-            $("[id*='source-controls'] > button[data-daq-state-target=" + target + ']').trigger("click");
-        });
-
-        $("#btn-start-all").click(function () {
-            start_run().success(handle_run_start_stop);
-        });
-
-        $("#btn-stop-all").click(function () {
-            stop_run().success(handle_run_start_stop);
+            change_state_all(target).success(function (data) {
+                handle_refresh_state_all_results(data);
+                handle_run_start_stop(data);
+            });
         });
 
         // Enable tooltips
