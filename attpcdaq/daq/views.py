@@ -193,7 +193,21 @@ def refresh_state_all(request):
 
         results.append(source_res)
 
-    return JsonResponse({'results': results})
+    all_states = [s['state'] for s in results]
+    if len(set(all_states)) == 1:
+        # All states are the same
+        overall_state = all_states[0]
+        overall_state_name = results[0]['state_name']
+    else:
+        overall_state = None
+        overall_state_name = 'Mixed'
+
+    output = {
+        'overall_state': overall_state,
+        'overall_state_name': overall_state_name,
+        'individual_results': results,
+    }
+    return JsonResponse(output)
 
 
 def source_change_state(request):

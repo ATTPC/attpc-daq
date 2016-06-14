@@ -48,7 +48,7 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-8">
-                    <h4>Overall status: <span class="label label-success">Idle</span></h4>
+                    <h4>Overall status: <span class="label label-success" id="overall-status-label">Idle</span></h4>
                 </div>
                 <div class="col-md-4 text-right">
                     <div class="btn-toolbar" id="run-control-toolbar">
@@ -148,25 +148,7 @@
         else {
             $label.text('Error');
         }
-        $label.removeClass();
-        $label.addClass('label');
-        {% with aSource=data_sources.first %}
-        if (!state_res.success) {
-            $label.addClass('label-danger');
-        }
-        else if (state_res.state == {{ aSource.IDLE }}) {
-            $label.addClass('label-default');
-        }
-        else if (state_res.state < {{ aSource.READY }}) {
-            $label.addClass('label-success');
-        }
-        else if (state_res.state == {{ aSource.READY }}) {
-            $label.addClass('label-success');
-        }
-        else if (state_res.state == {{ aSource.RUNNING }}) {
-            $label.addClass('label-primary');
-        }
-        {% endwith %}
+        set_label_color($label, state_res.state);
 
         // Update spinner and visibility
         if (state_res.transitioning) {
@@ -179,6 +161,28 @@
         }
     }
 
+    function set_label_color($label, state) {
+        $label.removeClass();
+        $label.addClass('label');
+        {% with aSource=data_sources.first %}
+        if (state == {{ aSource.IDLE }}) {
+            $label.addClass('label-default');
+        }
+        else if (state < {{ aSource.READY }}) {
+            $label.addClass('label-info');
+        }
+        else if (state == {{ aSource.READY }}) {
+            $label.addClass('label-success');
+        }
+        else if (state == {{ aSource.RUNNING }}) {
+            $label.addClass('label-primary');
+        }
+        else {
+            $label.addClass('label-danger');
+        }
+        {% endwith %}
+    }
+
     function get_state(pk) {
         return $.get("{% url 'daq/source_get_state' %}", {pk: pk});
     }
@@ -188,7 +192,11 @@
     }
 
     function handle_refresh_state_all_results(data) {
-        $.each(data.results, function (index, value) {
+        $overall_label = $("#overall-status-label");
+        $overall_label.text(data.overall_state_name);
+        set_label_color($overall_label, data.overall_state);
+
+        $.each(data.individual_results, function (index, value) {
             handle_state_change_result(value);
         });
     }
