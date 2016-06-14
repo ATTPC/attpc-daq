@@ -8,10 +8,10 @@ subclasses attached as attributes will be the columns in the database table.
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.conf import settings
 import xml.etree.ElementTree as ET
 from zeep.client import Client as SoapClient
+import os
 
 
 class ECCError(Exception):
@@ -228,10 +228,10 @@ class DataSource(models.Model):
     def ecc_url(self):
         """Get the URL of the ECC server as a string.
         """
-        return 'http://{}:{}/'.format(self.ip_address, self.port)
+        return 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
 
     def _get_soap_client(self):
-        wsdl_url = 'http://' + settings.HOST_NAME + static('daq/ecc.wsdl')
+        wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
         client = SoapClient(wsdl_url)
         client.set_address('ecc', 'ecc', self.ecc_url)
         return client
