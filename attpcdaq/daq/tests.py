@@ -1,26 +1,176 @@
 from django.test import TestCase
-from .models import ECCServer, DataRouter, DataSource, ConfigId
+from django.conf import settings
+from unittest.mock import patch
+from .models import DataRouter, DataSource, ConfigId
+import xml.etree.ElementTree as ET
+import os
+from itertools import permutations
 
 
-class ECCServerModelTestCase(TestCase):
+class ConfigIdModelTestCase(TestCase):
     def setUp(self):
-        self.name = 'ECC0'
-        self.ip = '127.0.0.1'
-        self.port = '8083'
-        self.ecc0 = ECCServer.objects.create(name=self.name, ip_address=self.ip, port=self.port)
+        self.describe_name = 'describe_name'
+        self.prepare_name = 'prepare_name'
+        self.configure_name = 'configure_name'
+        self.config = ConfigId(describe=self.describe_name,
+                               prepare=self.prepare_name,
+                               configure=self.configure_name)
 
-    def test_url(self):
-        expected = 'http://' + self.ip + ':' + self.port + '/'
-        result = self.ecc0.url
-        self.assertEqual(expected, result)
+        root = ET.Element('ConfigId')
+        describe_node = ET.SubElement(root, 'SubConfigId', attrib={'type': 'describe'})
+        describe_node.text = self.describe_name
+        prepare_node = ET.SubElement(root, 'SubConfigId', attrib={'type': 'prepare'})
+        prepare_node.text = self.prepare_name
+        configure_node = ET.SubElement(root, 'SubConfigId', attrib={'type': 'configure'})
+        configure_node.text = self.configure_name
+        self.xml_root = root
+
+    def test_str(self):
+        s = str(self.config)
+        self.assertEqual(s, '{}/{}/{}'.format(self.describe_name, self.prepare_name, self.configure_name))
+
+    def test_as_xml(self):
+        xml = self.config.as_xml()
+        root = ET.fromstring(xml)
+        self.assertEqual(root.tag, 'ConfigId')
+        for node in root:
+            self.assertEqual(node.tag, 'SubConfigId')
+
+            node_type = node.get('type')
+            if node_type == 'describe':
+                self.assertEqual(node.text, self.describe_name)
+            elif node_type == 'prepare':
+                self.assertEqual(node.text, self.prepare_name)
+            elif node_type == 'configure':
+                self.assertEqual(node.text, self.configure_name)
+            else:
+                self.fail('Unknown node type: {}'.format(node_type))
+
+            self.assertEqual(len(node), 0, msg='SubConfigId node should have 0 children.')
+
+    def test_from_xml_valid(self):
+        new_config = ConfigId.from_xml(self.xml_root)
+
+        self.assertEqual(new_config.describe, self.describe_name)
+        self.assertEqual(new_config.prepare, self.prepare_name)
+        self.assertEqual(new_config.configure, self.configure_name)
+
+    def test_from_xml_with_string(self):
+        xml_string = ET.tostring(self.xml_root)
+
+        new_config = ConfigId.from_xml(xml_string)
+
+        self.assertEqual(new_config.describe, self.describe_name)
+        self.assertEqual(new_config.prepare, self.prepare_name)
+        self.assertEqual(new_config.configure, self.configure_name)
+
+    def test_from_xml_with_bad_root_node(self):
+        self.xml_root.tag = 'NotAValidTag'
+        self.assertRaisesRegex(ValueError, 'Not a ConfigId node', ConfigId.from_xml, self.xml_root)
+
+    def test_from_xml_with_bad_type(self):
+        self.xml_root[0].set('type', 'BadType')
+        self.assertRaisesRegex(ValueError, 'Unknown or missing config type: BadType', ConfigId.from_xml, self.xml_root)
 
 
-class StatusViewTestCase(TestCase):
+class DataRouterModelTestCase(TestCase):
     def setUp(self):
-        self.ecc = ECCServer.objects.create(name='ECC0', ip_address='127.0.0.1', port='8083')
-        self.data_router = DataRouter.objects.create(name='dataRouter0', ip_address='127.0.0.1',
-                                                     port='46005', type='TCP')
-        self.config = ConfigId(describe='desc', prepare='prep', configure='conf', ecc_server=self.ecc)
+        self.name = 'dataRouterName'
+        self.ip_address = '123.456.78.9'
+        self.port = '1234'
+        self.datarouter = DataRouter(name=self.name,
+                                     ip_address=self.ip_address,
+                                     port=self.port)
 
-    def test_template_render(self):
-        pass
+    def test_str(self):
+        s = str(self.datarouter)
+        self.assertEqual(s, self.name)
+
+
+class DataSourceModelTestCase(TestCase):
+    def setUp(self):
+        self.name = 'CoBo[0]'
+        self.ecc_ip_address = '123.45.67.8'
+        self.ecc_port = '1234'
+        self.datarouter = DataRouter(name='dataRouter0',
+                                     ip_address='123.456.78.9',
+                                     port='1111')
+        self.selected_config = ConfigId(describe='describe',
+                                        prepare='prepare',
+                                        configure='configure')
+        self.datasource = DataSource(name=self.name,
+                                     ecc_ip_address=self.ecc_ip_address,
+                                     ecc_port=self.ecc_port,
+                                     data_router=self.datarouter,
+                                     selected_config=self.selected_config)
+        self.datarouter.save()
+        self.selected_config.save()
+        self.datasource.save()
+
+    def tearDown(self):
+        self.selected_config.delete()
+        self.datarouter.delete()
+        self.datasource.delete()
+
+    def test_str(self):
+        s = str(self.datasource)
+        self.assertEqual(s, self.name)
+
+    def test_get_data_link_xml(self):
+        xml_string = self.datasource.get_data_link_xml()
+        root = ET.fromstring(xml_string)
+
+        self.assertEqual(root.tag, 'DataLinkSet')
+        self.assertEqual(len(root), 1, 'Root node should have one child')
+
+        dl_node = root[0]
+        self.assertEqual(dl_node.tag, 'DataLink')
+
+        sender_nodes = dl_node.findall('DataSender')
+        self.assertEqual(len(sender_nodes), 1, 'Must have only one sender node')
+        self.assertEqual(sender_nodes[0].attrib, {'id': self.datasource.name})
+
+        router_nodes = dl_node.findall('DataRouter')
+        self.assertEqual(len(router_nodes), 1, 'Must have only one router node')
+        self.assertEqual(router_nodes[0].attrib, {'name': self.datarouter.name,
+                                                  'ipAddress': self.datarouter.ip_address,
+                                                  'port': self.datarouter.port,
+                                                  'type': self.datarouter.type})
+
+    def test_ecc_url(self):
+        ecc_url = self.datasource.ecc_url
+        expected = 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
+        self.assertEqual(ecc_url, expected)
+
+    def test_get_soap_client(self):
+        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+            instance = mock_client.return_value
+            self.datasource._get_soap_client()
+
+            wsdl = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
+            mock_client.assert_called_once_with(wsdl)
+            instance.set_address.assert_called_once_with('ecc', 'ecc', self.datasource.ecc_url)
+
+    def test_refresh_configs(self):
+        config_names = ['A', 'B', 'C']
+        configs = [ConfigId(describe=a, prepare=b, configure=c)
+                   for a, b, c in permutations(config_names, 3)]
+        configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
+
+        def return_side_effect():
+            class FakeResult(object):
+                Text = configs_xml
+            return FakeResult()
+
+        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+            instance = mock_client.return_value
+            instance.service.GetConfigIDs.side_effect = return_side_effect
+
+            self.datasource.refresh_configs()
+
+            instance.service.GetConfigIDs.assert_called_once_with()
+
+        for config in configs:
+            self.assertTrue(ConfigId.objects.filter(describe=config.describe,
+                                                    prepare=config.prepare,
+                                                    configure=config.configure).exists())
