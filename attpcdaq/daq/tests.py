@@ -4,7 +4,13 @@ from unittest.mock import patch
 from .models import DataRouter, DataSource, ConfigId
 import xml.etree.ElementTree as ET
 import os
-from itertools import permutations
+from itertools import permutations, product
+
+
+class FakeTransitionResult(object):
+    def __init__(self, error_code, error_message):
+        self.ErrorCode = error_code
+        self.ErrorMessage = error_message
 
 
 class ConfigIdModelTestCase(TestCase):
@@ -174,3 +180,47 @@ class DataSourceModelTestCase(TestCase):
             self.assertTrue(ConfigId.objects.filter(describe=config.describe,
                                                     prepare=config.prepare,
                                                     configure=config.configure).exists())
+
+    def test_refresh_state(self):
+        class FakeResult(object):
+            def __init__(self, state, trans):
+                self.State = state
+                self.Transition = trans
+
+        for (state, trans) in product(DataSource.STATE_DICT.keys(), [False, True]):
+            with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+                mock_inst = mock_client.return_value
+                mock_inst.service.GetState.return_value = FakeResult(state, False)
+
+                self.datasource.refresh_state()
+
+                mock_inst.service.GetState.assert_called_once_with()
+
+            self.assertEqual(self.datasource.state, state)
+            self.assertEqual(self.datasource.is_transitioning, False)
+
+    def test_change_state_increasing(self):
+        for target_state in DataSource.STATE_DICT.keys():
+            if target_state == DataSource.IDLE:
+                continue
+
+            self.datasource.state = target_state - 1
+            self.datasource.is_transitioning = False
+
+            with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+                mock_inst = mock_client.return_value
+                transition_dispatch = {
+                    DataSource.DESCRIBED: mock_inst.service.Describe,
+                    DataSource.PREPARED: mock_inst.service.Prepare,
+                    DataSource.READY: mock_inst.service.Configure,
+                    DataSource.RUNNING: mock_inst.service.Start,
+                }
+                transition_dispatch[target_state].return_value = FakeTransitionResult(0, "")
+
+                self.datasource.change_state(target_state)
+
+                config_xml = self.datasource.selected_config.as_xml()
+                datalink_xml = self.datasource.get_data_link_xml()
+                transition_dispatch[target_state].assert_called_once_with(config_xml, datalink_xml)
+
+                self.assertEqual(self.datasource.is_transitioning, True)
