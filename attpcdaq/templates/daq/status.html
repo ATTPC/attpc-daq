@@ -183,11 +183,18 @@
         return $.get("{% url 'daq/source_get_state' %}", {pk: pk});
     }
 
-    function check_for_state_changes() {
-        $('[id*="status-cell"]').each(function () {
-            var pk = $(this).data('daq-source-id');
-            get_state(pk).success(handle_state_change_result);
+    function refresh_state_all() {
+        return $.get("{% url 'daq/source_refresh_state_all' %}");
+    }
+
+    function handle_refresh_state_all_results(data) {
+        $.each(data.results, function (index, value) {
+            handle_state_change_result(value);
         });
+    }
+
+    function check_for_state_changes() {
+        refresh_state_all().success(handle_refresh_state_all_results);
     }
 
     function change_state(pk, target) {

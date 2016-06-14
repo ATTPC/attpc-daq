@@ -152,6 +152,50 @@ def source_get_state(request):
                                  state_name=source.get_state_display(), transitioning=source.is_transitioning)
 
 
+@login_required
+def refresh_state_all(request):
+    """Refresh the state of all data sources and return the new states.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request object. The method must be GET.
+
+    Returns
+    -------
+    JsonResponse
+        An array of dictionaries containing the results from each data source. The content of each dictionary is
+        like that in `source_get_state`.
+    """
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+
+    results = []
+
+    for source in DataSource.objects.all():
+        try:
+            source.refresh_state()
+        except Exception as e:
+            success = False
+            error_message = str(e)
+        else:
+            success = True
+            error_message = ""
+
+        source_res = {
+            'success': success,
+            'pk': source.pk,
+            'error_message': error_message,
+            'state': source.state,
+            'state_name': source.get_state_display(),
+            'transitioning': source.is_transitioning,
+        }
+
+        results.append(source_res)
+
+    return JsonResponse({'results': results})
+
+
 def source_change_state(request):
     """Tells the ECC server to change a source's state.
 
