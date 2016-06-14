@@ -86,7 +86,7 @@
             <tr>
                 <th>Name</th>
                 <th>Status</th>
-                <th>Config</th>
+                <th>Selected Config</th>
                 <th class="shrink"></th>
             </tr>
             {% for source in data_sources %}
@@ -98,7 +98,7 @@
                     </span>
                     <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner" data-daq-source-id="{{ source.pk }}"></span>
                 </td>
-                <td>{{ source.config }}</td>
+                <td>{{ source.selected_config }}</td>
                 <td class="text-right">
                     <div class="btn-toolbar" id="{{ source.name }}-source-controls">
                         <button class="btn btn-xs btn-info" data-daq-source-id="{{ source.pk }}" data-daq-state-target="{{ source.DESCRIBED }}"
