@@ -5,11 +5,6 @@ from unittest.mock import patch
 from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
 from .utilities import FakeResponseState
 from .. import views
-import xml.etree.ElementTree as ET
-import os
-from itertools import permutations, product
-from datetime import datetime
-import pytz
 
 
 @patch('attpcdaq.daq.models.SoapClient')
@@ -95,3 +90,67 @@ class SourceGetStateViewTestCase(TestCase):
                          'transitioning': False}
 
         self.assertEqual(response_json, expected_json)
+
+
+@patch('attpcdaq.daq.models.SoapClient')
+class RefreshStateAllViewTestCase(TestCase):
+    def setUp(self):
+        self.ecc_ip_address = '123.45.67.8'
+        self.ecc_port = '1234'
+        self.selected_config = ConfigId(describe='describe',
+                                        prepare='prepare',
+                                        configure='configure')
+        self.selected_config.save()
+
+        self.datasources = []
+        for i in range(10):
+            dr = DataRouter(name='dataRouter{}'.format(i),
+                            ip_address='123.456.78.9',
+                            port='1111')
+            dr.save()
+
+            d = DataSource(name='CoBo[{}]'.format(i),
+                           ecc_ip_address=self.ecc_ip_address,
+                           ecc_port=self.ecc_port,
+                           data_router=dr,
+                           selected_config=self.selected_config)
+            d.save()
+            self.datasources.append(d)
+
+        self.user = User(username='test', password='test1234')
+        self.user.save()
+
+        self.view_name = 'daq/source_refresh_state_all'
+
+    def test_no_login(self, mock_client):
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_put(self, mock_client):
+        self.client.force_login(self.user)
+        resp = self.client.put(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 405)
+
+    def test_good_request(self, mock_client):
+        self.client.force_login(self.user)
+        mock_instance = mock_client.return_value
+        mock_instance.service.GetState.return_value = \
+            FakeResponseState(state=DataSource.RUNNING,
+                              trans=False)
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.resolver_match.func, views.refresh_state_all)
+
+        response_json = resp.json()
+        self.assertEqual(response_json['overall_state'], DataSource.RUNNING)
+        self.assertEqual(response_json['overall_state_name'], DataSource.STATE_DICT[DataSource.RUNNING])
+
+        for res in response_json['individual_results']:
+            pk = int(res['pk'])
+            source = DataSource.objects.get(pk=pk)
+            self.assertEqual(res['state'], source.state)
+            self.assertEqual(res['state'], DataSource.RUNNING)
+            self.assertEqual(res['state_name'], source.get_state_display())
+            self.assertEqual(res['transitioning'], source.is_transitioning)
+            self.assertTrue(res['success'])
+            self.assertEqual(res['error_message'], '')
