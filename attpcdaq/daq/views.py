@@ -344,6 +344,11 @@ def source_change_state_all(request):
                                                  run_number=experiment.next_run_number,
                                                  start_datetime=datetime.now())
         current_run.save()
+    elif target_state == DataSource.READY and experiment.is_running:
+        current_run = experiment.latest_run
+        if current_run.stop_datetime is None:
+            current_run.stop_datetime = datetime.now()
+            current_run.save()
     else:
         current_run = experiment.latest_run
 
