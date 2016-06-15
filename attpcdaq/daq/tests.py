@@ -315,3 +315,36 @@ class ExperimentModelTestCase(TestCase):
 
     def test_next_run_number_without_runs(self):
         self.assertEqual(self.experiment.next_run_number, 0)
+
+
+class RunMetadataModelTestCase(TestCase):
+    def setUp(self):
+        self.user = User(username='test', password='test1234')
+        self.user.save()
+        self.name = 'Test experiment'
+        self.target_run_duration = 1000
+        self.experiment = Experiment(user=self.user,
+                                     name=self.name,
+                                     target_run_duration=self.target_run_duration)
+        self.experiment.save()
+
+        self.run0 = RunMetadata(experiment=self.experiment,
+                                run_number=0,
+                                start_datetime=datetime(year=2016,
+                                                        month=1,
+                                                        day=1,
+                                                        hour=0,
+                                                        minute=0,
+                                                        second=0,
+                                                        tzinfo=pytz.utc),
+                                stop_datetime=datetime(year=2016,
+                                                       month=1,
+                                                       day=1,
+                                                       hour=1,
+                                                       minute=0,
+                                                       second=0,
+                                                       tzinfo=pytz.utc))
+
+    def test_duration(self):
+        expected = str(self.run0.stop_datetime - self.run0.start_datetime)
+        self.assertEqual(self.run0.duration, expected)
