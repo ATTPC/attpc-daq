@@ -236,6 +236,29 @@ class DataSource(models.Model):
         client.set_address('ecc', 'ecc', self.ecc_url)
         return client
 
+    @classmethod
+    def _get_transition(cls, client, current_state, target_state):
+        transitions = {
+            (cls.IDLE, cls.DESCRIBED): client.service.Describe,
+            (cls.DESCRIBED, cls.IDLE): client.service.Undo,
+
+            (cls.DESCRIBED, cls.PREPARED): client.service.Prepare,
+            (cls.PREPARED, cls.DESCRIBED): client.service.Undo,
+
+            (cls.PREPARED, cls.READY): client.service.Configure,
+            (cls.READY, cls.PREPARED): client.service.Breakup,
+
+            (cls.READY, cls.RUNNING): client.service.Start,
+            (cls.RUNNING, cls.READY): client.service.Stop,
+        }
+
+        try:
+            trans = transitions[(current_state, target_state)]
+        except KeyError:
+            raise ValueError('Can only transition one step at a time.')
+
+        return trans
+
     def refresh_configs(self):
         client = self._get_soap_client()
         result = client.service.GetConfigIDs()
@@ -267,24 +290,8 @@ class DataSource(models.Model):
 
         client = self._get_soap_client()
 
-        # Dictionaries of transition functions. Dictionary key is *target* state.
-        if self.state < target_state:  # This will be a forward transition
-            transition_dict = {
-                DataSource.DESCRIBED: client.service.Describe,
-                DataSource.PREPARED: client.service.Prepare,
-                DataSource.READY: client.service.Configure,
-                DataSource.RUNNING: client.service.Start,
-            }
-        else:  # This will be a backward transition
-            transition_dict = {
-                DataSource.READY: client.service.Stop,
-                DataSource.PREPARED: client.service.Breakup,
-                DataSource.DESCRIBED: client.service.Undo,
-                DataSource.IDLE: client.service.Undo,
-            }
-
         # Get the function corresponding to the requested transition
-        transition = transition_dict[target_state]
+        transition = self._get_transition(client, self.state, target_state)
 
         # Finally, perform the transition
         res = transition(config_xml, datalink_xml)

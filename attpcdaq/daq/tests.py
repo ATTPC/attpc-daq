@@ -157,6 +157,15 @@ class DataSourceModelTestCase(TestCase):
             mock_client.assert_called_once_with(wsdl)
             instance.set_address.assert_called_once_with('ecc', 'ecc', self.datasource.ecc_url)
 
+    @patch('attpcdaq.daq.models.SoapClient')
+    def test_get_transition_too_many_steps(self, mock_client):
+        mock_instance = mock_client()
+        for initial_state, final_state in permutations(DataSource.STATE_DICT.keys(), 2):
+            if final_state - initial_state not in (1, -1):
+                self.assertRaisesRegex(ValueError, 'Can only transition one step at a time\.',
+                                       self.datasource._get_transition, mock_instance,
+                                       initial_state, final_state)
+
     def test_refresh_configs(self):
         config_names = ['A', 'B', 'C']
         configs = [ConfigId(describe=a, prepare=b, configure=c)
@@ -199,28 +208,33 @@ class DataSourceModelTestCase(TestCase):
             self.assertEqual(self.datasource.state, state)
             self.assertEqual(self.datasource.is_transitioning, False)
 
-    def test_change_state_increasing(self):
-        for target_state in DataSource.STATE_DICT.keys():
-            if target_state == DataSource.IDLE:
-                continue
+    @patch('attpcdaq.daq.models.SoapClient')
+    def _transition_test_helper(self, trans_func_name, initial_state, final_state, mock_client):
+        self.datasource.state = initial_state
+        self.datasource.is_transitioning = False
 
-            self.datasource.state = target_state - 1
-            self.datasource.is_transitioning = False
+        mock_instance = mock_client.return_value
+        mock_trans_func = getattr(mock_instance.service, trans_func_name)
+        mock_trans_func.return_value = FakeTransitionResult(0, "")
 
-            with patch('attpcdaq.daq.models.SoapClient') as mock_client:
-                mock_inst = mock_client.return_value
-                transition_dispatch = {
-                    DataSource.DESCRIBED: mock_inst.service.Describe,
-                    DataSource.PREPARED: mock_inst.service.Prepare,
-                    DataSource.READY: mock_inst.service.Configure,
-                    DataSource.RUNNING: mock_inst.service.Start,
-                }
-                transition_dispatch[target_state].return_value = FakeTransitionResult(0, "")
+        self.datasource.change_state(final_state)
 
-                self.datasource.change_state(target_state)
+        config_xml = self.datasource.selected_config.as_xml()
+        datalink_xml = self.datasource.get_data_link_xml()
+        mock_trans_func.assert_called_once_with(config_xml, datalink_xml)
 
-                config_xml = self.datasource.selected_config.as_xml()
-                datalink_xml = self.datasource.get_data_link_xml()
-                transition_dispatch[target_state].assert_called_once_with(config_xml, datalink_xml)
+        self.assertTrue(self.datasource.is_transitioning)
 
-                self.assertEqual(self.datasource.is_transitioning, True)
+    def test_change_state(self):
+        self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
+        self._transition_test_helper('Undo', DataSource.DESCRIBED, DataSource.IDLE)
+
+        self._transition_test_helper('Prepare', DataSource.DESCRIBED, DataSource.PREPARED)
+        self._transition_test_helper('Undo', DataSource.PREPARED, DataSource.DESCRIBED)
+
+        self._transition_test_helper('Configure', DataSource.PREPARED, DataSource.READY)
+        self._transition_test_helper('Breakup', DataSource.READY, DataSource.PREPARED)
+
+        self._transition_test_helper('Start', DataSource.READY, DataSource.RUNNING)
+        self._transition_test_helper('Stop', DataSource.RUNNING, DataSource.READY)
+
