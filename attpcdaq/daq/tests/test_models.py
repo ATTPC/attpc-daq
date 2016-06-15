@@ -166,6 +166,13 @@ class DataSourceModelTestCase(TestCase):
                                        self.datasource._get_transition, mock_instance,
                                        initial_state, final_state)
 
+    @patch('attpcdaq.daq.models.SoapClient')
+    def test_get_transition_same_state(self, mock_client):
+        mock_instance = mock_client()
+        for state in DataSource.STATE_DICT.keys():
+            self.assertRaisesRegex(ValueError, 'No transition needed.', self.datasource._get_transition,
+                                   mock_instance, state, state)
+
     def test_refresh_configs(self):
         config_names = ['A', 'B', 'C']
         configs = [ConfigId(describe=a, prepare=b, configure=c)

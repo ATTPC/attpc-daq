@@ -256,7 +256,7 @@ def source_change_state(request):
 
     try:
         pk = request.POST['pk']
-        target_state = request.POST['target_state']
+        target_state = int(request.POST['target_state'])
     except KeyError:
         resp = _make_status_response(success=False,
                                      error_message="Must provide data source pk and target state")
@@ -265,19 +265,14 @@ def source_change_state(request):
 
     source = get_object_or_404(DataSource, pk=pk)
 
-    # Cast the target_state to an integer for comparisons
-    if not isinstance(target_state, int):
-        target_state = int(target_state)
-
-    # If the target = the current state, no transition is needed
-    if source.state == target_state:
-        return _make_status_response(success=True, pk=pk, state=source.state,
-                                     state_name=source.get_state_display(), transitioning=False)
+    # Handle "reset" case
+    if target_state == DataSource.RESET:
+        target_state = max(target_state - 1, DataSource.IDLE)
 
     # Request the transition
     try:
         source.change_state(target_state)
-    except ECCError as err:
+    except (ECCError, ValueError) as err:
         success = False
         error_message = str(err)
     else:
@@ -316,11 +311,21 @@ def source_change_state_all(request):
         resp.status_code = 400
         return resp
 
+    # Handle "reset" case
+    if target_state == DataSource.RESET:
+        overall_state, _ = _calculate_overall_state(DataSource.objects.all())
+        if overall_state is not None:
+            target_state = max(overall_state - 1, DataSource.IDLE)
+        else:
+            resp = _make_status_response(success=False,
+                                         error_message="Cannot perform reset when overall state is inconsistent.")
+            return resp
+
     results = []
     for source in DataSource.objects.all():
         try:
             source.change_state(target_state)
-        except ECCError as err:
+        except (ECCError, ValueError) as err:
             success = False
             error_message = str(err)
         else:

@@ -187,6 +187,7 @@ class DataSource(models.Model):
                      (READY, 'Ready'),
                      (RUNNING, 'Running'))
     STATE_DICT = dict(STATE_CHOICES)
+    RESET = -1
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
     is_transitioning = models.BooleanField(default=False)
 
@@ -238,6 +239,9 @@ class DataSource(models.Model):
 
     @classmethod
     def _get_transition(cls, client, current_state, target_state):
+        if target_state == current_state:
+            raise ValueError('No transition needed.')
+
         transitions = {
             (cls.IDLE, cls.DESCRIBED): client.service.Describe,
             (cls.DESCRIBED, cls.IDLE): client.service.Undo,
