@@ -2,8 +2,8 @@ from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
-from .models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
-from .models import ECCError
+from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
+from ..models import ECCError
 import xml.etree.ElementTree as ET
 import os
 from itertools import permutations, product
