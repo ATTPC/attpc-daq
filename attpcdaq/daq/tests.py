@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.conf import settings
 from unittest.mock import patch
 from .models import DataRouter, DataSource, ConfigId
+from .models import ECCError
 import xml.etree.ElementTree as ET
 import os
 from itertools import permutations, product
@@ -208,22 +209,23 @@ class DataSourceModelTestCase(TestCase):
             self.assertEqual(self.datasource.state, state)
             self.assertEqual(self.datasource.is_transitioning, False)
 
-    @patch('attpcdaq.daq.models.SoapClient')
-    def _transition_test_helper(self, trans_func_name, initial_state, final_state, mock_client):
-        self.datasource.state = initial_state
-        self.datasource.is_transitioning = False
+    def _transition_test_helper(self, trans_func_name, initial_state, final_state,
+                                error_code=0, error_msg=""):
+        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+            self.datasource.state = initial_state
+            self.datasource.is_transitioning = False
 
-        mock_instance = mock_client.return_value
-        mock_trans_func = getattr(mock_instance.service, trans_func_name)
-        mock_trans_func.return_value = FakeTransitionResult(0, "")
+            mock_instance = mock_client.return_value
+            mock_trans_func = getattr(mock_instance.service, trans_func_name)
+            mock_trans_func.return_value = FakeTransitionResult(error_code, error_msg)
 
-        self.datasource.change_state(final_state)
+            self.datasource.change_state(final_state)
 
-        config_xml = self.datasource.selected_config.as_xml()
-        datalink_xml = self.datasource.get_data_link_xml()
-        mock_trans_func.assert_called_once_with(config_xml, datalink_xml)
+            config_xml = self.datasource.selected_config.as_xml()
+            datalink_xml = self.datasource.get_data_link_xml()
+            mock_trans_func.assert_called_once_with(config_xml, datalink_xml)
 
-        self.assertTrue(self.datasource.is_transitioning)
+            self.assertTrue(self.datasource.is_transitioning)
 
     def test_change_state(self):
         self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
@@ -238,3 +240,20 @@ class DataSourceModelTestCase(TestCase):
         self._transition_test_helper('Start', DataSource.READY, DataSource.RUNNING)
         self._transition_test_helper('Stop', DataSource.RUNNING, DataSource.READY)
 
+    def test_change_state_with_error(self):
+        error_code = 1
+        error_msg = 'An error occurred'
+
+        with self.assertRaisesRegex(ECCError, '.*' + error_msg):
+            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED,
+                                         error_code, error_msg)
+
+    def test_change_state_with_no_config(self):
+        self.datasource.selected_config = None
+        with self.assertRaisesRegex(RuntimeError, 'Data source has no config associated with it.'):
+            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
+
+    def test_change_state_with_no_data_router(self):
+        self.datasource.data_router = None
+        with self.assertRaisesRegex(RuntimeError, 'Data source has no data router associated with it.'):
+            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
