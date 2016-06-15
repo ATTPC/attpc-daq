@@ -1,11 +1,14 @@
 from django.test import TestCase
 from django.conf import settings
+from django.contrib.auth.models import User
 from unittest.mock import patch
-from .models import DataRouter, DataSource, ConfigId
+from .models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
 from .models import ECCError
 import xml.etree.ElementTree as ET
 import os
 from itertools import permutations, product
+from datetime import datetime
+import pytz
 
 
 class FakeTransitionResult(object):
@@ -257,3 +260,58 @@ class DataSourceModelTestCase(TestCase):
         self.datasource.data_router = None
         with self.assertRaisesRegex(RuntimeError, 'Data source has no data router associated with it.'):
             self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
+
+
+class ExperimentModelTestCase(TestCase):
+    def setUp(self):
+        self.user = User(username='test', password='test1234')
+        self.user.save()
+        self.name = 'Test experiment'
+        self.target_run_duration = 1000
+        self.experiment = Experiment(user=self.user,
+                                     name=self.name,
+                                     target_run_duration=self.target_run_duration)
+        self.experiment.save()
+
+        self.run0 = RunMetadata(experiment=self.experiment,
+                                run_number=0,
+                                start_datetime=datetime(year=2016,
+                                                        month=1,
+                                                        day=1,
+                                                        hour=0,
+                                                        minute=0,
+                                                        second=0,
+                                                        tzinfo=pytz.utc),
+                                stop_datetime=datetime(year=2016,
+                                                       month=1,
+                                                       day=1,
+                                                       hour=1,
+                                                       minute=0,
+                                                       second=0,
+                                                       tzinfo=pytz.utc))
+
+    def test_latest_run_with_runs(self):
+        self.run0.save()
+        self.assertEqual(self.experiment.latest_run, self.run0)
+
+    def test_latest_run_without_runs(self):
+        self.assertIsNone(self.experiment.latest_run)
+
+    def test_is_running_when_running(self):
+        self.run0.stop_datetime = None
+        self.run0.save()
+        self.assertTrue(self.experiment.is_running)
+
+    def test_is_running_when_not_running(self):
+        self.run0.save()
+        self.assertFalse(self.experiment.is_running)
+
+    def test_is_running_without_runs(self):
+        self.assertFalse(self.experiment.is_running)
+
+    def test_next_run_number_with_runs(self):
+        self.run0.save()
+        self.assertEqual(self.experiment.next_run_number, self.run0.run_number + 1)
+
+    def test_next_run_number_without_runs(self):
+        self.assertEqual(self.experiment.next_run_number, 0)
