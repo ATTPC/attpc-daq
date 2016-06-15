@@ -409,42 +409,6 @@ def experiment_settings(request):
         return render(request, 'daq/experiment_settings.html', {'form': form})
 
 
-# ============
-# Internal API
-# ============
-
-@login_required
-def start_run(request):
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(['POST'])
-
-    experiment = get_object_or_404(Experiment, user=request.user)
-    if not experiment.is_running:
-        new_run = RunMetadata.objects.create(experiment=experiment,
-                                             run_number=experiment.next_run_number,
-                                             start_datetime=datetime.now())
-        new_run.save()
-
-        return _make_runcontrol_response(success=True, start_time=new_run.start_datetime, run_number=new_run.run_number)
-    else:
-        return JsonResponse({})
-
-
-@login_required
-def stop_run(request):
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(['POST'])
-
-    experiment = get_object_or_404(Experiment, user=request.user)
-    if experiment.is_running:
-        current_run = experiment.latest_run
-        current_run.stop_datetime = datetime.now()
-        current_run.save()
-
-        return _make_runcontrol_response(success=True, start_time=current_run.start_datetime, run_number=current_run.run_number)
-    else:
-        return JsonResponse({})
-
 # ===============================================================================================
 # CRUD Views:
 #

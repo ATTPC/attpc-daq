@@ -24,8 +24,6 @@ urlpatterns = [
     url(r'^data_router/remove/(?P<pk>\d+)$', views.RemoveDataRouterView.as_view(), name='daq/remove_data_router'),
 
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
-    url(r'^runs/start_run$', views.start_run, name='daq/start_run'),
-    url(r'^runs/stop_run$', views.stop_run, name='daq/stop_run'),
 
     url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),
 ]
