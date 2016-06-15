@@ -148,7 +148,7 @@
         else {
             $label.text('Error');
         }
-        set_label_color($label, state_res.state);
+        set_label_color($label, state_res.state, state_res.success);
 
         // Update spinner and visibility
         if (state_res.transitioning) {
@@ -161,21 +161,24 @@
         }
     }
 
-    function set_label_color($label, state) {
+    function set_label_color($label, state, success) {
         $label.removeClass();
         $label.addClass('label');
         {% with aSource=data_sources.first %}
-        if (state == {{ aSource.IDLE }}) {
+        if (state < 0 || !success) {
+            $label.addClass('label-danger');
+        }
+        else if (state == {{ aSource.IDLE }}) {
             $label.addClass('label-default');
         }
         else if (state < {{ aSource.READY }}) {
             $label.addClass('label-info');
         }
         else if (state == {{ aSource.READY }}) {
-            $label.addClass('label-success');
+            $label.addClass('label-primary');
         }
         else if (state == {{ aSource.RUNNING }}) {
-            $label.addClass('label-primary');
+            $label.addClass('label-success');
         }
         else {
             $label.addClass('label-danger');
@@ -194,7 +197,7 @@
     function handle_refresh_state_all_results(data) {
         $overall_label = $("#overall-status-label");
         $overall_label.text(data.overall_state_name);
-        set_label_color($overall_label, data.overall_state);
+        set_label_color($overall_label, data.overall_state, true);
 
         $.each(data.individual_results, function (index, value) {
             handle_state_change_result(value);
