@@ -273,8 +273,12 @@ class DataSource(models.Model):
         client = self._get_soap_client()
         result = client.service.GetState()
 
+        if int(result.ErrorCode) != 0:
+            raise ECCError(result.ErrorMessage)
+
         self.state = int(result.State)
         self.is_transitioning = int(result.Transition) != 0
+        self.save()
 
     def change_state(self, target_state):
         # Get transition arguments

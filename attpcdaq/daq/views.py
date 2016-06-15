@@ -135,6 +135,7 @@ def ecc_get_configs(request, pk):
     return JsonResponse(json_repr)
 
 
+@login_required
 def source_get_state(request):
     """Get the state of a given data source.
 
@@ -158,7 +159,7 @@ def source_get_state(request):
 
     # Get the data source
     try:
-        pk = request.GET['pk']
+        pk = int(request.GET['pk'])
     except KeyError:
         resp = _make_status_response(success=False, error_message="No data source pk provided")
         resp.status_code = 400

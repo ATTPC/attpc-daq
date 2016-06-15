@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
+from .utilities import FakeResponseState
 from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
 from ..models import ECCError
 import xml.etree.ElementTree as ET
@@ -117,11 +118,6 @@ class DataSourceModelTestCase(TestCase):
         self.selected_config.save()
         self.datasource.save()
 
-    def tearDown(self):
-        self.selected_config.delete()
-        self.datarouter.delete()
-        self.datasource.delete()
-
     def test_str(self):
         s = str(self.datasource)
         self.assertEqual(s, self.name)
@@ -195,22 +191,18 @@ class DataSourceModelTestCase(TestCase):
                                                     configure=config.configure).exists())
 
     def test_refresh_state(self):
-        class FakeResult(object):
-            def __init__(self, state, trans):
-                self.State = state
-                self.Transition = trans
-
         for (state, trans) in product(DataSource.STATE_DICT.keys(), [False, True]):
             with patch('attpcdaq.daq.models.SoapClient') as mock_client:
                 mock_inst = mock_client.return_value
-                mock_inst.service.GetState.return_value = FakeResult(state, False)
+                mock_inst.service.GetState.return_value = \
+                    FakeResponseState(state=state, trans=trans)
 
                 self.datasource.refresh_state()
 
                 mock_inst.service.GetState.assert_called_once_with()
 
             self.assertEqual(self.datasource.state, state)
-            self.assertEqual(self.datasource.is_transitioning, False)
+            self.assertEqual(self.datasource.is_transitioning, trans)
 
     def _transition_test_helper(self, trans_func_name, initial_state, final_state,
                                 error_code=0, error_msg=""):
