@@ -267,7 +267,7 @@ def source_change_state(request):
 
     # Handle "reset" case
     if target_state == DataSource.RESET:
-        target_state = max(target_state - 1, DataSource.IDLE)
+        target_state = max(source.state - 1, DataSource.IDLE)
 
     # Request the transition
     try:
