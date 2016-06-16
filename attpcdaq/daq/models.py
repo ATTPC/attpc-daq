@@ -12,6 +12,7 @@ from django.conf import settings
 import xml.etree.ElementTree as ET
 from zeep.client import Client as SoapClient
 import os
+from datetime import datetime
 
 
 class ECCError(Exception):
@@ -339,6 +340,22 @@ class Experiment(models.Model):
         else:
             return 0
 
+    def start_run(self):
+        if self.is_running:
+            raise RuntimeError('Stop the current run before starting a new one')
+
+        new_run = RunMetadata(experiment=self,
+                              run_number=self.next_run_number,
+                              start_datetime=datetime.now())
+        new_run.save()
+
+    def stop_run(self):
+        if not self.is_running:
+            raise RuntimeError('Not running')
+
+        current_run = self.latest_run
+        current_run.stop_datetime = datetime.now()
+        current_run.save()
 
 
 class RunMetadata(models.Model):

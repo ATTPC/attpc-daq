@@ -315,6 +315,30 @@ class ExperimentModelTestCase(TestCase):
     def test_next_run_number_without_runs(self):
         self.assertEqual(self.experiment.next_run_number, 0)
 
+    def test_start_run(self):
+        self.run0.save()
+        self.experiment.start_run()
+        run = self.experiment.latest_run
+        self.assertNotEqual(run, self.run0)
+        self.assertEqual(run.run_number, self.run0.run_number + 1)
+
+    def test_start_run_when_running(self):
+        self.experiment.start_run()
+        self.assertRaisesRegex(RuntimeError, 'Stop the current run before starting a new one',
+                               self.experiment.start_run)
+
+    def test_stop_run(self):
+        self.run0.stop_datetime = None
+        self.run0.save()
+        self.experiment.stop_run()
+        run = self.experiment.latest_run
+        self.assertEqual(run, self.run0)
+        self.assertIsNotNone(run.stop_datetime)
+
+    def test_stop_run_when_stopped(self):
+        self.run0.save()
+        self.assertRaisesRegex(RuntimeError, 'Not running', self.experiment.stop_run)
+
 
 class RunMetadataModelTestCase(TestCase):
     def setUp(self):

@@ -15,6 +15,7 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.serializers import serialize
 from django.db.models import Min
 from datetime import datetime
+from .workertasks import WorkerInterface
 
 from .models import DataSource, DataRouter, ConfigId, RunMetadata, Experiment
 from .models import ECCError
@@ -344,18 +345,22 @@ def source_change_state_all(request):
         results.append(source_result)
 
     experiment = get_object_or_404(Experiment, user=request.user)
-    if target_state == DataSource.RUNNING and not experiment.is_running:
-        current_run = RunMetadata.objects.create(experiment=experiment,
-                                                 run_number=experiment.next_run_number,
-                                                 start_datetime=datetime.now())
-        current_run.save()
-    elif target_state == DataSource.READY and experiment.is_running:
-        current_run = experiment.latest_run
-        if current_run.stop_datetime is None:
-            current_run.stop_datetime = datetime.now()
-            current_run.save()
-    else:
-        current_run = experiment.latest_run
+
+    is_starting = target_state == DataSource.RUNNING and not experiment.is_running
+    is_stopping = target_state == DataSource.READY and experiment.is_running
+
+    if is_starting:
+        experiment.start_run()
+    elif is_stopping:
+        experiment.stop_run()
+
+    current_run = experiment.latest_run
+
+    if is_stopping:
+        # Organize the graw files on the data router host
+        for source in DataSource.objects.all():
+            with WorkerInterface(source.data_router.ip_address) as wint:
+                wint.organize_files(experiment.name, current_run.run_number)
 
     overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
 

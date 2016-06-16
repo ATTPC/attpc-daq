@@ -12,6 +12,12 @@ class WorkerInterface(object):
         self.client.set_missing_host_key_policy(WarningPolicy())
         self.client.connect(address, port, username=username)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.client.close()
+
     def find_data_router(self):
         stdin, stdout, stderr = self.client.exec_command('lsof -a -d cwd -c dataRouter -Fcn')
         for line in stdout:
@@ -35,7 +41,8 @@ class WorkerInterface(object):
 
     def organize_files(self, experiment_name, run_number):
         pwd = self.find_data_router()
-        run_dir = os.path.join(pwd, experiment_name, run_number)
+        run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
+        run_dir = os.path.join(pwd, experiment_name, run_name)
 
         graws = self.get_graw_list()
 
