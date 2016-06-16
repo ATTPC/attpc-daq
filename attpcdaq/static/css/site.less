@@ -5,6 +5,12 @@
 @bgcolor: lighten(@navcolor, 78%);
 @titlecolor: #555555;
 
+@color-ready: #247BA0;
+@color-intermediate: #6C8484;
+@color-running: #70C1B3;
+@color-error: #F25F5C;
+@color-idle: #50514F;
+
 
 .shadow() {
   box-shadow: 0 1px 2px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.20);
@@ -39,10 +45,11 @@ body {
 }
 
 .sidebar-app-name {
-  font-size: 150%;
-  height: @top-navbar-height;
+  font-size: 160%;
+  height: @top-navbar-height + 10;
   color: white;
-  padding-top: 10px;
+  margin: -10px -20px 10px;
+  padding-top: 20px;
   text-align: center;
 }
 
@@ -113,6 +120,55 @@ body {
     color: @titlecolor;
     font-size: 120%;
   }
+}
+
+.panel-status {
+  display: flex;
+  align-items: center;
+  height: 100px;
+  vertical-align: middle;
+
+  .status-text {
+    font-size: 200%;
+    font-weight: 300;
+    color: white;
+    display: inline;
+    position: relative;
+  }
+
+  .status-icon {
+    display: inline;
+    padding-left: 20px;
+    padding-right: 20px;
+    text-align: center;
+    font-size: 60px;
+    opacity: 0.3;
+    color: white;
+  }
+}
+
+.source-ctrl-btn:hover {
+  color: hsl(0, 0, 0.5);
+}
+
+.bg-color-idle {
+  background-color: @color-idle;
+}
+
+.bg-color-ready {
+  background-color: @color-ready;
+}
+
+.bg-color-running {
+  background-color: @color-running;
+}
+
+.bg-color-error {
+  background-color: @color-error;
+}
+
+.bg-color-intermediate {
+  background-color: @color-intermediate;
 }
 
 .login-page {
