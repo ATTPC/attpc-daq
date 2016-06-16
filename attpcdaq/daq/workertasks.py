@@ -15,10 +15,10 @@ class WorkerInterface(object):
     def find_data_router(self):
         stdin, stdout, stderr = self.client.exec_command('lsof -a -d cwd -c dataRouter -Fcn')
         for line in stdout:
-            if line[0] == 'c' and line[1:] != 'dataRouter':
+            if line[0] == 'c' and not re.match('cdataRouter', line):
                 raise RuntimeError("lsof didn't find dataRouter. Process name found was {}".format(line[1:]))
             elif line[0] == 'n':
-                return line[1:]
+                return line[1:].strip()
 
     def get_graw_list(self):
         pwd = self.find_data_router()
