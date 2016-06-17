@@ -11,23 +11,11 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
-import socket
+
+IS_PRODUCTION = 'DAQ_IS_PRODUCTION' in os.environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'g-jvtk*p#4yli!hw=pm86%=!j=#_t!&!6pw8(8#&@lfngp$+vq'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -75,18 +63,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'attpcdaq.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 
@@ -133,7 +109,27 @@ STATICFILES_DIRS = (
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
-try:
-    HOST_NAME = socket.gethostname()
-except Exception:
-    HOST_NAME = 'localhost'
+if IS_PRODUCTION:
+    DEBUG = False
+    ALLOWED_HOSTS = ['*']
+    SECRET_KEY = os.environ['DAQ_SECRET_KEY']
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ['POSTGRES_DB'],
+            'USER': os.environ['POSTGRES_USER'],
+            'PASSWORD': os.environ['POSTGRES_PASSWORD'],
+            'HOST': os.environ['POSTGRES_HOST'],
+            'PORT': os.environ['POSTGRES_PORT'],
+        }
+    }
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = []
+    SECRET_KEY = 'g-jvtk*p#4yli!hw=pm86%=!j=#_t!&!6pw8(8#&@lfngp$+vq'
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }

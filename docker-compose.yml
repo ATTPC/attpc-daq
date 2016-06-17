@@ -1,23 +1,61 @@
+# docker-compose.yml
+# ==================
+#
+# This file describes the Docker containers that make up the app. For more information about the
+# individual elements, see https://docs.docker.com/compose/compose-file.
+#
+# Some containers expect an environment file to be provided. This should have the following entries:
+#
+#     DAQ_IS_PRODUCTION=True   <-- Tells the system to use the production settings, rather than debug.
+#     POSTGRES_USER=[something]   <-- A user name for the PostgreSQL database. Set it to something reasonable.
+#     POSTGRES_PASSWORD=[something]  <-- A secure, random password that you will not likely need to remember.
+#     POSTGRES_DB=attpcdaq  <-- The name of the database for PostgreSQL,
+#     DAQ_SECRET_KEY=[something]  <-- A secure, *STRONG* random string for Django's cryptography tools.
+#
+# Since this environment file has passwords and secret tokens in it, **NEVER PUT IT ON GITHUB!**
+
 version: "2"
 
 services:
+  # This container holds the PostgreSQL database where the DAQ GUI's internal configuration is stored.
+  db:
+    image: postgres
+    restart: unless-stopped
+    ports:
+      - "5432"
+    networks:
+      - daq
+    env_file:
+      - ./production.env
+
   web:
+    # This container runs the Django app, which provides the dynamic content of the website.
     image: attpc/attpcdaq
-    container_name: web
-    restart: always
+    restart: unless-stopped
     build: ./web
+    expose:
+      - "8000"
     volumes:
       - static:/usr/src/app/static
     networks:
       - daq
+    env_file:
+      - ./production.env
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
     command: ['/bin/bash', './docker_entrypoint.sh']
 
   nginx:
+    # The nginx container serves the static resources and proxies all of the requests to Django.
+    # This is what you will connect to with your browser. The port is listed below, and can be changed as needed.
     image: attpc/nginx
-    restart: always
+    restart: unless-stopped
     build: ./nginx
     ports:
-      - "80"
+      - "8080:80"  # Format is "[external]:[internal]"
     networks:
       - daq
     volumes:
