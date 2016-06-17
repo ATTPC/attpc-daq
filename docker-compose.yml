@@ -1,0 +1,34 @@
+version: "2"
+
+services:
+  web:
+    image: attpc/attpcdaq
+    container_name: web
+    restart: always
+    build: ./web
+    volumes:
+      - static:/usr/src/app/static
+    networks:
+      - daq
+    command: ['/bin/bash', './docker_entrypoint.sh']
+
+  nginx:
+    image: attpc/nginx
+    restart: always
+    build: ./nginx
+    ports:
+      - "80"
+    networks:
+      - daq
+    volumes:
+      - static:/www/static
+    depends_on:
+      - web
+
+networks:
+  daq:
+    driver: bridge
+
+volumes:
+  static:
+    driver: local

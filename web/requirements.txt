@@ -1,0 +1,7 @@
+Django==1.9.5
+django-crispy-forms==1.6.0
+gunicorn==19.6.0
+paramiko==2.0.0
+pytz==2016.4
+Sphinx==1.4.3
+zeep==0.7.1
