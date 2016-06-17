@@ -1,16 +1,32 @@
 from paramiko.client import SSHClient
+from paramiko.config import SSHConfig
 from paramiko import WarningPolicy
 import os
 import re
 
 
 class WorkerInterface(object):
-    def __init__(self, address, port=22, username=None):
-        self.address = address
+    def __init__(self, hostname, port=22, username=None, config_path=None):
+        self.hostname = hostname
         self.client = SSHClient()
+
         self.client.load_system_host_keys()
         self.client.set_missing_host_key_policy(WarningPolicy())
-        self.client.connect(address, port, username=username)
+
+        if config_path is None:
+            config_path = os.path.join(os.path.expanduser('~'), '.ssh', 'config')
+        self.config = SSHConfig()
+        self.config.parse(config_path)
+
+        if hostname in self.config.get_hostnames():
+            host_cfg = self.config.lookup(hostname)
+            full_hostname = host_cfg.get('hostname', default=hostname)
+            if username is None:
+                username = host_cfg.get('user', default=None)  # If none, it will try the user running the server.
+        else:
+            full_hostname = hostname
+
+        self.client.connect(full_hostname, port, username=username)
 
     def __enter__(self):
         return self

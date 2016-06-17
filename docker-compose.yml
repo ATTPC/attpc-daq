@@ -37,6 +37,7 @@ services:
       - "8000"
     volumes:
       - static:/usr/src/app/static
+      - $HOME/.ssh/:$HOME/.ssh/
     networks:
       - daq
     env_file:
