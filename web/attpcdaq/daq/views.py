@@ -108,34 +108,6 @@ def _calculate_overall_state(source_list):
 # status page after completion.
 # =====================================================================================================
 
-def ecc_get_configs(request, pk):
-    """Fetches the set of configurations from a given ECC server.
-
-    This will send a request to the ECC server identified by primary key `pk` to get
-    the configuration list. The list is stored in the database's ConfigId table and
-    also returned as a JSON array.
-
-    Parameters
-    ----------
-    request : HttpRequest
-        The Django request object.
-    pk : int
-        The primary key identifying the ECC server in the database.
-
-    Returns
-    -------
-    HttpResponse
-        The response contains a JSON array of the configurations.
-
-    """
-    source = get_object_or_404(DataSource, pk=pk)
-    source.refresh_configs()
-    config_list = source.configid_set.all()
-
-    json_repr = serialize('json', config_list)
-    return JsonResponse(json_repr)
-
-
 @login_required
 def source_get_state(request):
     """Get the state of a given data source.
