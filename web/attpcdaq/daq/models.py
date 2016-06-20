@@ -41,6 +41,8 @@ class ConfigId(models.Model):
 
     data_source = models.ForeignKey('DataSource', on_delete=models.CASCADE, null=True, blank=True)
 
+    last_fetched = models.DateTimeField(default=datetime.now())
+
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
 
@@ -267,12 +269,18 @@ class DataSource(models.Model):
     def refresh_configs(self):
         client = self._get_soap_client()
         result = client.service.GetConfigIDs()
+        fetch_time = datetime.now()
 
         config_list_xml = ET.fromstring(result.Text)
         configs = [ConfigId.from_xml(s) for s in config_list_xml.findall('ConfigId')]
         for config in configs:
-            config.data_source = self
-            config.save()
+            ConfigId.objects.update_or_create(describe=config.describe,
+                                              prepare=config.prepare,
+                                              configure=config.configure,
+                                              data_source=self,
+                                              defaults={'last_fetched': fetch_time})
+
+        self.configid_set.filter(last_fetched__lt=fetch_time).delete()
 
     def refresh_state(self):
         client = self._get_soap_client()

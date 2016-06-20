@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
-from .utilities import FakeResponseState
+from .utilities import FakeResponseState, FakeResponseText
 from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
 from ..models import ECCError
 import xml.etree.ElementTree as ET
@@ -196,6 +196,46 @@ class DataSourceModelTestCase(TestCase):
             self.assertTrue(ConfigId.objects.filter(describe=config.describe,
                                                     prepare=config.prepare,
                                                     configure=config.configure).exists())
+
+    @patch('attpcdaq.daq.models.SoapClient')
+    def test_refresh_configs_does_not_duplicate_existing(self, mock_client):
+        config_names = ['A', 'B', 'C']
+        configs = [ConfigId(describe=a, prepare=b, configure=c)
+                   for a, b, c in permutations(config_names, 3)]
+        configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
+
+        mock_inst = mock_client.return_value
+        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+
+        self.datasource.refresh_configs()
+        self.datasource.refresh_configs()  # Call a second time to see if duplication occurs
+
+        self.assertEqual(len(self.datasource.configid_set.all()), len(configs))
+
+    @patch('attpcdaq.daq.models.SoapClient')
+    def test_refresh_configs_removes_outdated(self, mock_client):
+        config_names = ['A', 'B', 'C']
+        configs = [ConfigId(describe=a, prepare=b, configure=c)
+                   for a, b, c in permutations(config_names, 3)]
+        configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
+
+        mock_inst = mock_client.return_value
+        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+
+        self.datasource.refresh_configs()  # Get the initial list
+
+        # Remove a config and update the mock response
+        removed_config = configs[0]
+        del configs[0]
+        configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
+        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+
+        self.datasource.refresh_configs()  # Now pull in the updated list
+
+        self.assertFalse(self.datasource.configid_set.filter(describe=removed_config.describe,
+                                                             prepare=removed_config.prepare,
+                                                             configure=removed_config.configure).exists(),
+                         msg='Removed config was still present in database.')
 
     def test_refresh_state(self):
         for (state, trans) in product(DataSource.STATE_DICT.keys(), [False, True]):
