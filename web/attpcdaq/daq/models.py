@@ -41,7 +41,7 @@ class ConfigId(models.Model):
 
     data_source = models.ForeignKey('DataSource', on_delete=models.CASCADE, null=True, blank=True)
 
-    last_fetched = models.DateTimeField(default=datetime.now())
+    last_fetched = models.DateTimeField(default=datetime.now)
 
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)

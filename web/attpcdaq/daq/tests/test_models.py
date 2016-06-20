@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ET
 import os
 from itertools import permutations, product
 from datetime import datetime
-import pytz
 
 
 class FakeTransitionResult(object):
@@ -319,15 +318,13 @@ class ExperimentModelTestCase(TestCase):
                                                         day=1,
                                                         hour=0,
                                                         minute=0,
-                                                        second=0,
-                                                        tzinfo=pytz.utc),
+                                                        second=0),
                                 stop_datetime=datetime(year=2016,
                                                        month=1,
                                                        day=1,
                                                        hour=1,
                                                        minute=0,
-                                                       second=0,
-                                                       tzinfo=pytz.utc))
+                                                       second=0))
 
     def test_latest_run_with_runs(self):
         self.run0.save()
@@ -398,15 +395,13 @@ class RunMetadataModelTestCase(TestCase):
                                                         day=1,
                                                         hour=0,
                                                         minute=0,
-                                                        second=0,
-                                                        tzinfo=pytz.utc),
+                                                        second=0),
                                 stop_datetime=datetime(year=2016,
                                                        month=1,
                                                        day=1,
                                                        hour=1,
                                                        minute=0,
-                                                       second=0,
-                                                       tzinfo=pytz.utc))
+                                                       second=0))
 
     def test_duration(self):
         expected = str(self.run0.stop_datetime - self.run0.start_datetime)
