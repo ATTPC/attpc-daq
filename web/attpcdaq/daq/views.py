@@ -423,7 +423,7 @@ class AddDataSourceView(CreateView):
     model = DataSource
     form_class = DataSourceForm
     template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
+    success_url = reverse_lazy('daq/data_source_list')
 
 
 class ListDataSourcesView(ListView):
@@ -437,14 +437,14 @@ class UpdateDataSourceView(UpdateView):
     model = DataSource
     form_class = DataSourceForm
     template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
+    success_url = reverse_lazy('daq/data_source_list')
 
 
 class RemoveDataSourceView(DeleteView):
     """Delete a data source."""
     model = DataSource
-    template_name = 'daq/remove_source.html'
-    success_url = reverse_lazy('daq/status')
+    template_name = 'daq/remove_item.html'
+    success_url = reverse_lazy('daq/data_source_list')
 
 
 class AddDataRouterView(CreateView):
@@ -452,7 +452,7 @@ class AddDataRouterView(CreateView):
     model = DataRouter
     form_class = DataRouterForm
     template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
+    success_url = reverse_lazy('daq/data_router_list')
 
 
 class ListDataRoutersView(ListView):
@@ -466,14 +466,14 @@ class UpdateDataRouterView(UpdateView):
     model = DataRouter
     form_class = DataRouterForm
     template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
+    success_url = reverse_lazy('daq/data_router_list')
 
 
 class RemoveDataRouterView(DeleteView):
     """Delete a data router."""
     model = DataRouter
-    template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/status')
+    template_name = 'daq/remove_item.html'
+    success_url = reverse_lazy('daq/data_router_list')
 
 
 class ListRunMetadataView(ListView):
