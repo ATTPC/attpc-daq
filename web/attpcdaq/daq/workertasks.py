@@ -45,13 +45,14 @@ class WorkerInterface(object):
         if config_path is None:
             config_path = os.path.join(os.path.expanduser('~'), '.ssh', 'config')
         self.config = SSHConfig()
-        self.config.parse(config_path)
+        with open(config_path) as config_file:
+            self.config.parse(config_file)
 
         if hostname in self.config.get_hostnames():
             host_cfg = self.config.lookup(hostname)
-            full_hostname = host_cfg.get('hostname', default=hostname)
+            full_hostname = host_cfg.get('hostname', hostname)
             if username is None:
-                username = host_cfg.get('user', default=None)  # If none, it will try the user running the server.
+                username = host_cfg.get('user', None)  # If none, it will try the user running the server.
         else:
             full_hostname = hostname
 
