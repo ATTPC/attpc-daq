@@ -49,7 +49,12 @@
                                 </span>
                                 <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner" data-daq-source-id="{{ source.pk }}"></span>
                             </td>
-                            <td>{{ source.selected_config }}</td>
+                            <td>
+                                {{ source.selected_config }}
+                                <a href="{% url 'daq/choose_config' source.pk %}">
+                                    <span class="source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip" data-placement="bottom"></span>
+                                </a>
+                            </td>
                             <td width="35px" class="text-center">
                                 <span class="source-ctrl-btn fa fa-server" title="Describe" data-daq-state-target="{{ source.DESCRIBED }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">

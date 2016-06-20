@@ -130,7 +130,12 @@ body {
   opacity: 0.3;
   color: white;
 }
-.source-ctrl-btn:hover {
+.source-ctrl-btn,
+a > .source-ctrl-btn {
+  color: black;
+}
+.source-ctrl-btn:hover,
+a > .source-ctrl-btn:hover {
   color: #808080;
 }
 .bg-color-idle {

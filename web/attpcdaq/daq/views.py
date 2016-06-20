@@ -19,7 +19,7 @@ from .workertasks import WorkerInterface
 
 from .models import DataSource, DataRouter, ConfigId, RunMetadata, Experiment
 from .models import ECCError
-from .forms import DataSourceForm, DataRouterForm, ExperimentSettingsForm
+from .forms import DataSourceForm, DataRouterForm, ExperimentSettingsForm, ConfigSelectionForm
 
 
 # ================
@@ -408,6 +408,20 @@ def status(request):
                                                'latest_run': latest_run,
                                                'experiment': experiment,
                                                'system_state': system_state})
+
+
+@login_required
+def choose_config(request, pk):
+    source = get_object_or_404(DataSource, pk=pk)
+
+    if request.method == 'POST':
+        form = ConfigSelectionForm(request.POST, instance=source)
+        form.save()
+        return redirect(reverse('daq/status'))
+    else:
+        source.refresh_configs()
+        form = ConfigSelectionForm(instance=source)
+        return render(request, 'daq/add_or_edit_item.html', {'form': form})
 
 
 @login_required

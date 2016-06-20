@@ -1,4 +1,4 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Form
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
@@ -14,6 +14,20 @@ class DataSourceForm(ModelForm):
         super(DataSourceForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'add-source-form'
+        self.helper.form_method = 'post'
+
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class ConfigSelectionForm(ModelForm):
+    class Meta:
+        model = DataSource
+        fields = ['selected_config']
+
+    def __init__(self, *args, **kwargs):
+        super(ModelForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'config-selection-form'
         self.helper.form_method = 'post'
 
         self.helper.add_input(Submit('submit', 'Submit'))
