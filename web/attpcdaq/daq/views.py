@@ -12,12 +12,10 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.core.serializers import serialize
 from django.db.models import Min
-from datetime import datetime
 from .workertasks import WorkerInterface
 
-from .models import DataSource, DataRouter, ConfigId, RunMetadata, Experiment
+from .models import DataSource, DataRouter, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, DataRouterForm, ExperimentSettingsForm, ConfigSelectionForm
 
