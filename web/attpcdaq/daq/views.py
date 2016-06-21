@@ -195,10 +195,24 @@ def refresh_state_all(request):
 
     overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
 
+    experiment = get_object_or_404(Experiment, user=request.user)
+    current_run = experiment.latest_run
+    if current_run is not None:
+        run_number = current_run.run_number
+        start_time = current_run.start_datetime
+        duration_str = current_run.duration_string
+    else:
+        run_number = None
+        start_time = None
+        duration_str = None
+
     output = {
         'overall_state': overall_state,
         'overall_state_name': overall_state_name,
         'individual_results': results,
+        'run_number': run_number,
+        'start_time': start_time,
+        'run_duration': duration_str,
     }
     return JsonResponse(output)
 

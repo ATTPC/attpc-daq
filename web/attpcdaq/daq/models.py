@@ -397,4 +397,14 @@ class RunMetadata(models.Model):
         datetime.timedelta
             Object representing the duration of the run.
         """
-        return str(self.stop_datetime - self.start_datetime)
+        if self.stop_datetime is not None:
+            return self.stop_datetime - self.start_datetime
+        else:
+            return datetime.now() - self.start_datetime
+
+    @property
+    def duration_string(self):
+        dur = self.duration
+        h, rem = divmod(dur.seconds, 3600)
+        m, s = divmod(rem, 60)
+        return '{:02d}:{:02d}:{:02d}'.format(h, m, s)

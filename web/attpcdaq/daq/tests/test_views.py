@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from unittest.mock import patch
+from datetime import datetime
 from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
 from .utilities import FakeResponseState, FakeResponseText
 from .. import views
@@ -161,6 +162,28 @@ class RefreshStateAllViewTestCase(ManySourcesTestCaseBase):
             self.assertEqual(res['transitioning'], source.is_transitioning)
             self.assertTrue(res['success'])
             self.assertEqual(res['error_message'], '')
+
+    def test_response_contains_run_info(self, mock_client):
+        self.client.force_login(self.user)
+        mock_instance = mock_client.return_value
+        mock_instance.service.GetState.return_value = \
+            FakeResponseState(state=DataSource.RUNNING,
+                              trans=False)
+
+        for source in self.datasources:
+            source.state = DataSource.RUNNING
+            source.save()
+
+        run0 = RunMetadata.objects.create(run_number=0,
+                                          experiment=self.experiment,
+                                          start_datetime=datetime.now())
+
+        resp = self.client.get(reverse(self.view_name))
+
+        resp_json = resp.json()
+        self.assertEqual(resp_json['run_number'], run0.run_number)
+        self.assertEqual(resp_json['start_time'], run0.start_datetime.isoformat()[:-3])  # This is perhaps not the best
+        self.assertEqual(resp_json['run_duration'], run0.duration_string)
 
 
 @patch('attpcdaq.daq.models.SoapClient')

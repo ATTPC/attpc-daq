@@ -404,5 +404,13 @@ class RunMetadataModelTestCase(TestCase):
                                                        second=0))
 
     def test_duration(self):
-        expected = str(self.run0.stop_datetime - self.run0.start_datetime)
+        expected = self.run0.stop_datetime - self.run0.start_datetime
         self.assertEqual(self.run0.duration, expected)
+
+    def test_duration_while_running(self):
+        self.run0.stop_datetime = None
+        before = datetime.now() - self.run0.start_datetime
+        dur = self.run0.duration
+        after = datetime.now() - self.run0.start_datetime
+        self.assertGreater(dur, before)
+        self.assertLess(dur, after)
