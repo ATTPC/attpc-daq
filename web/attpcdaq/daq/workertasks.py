@@ -10,6 +10,7 @@ from paramiko.config import SSHConfig
 from paramiko import WarningPolicy
 import os
 import re
+import shlex
 
 
 class WorkerInterface(object):
@@ -83,9 +84,11 @@ class WorkerInterface(object):
         stdin, stdout, stderr = self.client.exec_command('lsof -a -d cwd -c dataRouter -Fcn')
         for line in stdout:
             if line[0] == 'c' and not re.match('cdataRouter', line):
-                raise RuntimeError("lsof didn't find dataRouter. Process name found was {}".format(line[1:]))
+                raise RuntimeError("lsof found {} instead of dataRouter".format(line[1:].strip()))
             elif line[0] == 'n':
                 return line[1:].strip()
+        else:
+            raise RuntimeError("lsof didn't find dataRouter")
 
     def get_graw_list(self):
         """Get a list of GRAW files in the data router's working directory.
@@ -126,9 +129,10 @@ class WorkerInterface(object):
         pwd = self.find_data_router()
         run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
         run_dir = os.path.join(pwd, experiment_name, run_name)
+        run_dir_esc = shlex.quote(run_dir)
 
-        graws = self.get_graw_list()
+        graws = [shlex.quote(s) for s in self.get_graw_list()]
 
-        self.client.exec_command('mkdir -p {}'.format(run_dir))
+        self.client.exec_command('mkdir -p {}'.format(run_dir_esc))
 
-        self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir))
+        self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir_esc))
