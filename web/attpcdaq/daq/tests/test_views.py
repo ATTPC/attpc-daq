@@ -182,7 +182,7 @@ class RefreshStateAllViewTestCase(ManySourcesTestCaseBase):
 
         resp_json = resp.json()
         self.assertEqual(resp_json['run_number'], run0.run_number)
-        self.assertEqual(resp_json['start_time'], run0.start_datetime.isoformat()[:-3])  # This is perhaps not the best
+        self.assertEqual(resp_json['start_time'], run0.start_datetime.strftime('%b %d %Y, %H:%M:%S'))  # This is perhaps not the best
         self.assertEqual(resp_json['run_duration'], run0.duration_string)
 
 

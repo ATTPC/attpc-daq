@@ -209,6 +209,12 @@
             {% endwith %}
         }
 
+        function update_run_info_panel(run_number, start_time, run_duration) {
+            $("#run-number").text(run_number);
+            $("#start-time").text(start_time);
+            $("#run-duration").text(run_duration);
+        }
+
         function set_label_color($label, state, success) {
             $label.removeClass();
             $label.addClass('label');
@@ -244,6 +250,7 @@
 
         function handle_refresh_state_all_results(data) {
             update_status_panel(data.overall_state);
+            update_run_info_panel(data.run_number, data.start_time, data.run_duration);
 
             $.each(data.individual_results, function (index, value) {
                 handle_state_change_result(value);
@@ -301,11 +308,6 @@
             redraw_status($label, $spinner, data);
         }
 
-        function handle_run_start_stop(response) {
-            $("#start-time").text(response.start_time);
-            $("#run-number").text(response.run_number);
-        }
-
         $(document).ready(function() {
             // Set up the control buttons
             $(".source-ctrl-btn").click(function () {
@@ -318,7 +320,6 @@
                 var target = $(this).data('daq-state-target');
                 change_state_all(target).success(function (data) {
                     handle_refresh_state_all_results(data);
-                    handle_run_start_stop(data);
                 });
             });
 

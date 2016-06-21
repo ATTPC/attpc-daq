@@ -199,7 +199,7 @@ def refresh_state_all(request):
     current_run = experiment.latest_run
     if current_run is not None:
         run_number = current_run.run_number
-        start_time = current_run.start_datetime
+        start_time = current_run.start_datetime.strftime('%b %d %Y, %H:%M:%S')
         duration_str = current_run.duration_string
     else:
         run_number = None
