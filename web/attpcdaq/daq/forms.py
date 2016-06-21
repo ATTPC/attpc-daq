@@ -8,7 +8,7 @@ from .models import DataSource, DataRouter, Experiment
 class DataSourceForm(ModelForm):
     class Meta:
         model = DataSource
-        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router', 'selected_config']
+        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router']
 
     def __init__(self, *args, **kwargs):
         super(DataSourceForm, self).__init__(*args, **kwargs)

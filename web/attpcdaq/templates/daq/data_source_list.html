@@ -17,17 +17,17 @@
         <table class="table table-hover">
             <tr>
                 <th>Name</th>
-                <th>ECC server</th>
+                <th>ECC server address</th>
+                <th>ECC server port</th>
                 <th>Data router</th>
-                <th>Config</th>
                 <th></th>
             </tr>
             {% for source in datasource_list %}
             <tr>
                 <td>{{ source.name }}</td>
-                <td>{{ source.ecc_server.name|default:'None' }}</td>
+                <td>{{ source.ecc_ip_address|default:'None' }}</td>
+                <td>{{ source.ecc_port|default:'None' }}</td>
                 <td>{{ source.data_router.name|default:'None' }}</td>
-                <td>{{ source.config }}</td>
                 <td class="text-right">
                     <a role="button" class="btn btn-xs btn-default"
                        href="{% url 'daq/update_source' source.pk %}">
