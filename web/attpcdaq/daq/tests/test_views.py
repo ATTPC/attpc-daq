@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from unittest.mock import patch
 from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
-from .utilities import FakeResponseState
+from .utilities import FakeResponseState, FakeResponseText
 from .. import views
 
 
@@ -92,8 +92,7 @@ class SourceGetStateViewTestCase(TestCase):
         self.assertEqual(response_json, expected_json)
 
 
-@patch('attpcdaq.daq.models.SoapClient')
-class RefreshStateAllViewTestCase(TestCase):
+class ManySourcesTestCaseBase(TestCase):
     def setUp(self):
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'
@@ -120,15 +119,23 @@ class RefreshStateAllViewTestCase(TestCase):
         self.user = User(username='test', password='test1234')
         self.user.save()
 
+        self.experiment = Experiment.objects.create(name='Test experiment',
+                                                    user=self.user)
+
+
+@patch('attpcdaq.daq.models.SoapClient')
+class RefreshStateAllViewTestCase(ManySourcesTestCaseBase):
+    def setUp(self):
+        super().setUp()
         self.view_name = 'daq/source_refresh_state_all'
 
     def test_no_login(self, mock_client):
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.status_code, 302)
 
-    def test_put(self, mock_client):
+    def test_post(self, mock_client):
         self.client.force_login(self.user)
-        resp = self.client.put(reverse(self.view_name))
+        resp = self.client.post(reverse(self.view_name))
         self.assertEqual(resp.status_code, 405)
 
     def test_good_request(self, mock_client):
@@ -154,3 +161,60 @@ class RefreshStateAllViewTestCase(TestCase):
             self.assertEqual(res['transitioning'], source.is_transitioning)
             self.assertTrue(res['success'])
             self.assertEqual(res['error_message'], '')
+
+
+@patch('attpcdaq.daq.models.SoapClient')
+class SourceChangeStateAllTestCase(ManySourcesTestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/source_change_state_all'
+
+    def test_no_login(self, mock_client):
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_get(self, mock_client):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 405)
+
+    def test_response_content(self, mock_client):
+        self.client.force_login(self.user)
+        mock_instance = mock_client.return_value
+        mock_instance.service.Describe.return_value = \
+            FakeResponseText()
+
+        run0 = RunMetadata.objects.create(run_number=0, experiment=self.experiment)
+
+        resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
+
+        self.assertEqual(resp.resolver_match.func, views.source_change_state_all)
+        self.assertEqual(resp.status_code, 200)
+
+        resp_json = resp.json()
+
+        self.assertTrue(resp_json['success'])
+        self.assertEqual(resp_json['run_number'], run0.run_number)
+        self.assertEqual(resp_json['start_time'], run0.start_datetime)
+        self.assertEqual(resp_json['overall_state'], DataSource.IDLE)
+        self.assertEqual(resp_json['overall_state_name'], DataSource.STATE_DICT[DataSource.IDLE])
+
+        for res in resp_json['individual_results']:
+            pk = int(res['pk'])
+            source = DataSource.objects.get(pk=pk)
+            self.assertEqual(res['state'], source.state)
+            self.assertEqual(res['state'], DataSource.IDLE)
+            self.assertEqual(res['state_name'], source.get_state_display())
+            self.assertEqual(res['transitioning'], True)
+            self.assertTrue(res['success'])
+            self.assertEqual(res['error_message'], '')
+
+    def test_with_no_runs(self, mock_client):
+        self.client.force_login(self.user)
+        mock_instance = mock_client.return_value
+        mock_instance.service.Describe.return_value = \
+            FakeResponseText()
+
+        resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.json()['run_number'])

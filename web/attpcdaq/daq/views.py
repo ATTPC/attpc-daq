@@ -327,19 +327,25 @@ def source_change_state_all(request):
         experiment.stop_run()
 
     current_run = experiment.latest_run
+    if current_run is not None:
+        run_number = current_run.run_number
+        start_datetime = current_run.start_datetime
+    else:
+        run_number = None
+        start_datetime = None
 
     if is_stopping:
         # Organize the graw files on the data router host
         for source in DataSource.objects.all():
             with WorkerInterface(source.data_router.ip_address) as wint:
-                wint.organize_files(experiment.name, current_run.run_number)
+                wint.organize_files(experiment.name, run_number)
 
     overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
 
     output = {
         'success': all((s['success'] for s in results)),
-        'run_number': current_run.run_number,
-        'start_time': current_run.start_datetime,
+        'run_number': run_number,
+        'start_time': start_datetime,
         'overall_state': overall_state,
         'overall_state_name': overall_state_name,
         'individual_results': results,
