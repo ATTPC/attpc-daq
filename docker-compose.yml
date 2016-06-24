@@ -37,6 +37,7 @@ services:
       - "8000"
     volumes:
       - static:/usr/src/app/static
+      - doc:/usr/src/app/doc/_build/html/
       - $HOME/.ssh/:/root/.ssh/
     networks:
       - daq
@@ -56,11 +57,12 @@ services:
     restart: unless-stopped
     build: ./nginx
     ports:
-      - "8080:80"  # Format is "[external]:[internal]"
+      - "8080:8080"  # Format is "[external]:[internal]"
     networks:
       - daq
     volumes:
       - static:/www/static
+      - doc:/www/doc
     depends_on:
       - web
 
@@ -70,4 +72,6 @@ networks:
 
 volumes:
   static:
+    driver: local
+  doc:
     driver: local

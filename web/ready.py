@@ -36,7 +36,7 @@ def server_ready(address, port):
     try:
         s.connect((address, port))
     except Exception as err:
-        print('Connection failed: {:s}'.format(err))
+        print('Connection failed: {}'.format(err))
         return False
     else:
         return True

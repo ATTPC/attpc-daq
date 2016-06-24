@@ -10,7 +10,13 @@ then
     exit 1  # If we got here, something is wrong.
 fi
 
-python manage.py migrate                       # Prepare the database
 python manage.py collectstatic --noinput       # Collect the static files for serving
+
+# Prepare the documentation
+cd doc
+make html
+cd ..
+
+python manage.py migrate                       # Prepare the database
 
 gunicorn attpcdaq.wsgi -b :8000                # Start the Django app
