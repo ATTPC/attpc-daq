@@ -140,19 +140,19 @@ a > .source-ctrl-btn:hover {
   color: #808080;
 }
 .bg-color-idle {
-  background-color: #50514F;
+  background-color: #50514f;
 }
 .bg-color-ready {
-  background-color: #247BA0;
+  background-color: #247ba0;
 }
 .bg-color-running {
-  background-color: #70C1B3;
+  background-color: #70c1b3;
 }
 .bg-color-error {
-  background-color: #F25F5C;
+  background-color: #f25f5c;
 }
 .bg-color-intermediate {
-  background-color: #6C8484;
+  background-color: #6c8484;
 }
 .login-page {
   background-color: #222733;

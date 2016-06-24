@@ -154,7 +154,28 @@ def source_get_state(request):
 
 @login_required
 def refresh_state_all(request):
-    """Refresh the state of all data sources and return the new states.
+    """Refresh the state of all data sources and return the overall state of the system.
+
+    This will poll all of the ECC servers to update the status of each data source. These will be returned
+    along with the overall state of the system and some information about the current experiment and run.
+
+    The JSON array returned will contain the following keys:
+
+    overall_state
+        The overall state of the system. If all of the data sources have the same state, this should
+        be the numerical ID of a state. If the sources have different states, it should be -1.
+    overall_state_name
+        The name of the overall state of the system. Either a state name or "Mixed" if the state
+        is inconsistent.
+    run_number
+        The current run number.
+    start_time
+        The date and time when the current run started.
+    run_duration
+        The duration of the current run. This is with respect to the current time if the run
+        has not ended.
+    individual_results
+        The results for the individual data sources.
 
     Parameters
     ----------
