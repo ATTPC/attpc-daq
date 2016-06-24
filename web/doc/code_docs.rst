@@ -1,10 +1,9 @@
 Source Code Documentation
 =========================
 
-..  automodule:: attpcdaq.daq.views
-    :members:
+.. toctree::
 
-..  automodule:: attpcdaq.daq.models
-    :members:
+   views.rst
+   models.rst
 
 

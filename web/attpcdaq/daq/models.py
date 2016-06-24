@@ -16,6 +16,7 @@ from datetime import datetime
 
 
 class ECCError(Exception):
+    """Indicates that something went wrong during communication with the ECC server."""
     pass
 
 
@@ -25,14 +26,20 @@ class ConfigId(models.Model):
     This will generally be retrieved from the ECC servers using a SOAP call. If this is the case, an
     object can be constructed from the XML representation using the class method `from_xml`.
 
+    It is important to note that this is just a representation of the config files which is used
+    for communicating with the ECC server. No actual configuration is done by this program.
+
     Attributes
     ----------
     describe, prepare, configure : models.CharField
         The names of the files used in each respective step. The actual filenames, as seen by
         the ECC server, will be, for example, `describe-[name].xcfg`. The prefix and file extension
         are added automatically by the ECC server.
-    ecc_server : models.ForeignKey
+    data_source : models.ForeignKey
         The ECC server which this config set is associated with. This may be null.
+    last_fetched : models.DateTimeField
+        The date and time when this config was fetched from the ECC server. This is used to remove
+        outdated configs from the database.
 
     """
     describe = models.CharField(max_length=120)
@@ -43,10 +50,6 @@ class ConfigId(models.Model):
 
     last_fetched = models.DateTimeField(default=datetime.now)
 
-    @property
-    def name(self):
-        return str(self)
-
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
 
@@ -54,6 +57,8 @@ class ConfigId(models.Model):
         """Get an XML representation of the object.
 
         This is useful for sending to the ECC server. The format is as follows:
+
+        .. code-block:: xml
 
             <ConfigId>
                 <SubConfigId type="describe">[self.describe]</SubConfigId>
@@ -162,17 +167,24 @@ class DataSource(models.Model):
         A unique name for the data source. For a CoBo, this *must* correspond to an entry in the appropriate
         config file. For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
         "CoBo[3]". If this is not correct, the ECC server will return an error during the Configure transition.
-    ecc_server : models.OneToOneField
-        The ECC server controlling this data source.
+    ecc_ip_address : models.GenericIPAddressField
+        The IP address of the ECC server.
+    ecc_port : models.PositiveIntegerField
+        The TCP port that the ECC server listens on.
     data_router : models.OneToOneField
         The data router receiving data from this source.
-    config : models.ForeignKey
+    selected_config : models.ForeignKey
         The configuration file set this source will use.
     state : models.IntegerField
         The state of the data source, as known by the ECC server. This must be one of the choices defined by
         the constants attached to this class.
+    is_transitioning : models.BooleanField
+        Whether the data source is currently changing state.
     IDLE, DESCRIBED, PREPARED, READY, RUNNING : int
         Constants representing valid states.
+    RESET : int
+        A constant to be used in the reset transition. This is not a real state machine state, but is used
+        to compute which state should be requested.
     STATE_DICT : dict
         A dictionary for retrieving display names for the above states.
 
@@ -207,6 +219,8 @@ class DataSource(models.Model):
         This is used by the ECC server to establish a connection between the CoBo and the
         data router. The format is as follows:
 
+        .. code-block:: xml
+
             <DataLinkSet>
                 <DataLink>
                     <DataSender id="[DataSource.name]">
@@ -239,6 +253,17 @@ class DataSource(models.Model):
         return 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
 
     def _get_soap_client(self):
+        """Creates a SOAP client for communicating with the ECC server.
+
+        The client loads the WSDL file, which describes the SOAP services, from the local disk. The
+        target URL of the client is then set to the ECC server's address.
+
+        Returns
+        -------
+        zeep.client.Client
+            The configured SOAP client.
+
+        """
         wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
         client = SoapClient(wsdl_url)
         client.set_address('ecc', 'ecc', self.ecc_url)
@@ -246,6 +271,37 @@ class DataSource(models.Model):
 
     @classmethod
     def _get_transition(cls, client, current_state, target_state):
+        """Look up the appropriate SOAP request to change the data source from one state to another.
+
+        Given the `current_state` and the `target_state`, this will either return the correct callable to
+        make the transition, or it will raise an exception.
+
+        Parameters
+        ----------
+        client : zeep.client.Client
+            The SOAP client. One of its methods will be returned.
+        current_state : int
+            The current state of the ECC state machine.
+        target_state : int
+            The desired final state of the ECC state machine.
+
+        Returns
+        -------
+        function
+            The function corresponding to the requested transition. This can then be called with the
+            appropriate arguments to change the ECC server's state.
+
+        Raises
+        ------
+        ValueError
+            If the requested states differ by more than one transition, or if no transition is needed.
+
+        See Also
+        --------
+        DataSource.state
+        DataSource.STATE_DICT
+
+        """
         if target_state == current_state:
             raise ValueError('No transition needed.')
 
@@ -271,6 +327,15 @@ class DataSource(models.Model):
         return trans
 
     def refresh_configs(self):
+        """Fetches the list of configs from the ECC server and updates the database.
+
+        If new configs are present on the ECC server, they will be added to the database. If configs are present
+        in the database but are no longer known to the ECC server, they will be deleted.
+
+        The old configs are deleted based on their `last_fetched` field. Therefore, this field will be updated for
+        each existing config set that is still present on the ECC server when this function is called.
+
+        """
         client = self._get_soap_client()
         result = client.service.GetConfigIDs()
         fetch_time = datetime.now()
@@ -287,6 +352,15 @@ class DataSource(models.Model):
         self.configid_set.filter(last_fetched__lt=fetch_time).delete()
 
     def refresh_state(self):
+        """Gets the current state of the data source from the ECC server and updates the database.
+
+        This will update the `state` and `is_transitioning` fields of the `DataSource`.
+
+        Raises
+        ------
+        ECCError
+            If the return code from the ECC server is nonzero.
+        """
         client = self._get_soap_client()
         result = client.service.GetState()
 
@@ -298,6 +372,28 @@ class DataSource(models.Model):
         self.save()
 
     def change_state(self, target_state):
+        """Tells the ECC server to transition the data source to a new state.
+
+        If the request is successful, the `is_transitioning` field will be set to True, but the `state` field will
+        *not* be updated automatically. To update this, `DataSource.refresh_state` should be called to see if the
+        transition has completed.
+
+        Parameters
+        ----------
+        target_state : int
+            The desired final state. The required transition will be computed using `DataSource._get_transition`.
+
+        Raises
+        ------
+        RuntimeError
+            If the data source does not have a config or a data router set.
+
+        See Also
+        --------
+        DataSource._get_transition
+
+        """
+
         # Get transition arguments
         try:
             config_xml = self.selected_config.as_xml()
@@ -325,12 +421,36 @@ class DataSource(models.Model):
 
 
 class Experiment(models.Model):
+    """Represents an experiment and the settings relevant to one.
+
+    This class is also responsible for keeping track of run numbers.
+
+    Attributes
+    ----------
+    user : models.OneToOneField
+        The user associated with this experiment.
+    name : models.CharField
+        The name of the experiment. This must be unique.
+    target_run_duration : models.PositiveIntegerField
+        The expected duration of a run, in seconds.
+
+    """
     user = models.OneToOneField(User)
     name = models.CharField(max_length=100, unique=True)
     target_run_duration = models.PositiveIntegerField(default=3600)
 
     @property
     def latest_run(self):
+        """Get the most recent run in the experiment.
+
+        This will return the current run if a run is ongoing, or the most recent run if the DAQ is stopped.
+
+        Returns
+        -------
+        RunMetadata or None
+            The most recent or current run. If there are no runs for this experiment, None will be returned instead.
+
+        """
         try:
             return self.runmetadata_set.latest('start_datetime')
         except RunMetadata.DoesNotExist:
@@ -338,6 +458,14 @@ class Experiment(models.Model):
 
     @property
     def is_running(self):
+        """Whether a run is currently being recorded.
+
+        Returns
+        -------
+        bool
+            True if the latest run has started but not stopped. False otherwise (including if there are no runs).
+
+        """
         latest_run = self.latest_run
         if latest_run is not None:
             return latest_run.stop_datetime is None
@@ -346,6 +474,23 @@ class Experiment(models.Model):
 
     @property
     def next_run_number(self):
+        """Get the number that the next run should have.
+
+        The number returned is the run number from `latest_run` plus 1. Therefore, if a run is currently being
+        recorded, this function will return the current run number plus 1.
+
+        If there are no runs, this will return 0.
+
+        Returns
+        -------
+        int
+            The next run number.
+
+        See Also
+        --------
+        DataSource.latest_run
+
+        """
         latest_run = self.latest_run
         if latest_run is not None:
             return latest_run.run_number + 1
@@ -353,6 +498,16 @@ class Experiment(models.Model):
             return 0
 
     def start_run(self):
+        """Creates and saves a new RunMetadata object with the next run number for the experiment.
+
+        The `start_datetime` field of the created RunMetadata instance is set to the current date and time.
+
+        Raises
+        ------
+        RuntimeError
+            If there is already a run that has started but not stopped.
+
+        """
         if self.is_running:
             raise RuntimeError('Stop the current run before starting a new one')
 
@@ -362,6 +517,14 @@ class Experiment(models.Model):
         new_run.save()
 
     def stop_run(self):
+        """Sets the `stop_datetime` of the current run to the current date and time, effectively ending the run.
+
+        Raises
+        ------
+        RuntimeError
+            If there is no current run.
+
+        """
         if not self.is_running:
             raise RuntimeError('Not running')
 
@@ -375,6 +538,8 @@ class RunMetadata(models.Model):
 
     Attributes
     ----------
+    experiment : models.ForeignKey
+        The experiment this run is for
     run_number : models.PositiveIntegerField
         The run number
     start_datetime : models.DateTimeField
@@ -396,6 +561,8 @@ class RunMetadata(models.Model):
     def duration(self):
         """Get the duration of the run.
 
+        If the run has not ended, the difference is taken with respect to the current time.
+
         Returns
         -------
         datetime.timedelta
@@ -408,6 +575,14 @@ class RunMetadata(models.Model):
 
     @property
     def duration_string(self):
+        """Get the duration as a string.
+
+        Returns
+        -------
+        str
+            The duration of the current run. The format is HH:MM:SS.
+
+        """
         dur = self.duration
         h, rem = divmod(dur.seconds, 3600)
         m, s = divmod(rem, 60)
