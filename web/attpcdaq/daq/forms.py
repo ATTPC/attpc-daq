@@ -2,7 +2,7 @@ from django.forms import ModelForm, Form
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import DataSource, DataRouter, Experiment
+from .models import DataSource, DataRouter, Experiment, ConfigId
 
 
 class DataSourceForm(ModelForm):
@@ -31,6 +31,8 @@ class ConfigSelectionForm(ModelForm):
         self.helper.form_method = 'post'
 
         self.helper.add_input(Submit('submit', 'Submit'))
+
+        self.fields['selected_config'].queryset = ConfigId.objects.filter(data_source=self.instance)
 
 
 class DataRouterForm(ModelForm):

@@ -43,6 +43,10 @@ class ConfigId(models.Model):
 
     last_fetched = models.DateTimeField(default=datetime.now)
 
+    @property
+    def name(self):
+        return str(self)
+
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
 
