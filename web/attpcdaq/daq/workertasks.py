@@ -19,9 +19,9 @@ class WorkerInterface(object):
     This is used perform tasks on the computers running the data router and the ECC server. This includes things
     like cleaning up the data files at the end of each run.
 
-    The connection is made using SSH, and the SSH config file at `config_path` is honored in making the connection.
+    The connection is made using SSH, and the SSH config file at ``config_path`` is honored in making the connection.
     Additionally, the server *must* accept connections authenticated using a public key, and this public key must
-    be available in your `.ssh` directory.
+    be available in your ``.ssh`` directory.
 
     Parameters
     ----------
@@ -33,7 +33,7 @@ class WorkerInterface(object):
         The username to use. If it isn't provided, a username will be read from the SSH config file. If no username
         is listed there, the name of the user running the code will be used.
     config_path : str, optional
-        The path to the SSH config file. The default is `~/.ssh/config`.
+        The path to the SSH config file. The default is ``~/.ssh/config``.
 
     """
     def __init__(self, hostname, port=22, username=None, config_path=None):
@@ -68,7 +68,7 @@ class WorkerInterface(object):
     def find_data_router(self):
         """Find the working directory of the data router process.
 
-        The directory is found using `lsof`, which must be available on the remote system.
+        The directory is found using ``lsof``, which must be available on the remote system.
 
         Returns
         -------
@@ -78,7 +78,7 @@ class WorkerInterface(object):
         Raises
         ------
         RuntimeError
-            If `lsof` finds something strange instead of a process called `dataRouter`.
+            If ``lsof`` finds something strange instead of a process called ``dataRouter``.
 
         """
         stdin, stdout, stderr = self.client.exec_command('lsof -a -d cwd -c dataRouter -Fcn')
@@ -115,8 +115,8 @@ class WorkerInterface(object):
         """Organize the GRAW files at the end of a run.
 
         This will get a list of the files written in the working directory of the data router and move them to
-        the directory `./experiment_name/run_name`, which will be created if necessary. For example, if
-        the `experiment_name` is "test" and the `run_number` is 4, the files will be placed in `./test/run_0004`.
+        the directory ``./experiment_name/run_name``, which will be created if necessary. For example, if
+        the ``experiment_name`` is "test" and the ``run_number`` is 4, the files will be placed in ``./test/run_0004``.
 
         Parameters
         ----------

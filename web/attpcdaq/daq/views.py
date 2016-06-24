@@ -35,7 +35,7 @@ def _make_status_response(success=True, pk=None, error_message=None, state=None,
     error_message : str, optional
         An error message to display, if applicable.
     state : int, optional
-        The integer identifying the current state of the object with primary key `pk`, if applicable.
+        The integer identifying the current state of the object with primary key ``pk``, if applicable.
     state_name : str, optional
         The display name of the state.
     transitioning : bool, optional
@@ -79,7 +79,7 @@ def _calculate_overall_state(source_list):
     Returns
     -------
     overall_state : int or None
-        The overall state of the system. Returns `None` if the state is mixed.
+        The overall state of the system. Returns ``None`` if the state is mixed.
     overall_state_name : str
         The name of the system state. The value 'Mixed' is returned if the system is not in a
         consistent state.
@@ -114,7 +114,7 @@ def source_get_state(request):
     Parameters
     ----------
     request : HttpRequest
-        The request must be made by GET (not POST), and the parameter `pk` must be included. `pk` is the
+        The request must be made by GET (not POST), and the parameter ``pk`` must be included. ``pk`` is the
         integer primary key of a data source in the database.
 
     Returns
@@ -257,7 +257,7 @@ def source_change_state(request):
     Parameters
     ----------
     request : HttpRequest
-        The request must include the primary key `pk` of the data source and the integer `target_state`
+        The request must include the primary key ``pk`` of the data source and the integer ``target_state``
         to change to. The request must be made via POST.
 
     Returns

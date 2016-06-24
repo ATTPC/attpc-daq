@@ -24,7 +24,7 @@ class ConfigId(models.Model):
     """Represents a configuration file set as seen by the ECC servers.
 
     This will generally be retrieved from the ECC servers using a SOAP call. If this is the case, an
-    object can be constructed from the XML representation using the class method `from_xml`.
+    object can be constructed from the XML representation using the class method ``from_xml``.
 
     It is important to note that this is just a representation of the config files which is used
     for communicating with the ECC server. No actual configuration is done by this program.
@@ -33,7 +33,7 @@ class ConfigId(models.Model):
     ----------
     describe, prepare, configure : models.CharField
         The names of the files used in each respective step. The actual filenames, as seen by
-        the ECC server, will be, for example, `describe-[name].xcfg`. The prefix and file extension
+        the ECC server, will be, for example, ``describe-[name].xcfg``. The prefix and file extension
         are added automatically by the ECC server.
     data_source : models.ForeignKey
         The ECC server which this config set is associated with. This may be null.
@@ -94,7 +94,7 @@ class ConfigId(models.Model):
         -------
         new_config : ConfigId
             A ConfigId object constructed from the representation. Note that this object is **not** automatically
-            committed to the database, so one should call `new_config.save()` if that is desired.
+            committed to the database, so one should call ``new_config.save()`` if that is desired.
 
         """
         new_config = cls()
@@ -273,7 +273,7 @@ class DataSource(models.Model):
     def _get_transition(cls, client, current_state, target_state):
         """Look up the appropriate SOAP request to change the data source from one state to another.
 
-        Given the `current_state` and the `target_state`, this will either return the correct callable to
+        Given the ``current_state`` and the ``target_state``, this will either return the correct callable to
         make the transition, or it will raise an exception.
 
         Parameters
@@ -332,7 +332,7 @@ class DataSource(models.Model):
         If new configs are present on the ECC server, they will be added to the database. If configs are present
         in the database but are no longer known to the ECC server, they will be deleted.
 
-        The old configs are deleted based on their `last_fetched` field. Therefore, this field will be updated for
+        The old configs are deleted based on their ``last_fetched`` field. Therefore, this field will be updated for
         each existing config set that is still present on the ECC server when this function is called.
 
         """
@@ -354,7 +354,7 @@ class DataSource(models.Model):
     def refresh_state(self):
         """Gets the current state of the data source from the ECC server and updates the database.
 
-        This will update the `state` and `is_transitioning` fields of the `DataSource`.
+        This will update the ``state`` and ``is_transitioning`` fields of the ``DataSource``.
 
         Raises
         ------
@@ -374,7 +374,7 @@ class DataSource(models.Model):
     def change_state(self, target_state):
         """Tells the ECC server to transition the data source to a new state.
 
-        If the request is successful, the `is_transitioning` field will be set to True, but the `state` field will
+        If the request is successful, the ``is_transitioning`` field will be set to True, but the ``state`` field will
         *not* be updated automatically. To update this, `DataSource.refresh_state` should be called to see if the
         transition has completed.
 

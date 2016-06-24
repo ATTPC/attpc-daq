@@ -5,5 +5,6 @@ Source Code Documentation
 
    views.rst
    models.rst
+   workertasks.rst
 
 
