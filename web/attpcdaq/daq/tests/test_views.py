@@ -241,3 +241,31 @@ class SourceChangeStateAllTestCase(ManySourcesTestCaseBase):
         resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
         self.assertEqual(resp.status_code, 200)
         self.assertIsNone(resp.json()['run_number'])
+
+
+class StatusTestCase(ManySourcesTestCaseBase):
+
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/status'
+
+    def test_sources_are_sorted_in_table(self):
+        self.client.force_login(self.user)
+
+        # Add new sources to make sure they aren't just listed in the order they were added (i.e. by pk)
+        for i in (15, 14, 13, 12, 11):
+            dr = DataRouter.objects.create(name='dataRouter{}'.format(i),
+                                           ip_address='123.456.78.9',
+                                           port='1111')
+            d = DataSource.objects.create(name='CoBo[{}]'.format(i),
+                                          ecc_ip_address=self.ecc_ip_address,
+                                          ecc_port=self.ecc_port,
+                                          data_router=dr,
+                                          selected_config=self.selected_config)
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 200)
+
+        source_list = resp.context['data_sources']
+        names = [s.name for s in source_list]
+        self.assertEqual(names, sorted(names))

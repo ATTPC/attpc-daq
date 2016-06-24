@@ -409,7 +409,7 @@ def status(request):
         The rendered page.
 
     """
-    sources = DataSource.objects.all()
+    sources = DataSource.objects.order_by('name')
     system_state = sources.aggregate(Min('state'))['state__min']
 
     experiment = get_object_or_404(Experiment, user=request.user)
