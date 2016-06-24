@@ -1,9 +1,7 @@
 """AT-TPC DAQ Views
 
-This module contains the main logic of the DAQ controller. The function here are responsible for:
-    1) Responding to HTTP requests and returning pages of the website.
-    2) Communicating with the ECC servers to configure, start, and stop CoBos.
-    3) Adding, editing, and removing objects from the program's internal representation of the DAQ.
+This module contains code that renders the pages of the web app and serves as an interface for requesting
+actions from the DAQ.
 
 """
 from django.shortcuts import render, get_object_or_404, redirect
@@ -110,7 +108,7 @@ def _calculate_overall_state(source_list):
 def source_get_state(request):
     """Get the state of a given data source.
 
-    This looks up the data source in the database, sends a request to its ECC server to check it's state,
+    This looks up the data source in the database, sends a request to its ECC server to check its state,
     and then returns the results as a JSON array.
 
     Parameters
@@ -175,7 +173,22 @@ def refresh_state_all(request):
         The duration of the current run. This is with respect to the current time if the run
         has not ended.
     individual_results
-        The results for the individual data sources.
+        The results for the individual data sources. These are sub-arrays.
+
+    The sub arrays for the individual results should include the keys:
+
+    success
+        Whether the request succeeded.
+    pk
+        The primary key of the source.
+    error_message
+        An error message.
+    state
+        The ID of the current state.
+    state_name
+        The name of the current state
+    transitioning
+        Whether the source is undergoing a state transition.
 
     Parameters
     ----------
@@ -185,8 +198,8 @@ def refresh_state_all(request):
     Returns
     -------
     JsonResponse
-        An array of dictionaries containing the results from each data source. The content of each dictionary is
-        like that in `source_get_state`.
+        An array of dictionaries containing the results from each data source. See above for the contents.
+
     """
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
@@ -240,10 +253,6 @@ def refresh_state_all(request):
 
 def source_change_state(request):
     """Tells the ECC server to change a source's state.
-
-    This view handles all state changes. These state changes are how the CoBo is configured.
-    One should probably call `source_get_state` some time after calling this view to check if the
-    state change succeeded.
 
     Parameters
     ----------
@@ -423,6 +432,23 @@ def status(request):
 
 @login_required
 def choose_config(request, pk):
+    """Renders a page for choosing the config for a DataSource.
+
+    This renders the `attpcdaq.daq.forms.ConfigSelectionForm` to pick the configuration.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request object
+    pk : int
+        The primary key of the data source to configure.
+
+    Returns
+    -------
+    HttpResponse
+        Redirects back to the main page on success.
+
+    """
     source = get_object_or_404(DataSource, pk=pk)
 
     if request.method == 'POST':
@@ -437,6 +463,19 @@ def choose_config(request, pk):
 
 @login_required
 def experiment_settings(request):
+    """Renders the experiment settings page.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request.
+
+    Returns
+    -------
+    HttpResponse
+        The rendered page.
+
+    """
 
     experiment = get_object_or_404(Experiment, user=request.user)
 
