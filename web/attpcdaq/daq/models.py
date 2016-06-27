@@ -118,42 +118,6 @@ class ConfigId(models.Model):
         return new_config
 
 
-class DataRouter(models.Model):
-    """A data router, for receiving data from the CoBos.
-
-    Attributes
-    ----------
-    name : models.CharField
-        A unique name for the data router.
-    ip_address : models.GenericIPAddressField
-        The IP address of the data router.
-    port : models.PositiveIntegerField
-        The TCP port the data router listens on.
-    type : models.CharField
-        The type of connection the data router accepts. This may be one of ICE, ZBUF, TCP, or FDT. The value should
-        be set using one of the corresponding attributes on this class.
-    ICE, ZBUF, TCP, FDT : str
-        Constants representing the available connection types.
-
-    """
-    name = models.CharField(max_length=100, unique=True)
-    ip_address = models.GenericIPAddressField(verbose_name='Data router IP address')
-    port = models.PositiveIntegerField(verbose_name='Data router port')
-
-    ICE = 'ICE'
-    ZBUF = 'ZBUF'
-    TCP = 'TCP'
-    FDT = 'FDT'
-    DATA_ROUTER_TYPES = ((ICE, 'ICE'),
-                         (TCP, 'TCP'),
-                         (FDT, 'FDT'),
-                         (ZBUF, 'ZBUF'))
-    type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
-
-    def __str__(self):
-        return self.name
-
-
 class DataSource(models.Model):
     """A source of data, probably a CoBo.
 
@@ -190,11 +154,29 @@ class DataSource(models.Model):
 
     """
     name = models.CharField(max_length=50, unique=True)
+
+    # ECC server information
     ecc_ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
     ecc_port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
-    data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Data router information
+    data_router_ip_address = models.GenericIPAddressField(verbose_name='Data router IP address')
+    data_router_port = models.PositiveIntegerField(verbose_name='Data router port', default=46005)
+
+    ICE = 'ICE'
+    ZBUF = 'ZBUF'
+    TCP = 'TCP'
+    FDT = 'FDT'
+    DATA_ROUTER_TYPES = ((ICE, 'ICE'),
+                         (TCP, 'TCP'),
+                         (FDT, 'FDT'),
+                         (ZBUF, 'ZBUF'))
+    data_router_type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
+
+    # Config file information
     selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # Status information
     IDLE = 1
     DESCRIBED = 2
     PREPARED = 3
@@ -212,6 +194,10 @@ class DataSource(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def data_router_name(self):
+        return self.name + "_dataRouter"
 
     def get_data_link_xml(self):
         """Get an XML representation of the data link for this source.
@@ -240,10 +226,10 @@ class DataSource(models.Model):
         dl_set = ET.Element('DataLinkSet')
         dl = ET.SubElement(dl_set, 'DataLink')
         ET.SubElement(dl, 'DataSender', attrib={'id': self.name})
-        ET.SubElement(dl, 'DataRouter', attrib={'name': self.data_router.name,
-                                                'ipAddress': self.data_router.ip_address,
-                                                'port': str(self.data_router.port),
-                                                'type': self.data_router.type})
+        ET.SubElement(dl, 'DataRouter', attrib={'name': self.data_router_name,
+                                                'ipAddress': self.data_router_ip_address,
+                                                'port': str(self.data_router_port),
+                                                'type': self.data_router_type})
         return ET.tostring(dl_set, encoding='unicode')
 
     @property
@@ -386,7 +372,7 @@ class DataSource(models.Model):
         Raises
         ------
         RuntimeError
-            If the data source does not have a config or a data router set.
+            If the data source does not have a config set.
 
         See Also
         --------
@@ -400,10 +386,7 @@ class DataSource(models.Model):
         except AttributeError:
             raise RuntimeError("Data source has no config associated with it.")
 
-        try:
-            datalink_xml = self.get_data_link_xml()
-        except AttributeError:
-            raise RuntimeError("Data source has no data router associated with it.")
+        datalink_xml = self.get_data_link_xml()
 
         client = self._get_soap_client()
 

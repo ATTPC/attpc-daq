@@ -1,14 +1,15 @@
-from django.forms import ModelForm, Form
+from django.forms import ModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import DataSource, DataRouter, Experiment, ConfigId
+from .models import DataSource, Experiment, ConfigId
 
 
 class DataSourceForm(ModelForm):
     class Meta:
         model = DataSource
-        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router']
+        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router_ip_address', 'data_router_port',
+                  'data_router_type']
 
     def __init__(self, *args, **kwargs):
         super(DataSourceForm, self).__init__(*args, **kwargs)
@@ -33,20 +34,6 @@ class ConfigSelectionForm(ModelForm):
         self.helper.add_input(Submit('submit', 'Submit'))
 
         self.fields['selected_config'].queryset = ConfigId.objects.filter(data_source=self.instance)
-
-
-class DataRouterForm(ModelForm):
-    class Meta:
-        model = DataRouter
-        fields = ['name', 'ip_address', 'port', 'type']
-
-    def __init__(self, *args, **kwargs):
-        super(DataRouterForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'add-data-router-form'
-        self.helper.form_method = 'post'
-
-        self.helper.add_input(Submit('submit', 'Submit'))
 
 
 class ExperimentSettingsForm(ModelForm):

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
 from .utilities import FakeResponseState, FakeResponseText
-from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
+from ..models import DataSource, ConfigId, Experiment, RunMetadata
 from ..models import ECCError
 import xml.etree.ElementTree as ET
 import os
@@ -83,37 +83,24 @@ class ConfigIdModelTestCase(TestCase):
         self.assertRaisesRegex(ValueError, 'Unknown or missing config type: BadType', ConfigId.from_xml, self.xml_root)
 
 
-class DataRouterModelTestCase(TestCase):
-    def setUp(self):
-        self.name = 'dataRouterName'
-        self.ip_address = '123.456.78.9'
-        self.port = '1234'
-        self.datarouter = DataRouter(name=self.name,
-                                     ip_address=self.ip_address,
-                                     port=self.port)
-
-    def test_str(self):
-        s = str(self.datarouter)
-        self.assertEqual(s, self.name)
-
-
 class DataSourceModelTestCase(TestCase):
     def setUp(self):
         self.name = 'CoBo[0]'
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'
-        self.datarouter = DataRouter(name='dataRouter0',
-                                     ip_address='123.456.78.9',
-                                     port='1111')
+        self.data_router_ip_address = '123.45.67.89'
+        self.data_router_port = 46005
+        self.data_router_type = DataSource.TCP
         self.selected_config = ConfigId(describe='describe',
                                         prepare='prepare',
                                         configure='configure')
         self.datasource = DataSource(name=self.name,
                                      ecc_ip_address=self.ecc_ip_address,
                                      ecc_port=self.ecc_port,
-                                     data_router=self.datarouter,
+                                     data_router_ip_address=self.data_router_ip_address,
+                                     data_router_port=self.data_router_port,
+                                     data_router_type=self.data_router_type,
                                      selected_config=self.selected_config)
-        self.datarouter.save()
         self.selected_config.save()
         self.datasource.save()
 
@@ -137,10 +124,11 @@ class DataSourceModelTestCase(TestCase):
 
         router_nodes = dl_node.findall('DataRouter')
         self.assertEqual(len(router_nodes), 1, 'Must have only one router node')
-        self.assertEqual(router_nodes[0].attrib, {'name': self.datarouter.name,
-                                                  'ipAddress': self.datarouter.ip_address,
-                                                  'port': self.datarouter.port,
-                                                  'type': self.datarouter.type})
+
+        self.assertEqual(router_nodes[0].attrib, {'name': self.datasource.data_router_name,
+                                                  'ipAddress': str(self.data_router_ip_address),
+                                                  'port': str(self.data_router_port),
+                                                  'type': self.data_router_type})
 
     def test_ecc_url(self):
         ecc_url = self.datasource.ecc_url
@@ -292,11 +280,6 @@ class DataSourceModelTestCase(TestCase):
     def test_change_state_with_no_config(self):
         self.datasource.selected_config = None
         with self.assertRaisesRegex(RuntimeError, 'Data source has no config associated with it.'):
-            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
-
-    def test_change_state_with_no_data_router(self):
-        self.datasource.data_router = None
-        with self.assertRaisesRegex(RuntimeError, 'Data source has no data router associated with it.'):
             self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
 
 

@@ -13,9 +13,9 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Min
 from .workertasks import WorkerInterface
 
-from .models import DataSource, DataRouter, RunMetadata, Experiment
+from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
-from .forms import DataSourceForm, DataRouterForm, ExperimentSettingsForm, ConfigSelectionForm
+from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
 
 
 # ================
@@ -379,7 +379,7 @@ def source_change_state_all(request):
     if is_stopping:
         # Organize the graw files on the data router host
         for source in DataSource.objects.all():
-            with WorkerInterface(source.data_router.ip_address) as wint:
+            with WorkerInterface(source.data_router_ip_address) as wint:
                 wint.organize_files(experiment.name, run_number)
 
     overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
@@ -523,35 +523,6 @@ class RemoveDataSourceView(DeleteView):
     model = DataSource
     template_name = 'daq/remove_item.html'
     success_url = reverse_lazy('daq/data_source_list')
-
-
-class AddDataRouterView(CreateView):
-    """Add a data router."""
-    model = DataRouter
-    form_class = DataRouterForm
-    template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/data_router_list')
-
-
-class ListDataRoutersView(ListView):
-    """List all data routers."""
-    model = DataRouter
-    template_name = 'daq/data_router_list.html'
-
-
-class UpdateDataRouterView(UpdateView):
-    """Change parameters of a data router."""
-    model = DataRouter
-    form_class = DataRouterForm
-    template_name = 'daq/add_or_edit_item.html'
-    success_url = reverse_lazy('daq/data_router_list')
-
-
-class RemoveDataRouterView(DeleteView):
-    """Delete a data router."""
-    model = DataRouter
-    template_name = 'daq/remove_item.html'
-    success_url = reverse_lazy('daq/data_router_list')
 
 
 class ListRunMetadataView(ListView):

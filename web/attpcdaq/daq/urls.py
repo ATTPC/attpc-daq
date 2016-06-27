@@ -17,11 +17,6 @@ urlpatterns = [
     url(r'^sources/change_state_all/$', views.source_change_state_all, name='daq/source_change_state_all'),
     url(r'^sources/choose_config/(\d+)$', views.choose_config, name='daq/choose_config'),
 
-    url(r'^data_router/$', views.ListDataRoutersView.as_view(), name='daq/data_router_list'),
-    url(r'^data_router/add/$', views.AddDataRouterView.as_view(), name='daq/add_data_router'),
-    url(r'^data_router/edit/(?P<pk>\d+)$', views.UpdateDataRouterView.as_view(), name='daq/update_data_router'),
-    url(r'^data_router/remove/(?P<pk>\d+)$', views.RemoveDataRouterView.as_view(), name='daq/remove_data_router'),
-
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
 
     url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),

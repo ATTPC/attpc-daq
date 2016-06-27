@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from unittest.mock import patch
 from datetime import datetime
-from ..models import DataRouter, DataSource, ConfigId, Experiment, RunMetadata
+from ..models import DataSource, ConfigId, Experiment, RunMetadata
 from .utilities import FakeResponseState, FakeResponseText
 from .. import views
 
@@ -14,10 +14,8 @@ class SourceGetStateViewTestCase(TestCase):
         self.source_name = 'CoBo[0]'
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'
-        self.datarouter = DataRouter(name='dataRouter0',
-                                     ip_address='123.456.78.9',
-                                     port='1111')
-        self.datarouter.save()
+        self.data_router_ip_address = '123.456.78.9'
+        self.data_router_port = '1111'
         self.selected_config = ConfigId(describe='describe',
                                         prepare='prepare',
                                         configure='configure')
@@ -25,7 +23,8 @@ class SourceGetStateViewTestCase(TestCase):
         self.datasource = DataSource(name=self.source_name,
                                      ecc_ip_address=self.ecc_ip_address,
                                      ecc_port=self.ecc_port,
-                                     data_router=self.datarouter,
+                                     data_router_ip_address=self.data_router_ip_address,
+                                     data_router_port=self.data_router_port,
                                      selected_config=self.selected_config)
         self.datasource.save()
 
@@ -97,6 +96,8 @@ class ManySourcesTestCaseBase(TestCase):
     def setUp(self):
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'
+        self.data_router_ip_address = '123.456.78.9'
+        self.data_router_port = '1111'
         self.selected_config = ConfigId(describe='describe',
                                         prepare='prepare',
                                         configure='configure')
@@ -104,15 +105,11 @@ class ManySourcesTestCaseBase(TestCase):
 
         self.datasources = []
         for i in range(10):
-            dr = DataRouter(name='dataRouter{}'.format(i),
-                            ip_address='123.456.78.9',
-                            port='1111')
-            dr.save()
-
             d = DataSource(name='CoBo[{}]'.format(i),
                            ecc_ip_address=self.ecc_ip_address,
                            ecc_port=self.ecc_port,
-                           data_router=dr,
+                           data_router_ip_address=self.data_router_ip_address,
+                           data_router_port=self.data_router_port,
                            selected_config=self.selected_config)
             d.save()
             self.datasources.append(d)
@@ -254,13 +251,11 @@ class StatusTestCase(ManySourcesTestCaseBase):
 
         # Add new sources to make sure they aren't just listed in the order they were added (i.e. by pk)
         for i in (15, 14, 13, 12, 11):
-            dr = DataRouter.objects.create(name='dataRouter{}'.format(i),
-                                           ip_address='123.456.78.9',
-                                           port='1111')
             d = DataSource.objects.create(name='CoBo[{}]'.format(i),
                                           ecc_ip_address=self.ecc_ip_address,
                                           ecc_port=self.ecc_port,
-                                          data_router=dr,
+                                          data_router_ip_address=self.data_router_ip_address,
+                                          data_router_port=self.data_router_port,
                                           selected_config=self.selected_config)
 
         resp = self.client.get(reverse(self.view_name))
