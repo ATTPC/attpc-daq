@@ -34,9 +34,5 @@ render via forms, and return a usable view with the method `as_view`.
 .. autoclass:: ListDataSourcesView
 .. autoclass:: UpdateDataSourceView
 .. autoclass:: RemoveDataSourceView
-.. autoclass:: AddDataRouterView
-.. autoclass:: ListDataRoutersView
-.. autoclass:: UpdateDataRouterView
-.. autoclass:: RemoveDataRouterView
 .. autoclass:: ListRunMetadataView
 .. autoclass:: UpdateExperimentView

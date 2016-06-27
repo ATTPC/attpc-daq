@@ -13,12 +13,6 @@ Data Source
 .. autoclass:: DataSource
    :members:
 
-Data Router
------------
-
-.. autoclass:: DataRouter
-   :members:
-
 Configuration IDs
 -----------------
 

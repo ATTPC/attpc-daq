@@ -135,8 +135,14 @@ class DataSource(models.Model):
         The IP address of the ECC server.
     ecc_port : models.PositiveIntegerField
         The TCP port that the ECC server listens on.
-    data_router : models.OneToOneField
-        The data router receiving data from this source.
+    data_router_ip_address : models.GenericIPAddressField
+        The IP address of the data router. This is where the data will be recorded.
+    data_router_port : models.PositiveIntegerField
+        The TCP port that the dataRouter process listens on.
+    data_router_type : models.CharField
+        The type of data stream expected by the data router. This is shown in the output of the data router
+        when it first starts, although it is also configurable with a command-line option. The type
+        specified must be one of the choices defined in this class.
     selected_config : models.ForeignKey
         The configuration file set this source will use.
     state : models.IntegerField
@@ -151,6 +157,8 @@ class DataSource(models.Model):
         to compute which state should be requested.
     STATE_DICT : dict
         A dictionary for retrieving display names for the above states.
+    ICE, ZBUF, TCP, FDT : str
+        These are the choices for the data router type.
 
     """
     name = models.CharField(max_length=50, unique=True)
@@ -197,6 +205,16 @@ class DataSource(models.Model):
 
     @property
     def data_router_name(self):
+        """The name of the data router.
+
+        This is sent to the CoBo during configuration, but is generally not useful otherwise.
+
+        Returns
+        -------
+        str
+            A name for the data router. This is currently set to the data source name suffixed with "_dataRouter".
+
+        """
         return self.name + "_dataRouter"
 
     def get_data_link_xml(self):
@@ -210,10 +228,10 @@ class DataSource(models.Model):
             <DataLinkSet>
                 <DataLink>
                     <DataSender id="[DataSource.name]">
-                    <DataRouter name="[DataRouter.name]"
-                                ipAddress="[DataRouter.ip_address]"
-                                port="[DataRouter.port]"
-                                type="[DataRouter.type]">
+                    <DataRouter name="[DataSource.data_router_name]"
+                                ipAddress="[DataSource.data_router_ip_address]"
+                                port="[DataSource.data_router_port]"
+                                type="[DataSource.data_router_type]">
                 </DataLink>
             </DataLinkSet>
 
