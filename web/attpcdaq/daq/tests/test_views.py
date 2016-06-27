@@ -264,3 +264,28 @@ class StatusTestCase(ManySourcesTestCaseBase):
         source_list = resp.context['data_sources']
         names = [s.name for s in source_list]
         self.assertEqual(names, sorted(names))
+
+
+class DataSourceListTestCase(ManySourcesTestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/data_source_list'
+
+    def test_sources_are_sorted_in_table(self):
+        self.client.force_login(self.user)
+
+        # Add new sources to make sure they aren't just listed in the order they were added (i.e. by pk)
+        for i in (15, 14, 13, 12, 11):
+            d = DataSource.objects.create(name='CoBo[{}]'.format(i),
+                                          ecc_ip_address=self.ecc_ip_address,
+                                          ecc_port=self.ecc_port,
+                                          data_router_ip_address=self.data_router_ip_address,
+                                          data_router_port=self.data_router_port,
+                                          selected_config=self.selected_config)
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 200)
+
+        source_list = resp.context['datasource_list']
+        names = [s.name for s in source_list]
+        self.assertEqual(names, sorted(names))

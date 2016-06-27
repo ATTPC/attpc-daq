@@ -507,6 +507,7 @@ class AddDataSourceView(CreateView):
 class ListDataSourcesView(ListView):
     """List all data sources."""
     model = DataSource
+    queryset = DataSource.objects.order_by('name')
     template_name = 'daq/data_source_list.html'
 
 
@@ -528,6 +529,7 @@ class RemoveDataSourceView(DeleteView):
 class ListRunMetadataView(ListView):
     """List the run information for all runs."""
     model = RunMetadata
+    queryset = RunMetadata.objects.order_by('run_number')
     template_name = 'daq/run_metadata_list.html'
 
 
