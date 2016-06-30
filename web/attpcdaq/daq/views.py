@@ -546,9 +546,3 @@ class ListRunMetadataView(ListView):
     queryset = RunMetadata.objects.order_by('run_number')
     template_name = 'daq/run_metadata_list.html'
 
-
-class UpdateExperimentView(UpdateView):
-    """Update experiment settings"""
-    model = Experiment
-    form_class = ExperimentSettingsForm
-    template_name = 'daq/experiment_settings.html'
