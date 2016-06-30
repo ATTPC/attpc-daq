@@ -496,9 +496,16 @@ def experiment_settings(request):
 # ===============================================================================================
 
 class PanelTitleMixin(object):
+    """A mixin that provides a panel title to be used in a template.
+
+    This overrides `get_context_data` to insert a key ``panel_title`` containing a title. The title
+    can be set in subclasses by setting the class attribute ``panel_title``.
+
+    """
     panel_title = None
 
     def get_title(self):
+        """Get the title by returning `self.panel_title`."""
         return self.panel_title
 
     def get_context_data(self, **kwargs):
