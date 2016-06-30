@@ -495,12 +495,25 @@ def experiment_settings(request):
 # This is used to render the pages for adding ECC servers, for example.
 # ===============================================================================================
 
+class PanelTitleMixin(object):
+    panel_title = None
 
-class AddDataSourceView(CreateView):
+    def get_title(self):
+        return self.panel_title
+
+    def get_context_data(self, **kwargs):
+        """Update the context to include a title."""
+        context = super().get_context_data(**kwargs)
+        context['panel_title'] = self.get_title()
+        return context
+
+
+class AddDataSourceView(PanelTitleMixin, CreateView):
     """Add a data source."""
     model = DataSource
     form_class = DataSourceForm
     template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'New data source'
     success_url = reverse_lazy('daq/data_source_list')
 
 
@@ -511,11 +524,12 @@ class ListDataSourcesView(ListView):
     template_name = 'daq/data_source_list.html'
 
 
-class UpdateDataSourceView(UpdateView):
+class UpdateDataSourceView(PanelTitleMixin, UpdateView):
     """Change parameters on a data source."""
     model = DataSource
     form_class = DataSourceForm
     template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Edit data source'
     success_url = reverse_lazy('daq/data_source_list')
 
 
