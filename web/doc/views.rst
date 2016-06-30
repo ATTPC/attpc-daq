@@ -35,4 +35,11 @@ render via forms, and return a usable view with the method `as_view`.
 .. autoclass:: UpdateDataSourceView
 .. autoclass:: RemoveDataSourceView
 .. autoclass:: ListRunMetadataView
-.. autoclass:: UpdateExperimentView
+
+Mixins
+------
+
+These are used internally to facilitate re-use of code.
+
+.. autoclass:: PanelTitleMixin
+   :members:
