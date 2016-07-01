@@ -440,6 +440,9 @@ class Experiment(models.Model):
     name = models.CharField(max_length=100, unique=True)
     target_run_duration = models.PositiveIntegerField(default=3600)
 
+    def __str__(self):
+        return self.name
+
     @property
     def latest_run(self):
         """Get the most recent run in the experiment.
@@ -557,6 +560,9 @@ class RunMetadata(models.Model):
     run_number = models.PositiveIntegerField()
     start_datetime = models.DateTimeField(null=True, blank=True)
     stop_datetime = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return "{} run {}".format(self.experiment.name, self.run_number)
 
     @property
     def duration(self):

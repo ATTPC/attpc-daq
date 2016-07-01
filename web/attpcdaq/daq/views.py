@@ -552,6 +552,10 @@ class RemoveDataSourceView(LoginRequiredMixin, DeleteView):
 class ListRunMetadataView(LoginRequiredMixin, ListView):
     """List the run information for all runs."""
     model = RunMetadata
-    queryset = RunMetadata.objects.order_by('run_number')
     template_name = 'daq/run_metadata_list.html'
+
+    def get_queryset(self):
+        """Filter the queryset based on the Experiment, and sort by run number."""
+        expt = get_object_or_404(Experiment, user=self.request.user)
+        return RunMetadata.objects.filter(experiment=expt).order_by('run_number')
 

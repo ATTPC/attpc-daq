@@ -339,3 +339,39 @@ class ListRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/run_list'
+
+        self.user = User.objects.create(username='testUser', password='test1234')
+        self.experiment = Experiment.objects.create(name='Test experiment', user=self.user)
+
+        self.runs = []
+        for i in (0, 3, 1, 2, 5, 4, 7, 9, 8):  # In a random order to test sorting
+            r = RunMetadata.objects.create(run_number=i,
+                                           start_datetime=datetime.now(),
+                                           stop_datetime=datetime.now(),
+                                           experiment=self.experiment)
+            self.runs.append(r)
+
+    def test_runs_are_sorted_by_run_number(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 200)
+
+        run_list = resp.context['runmetadata_list']
+        run_nums = [run.run_number for run in run_list]
+        self.assertEqual(sorted(run_nums), run_nums)
+
+    def test_runs_are_only_for_this_experiment(self):
+        self.client.force_login(self.user)
+
+        newuser = User.objects.create(username='newExperiment', password='new12345')
+        newexpt = Experiment.objects.create(name='Another experiment', user=newuser)
+        newrun = RunMetadata.objects.create(run_number=0,
+                                            start_datetime=datetime.now(),
+                                            stop_datetime=datetime.now(),
+                                            experiment=newexpt)
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertEqual(resp.status_code, 200)
+
+        run_list = resp.context['runmetadata_list']
+        self.assertNotIn(newrun, run_list)
