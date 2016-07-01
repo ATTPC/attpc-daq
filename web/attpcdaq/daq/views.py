@@ -7,6 +7,7 @@ actions from the DAQ.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -251,6 +252,7 @@ def refresh_state_all(request):
     return JsonResponse(output)
 
 
+@login_required
 def source_change_state(request):
     """Tells the ECC server to change a source's state.
 
@@ -515,7 +517,7 @@ class PanelTitleMixin(object):
         return context
 
 
-class AddDataSourceView(PanelTitleMixin, CreateView):
+class AddDataSourceView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a data source."""
     model = DataSource
     form_class = DataSourceForm
@@ -524,14 +526,14 @@ class AddDataSourceView(PanelTitleMixin, CreateView):
     success_url = reverse_lazy('daq/data_source_list')
 
 
-class ListDataSourcesView(ListView):
+class ListDataSourcesView(LoginRequiredMixin, ListView):
     """List all data sources."""
     model = DataSource
     queryset = DataSource.objects.order_by('name')
     template_name = 'daq/data_source_list.html'
 
 
-class UpdateDataSourceView(PanelTitleMixin, UpdateView):
+class UpdateDataSourceView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Change parameters on a data source."""
     model = DataSource
     form_class = DataSourceForm
@@ -540,14 +542,14 @@ class UpdateDataSourceView(PanelTitleMixin, UpdateView):
     success_url = reverse_lazy('daq/data_source_list')
 
 
-class RemoveDataSourceView(DeleteView):
+class RemoveDataSourceView(LoginRequiredMixin, DeleteView):
     """Delete a data source."""
     model = DataSource
     template_name = 'daq/remove_item.html'
     success_url = reverse_lazy('daq/data_source_list')
 
 
-class ListRunMetadataView(ListView):
+class ListRunMetadataView(LoginRequiredMixin, ListView):
     """List the run information for all runs."""
     model = RunMetadata
     queryset = RunMetadata.objects.order_by('run_number')

@@ -8,8 +8,19 @@ from .utilities import FakeResponseState, FakeResponseText
 from .. import views
 
 
+class RequiresLoginTestMixin(object):
+    def setUp(self):
+        super().setUp()
+
+    def test_no_login(self, *args, **kwargs):
+        request_data = kwargs.get('data')
+        reverse_args = kwargs.get('rev_args')
+        resp = self.client.get(reverse(self.view_name, args=reverse_args), data=request_data)
+        self.assertEqual(resp.status_code, 302)
+
+
 @patch('attpcdaq.daq.models.SoapClient')
-class SourceGetStateViewTestCase(TestCase):
+class SourceGetStateViewTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):
         self.source_name = 'CoBo[0]'
         self.ecc_ip_address = '123.45.67.8'
@@ -30,10 +41,7 @@ class SourceGetStateViewTestCase(TestCase):
 
         self.user = User(username='test', password='test1234')
         self.user.save()
-
-    def test_not_logged_in(self, mock_client):
-        resp = self.client.get(reverse('daq/source_get_state'), {'pk': self.datasource.pk})
-        self.assertEqual(resp.status_code, 302)
+        self.view_name = 'daq/source_get_state'
 
     def test_good(self, mock_client):
         mock_instance = mock_client.return_value
@@ -122,14 +130,10 @@ class ManySourcesTestCaseBase(TestCase):
 
 
 @patch('attpcdaq.daq.models.SoapClient')
-class RefreshStateAllViewTestCase(ManySourcesTestCaseBase):
+class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_refresh_state_all'
-
-    def test_no_login(self, mock_client):
-        resp = self.client.get(reverse(self.view_name))
-        self.assertEqual(resp.status_code, 302)
 
     def test_post(self, mock_client):
         self.client.force_login(self.user)
@@ -183,15 +187,17 @@ class RefreshStateAllViewTestCase(ManySourcesTestCaseBase):
         self.assertEqual(resp_json['run_duration'], run0.duration_string)
 
 
+class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/source_change_state'
+
+
 @patch('attpcdaq.daq.models.SoapClient')
-class SourceChangeStateAllTestCase(ManySourcesTestCaseBase):
+class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_change_state_all'
-
-    def test_no_login(self, mock_client):
-        resp = self.client.get(reverse(self.view_name))
-        self.assertEqual(resp.status_code, 302)
 
     def test_get(self, mock_client):
         self.client.force_login(self.user)
@@ -240,8 +246,7 @@ class SourceChangeStateAllTestCase(ManySourcesTestCaseBase):
         self.assertIsNone(resp.json()['run_number'])
 
 
-class StatusTestCase(ManySourcesTestCaseBase):
-
+class StatusTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/status'
@@ -266,7 +271,28 @@ class StatusTestCase(ManySourcesTestCaseBase):
         self.assertEqual(names, sorted(names))
 
 
-class DataSourceListTestCase(ManySourcesTestCaseBase):
+class ChooseConfigTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/choose_config'
+
+    def test_no_login(self, *args, **kwargs):
+        super().test_no_login(rev_args=(1,))
+
+
+class ExperimentSettingsTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/experiment_settings'
+
+
+class AddDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/add_source'
+
+
+class DataSourceListTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/data_source_list'
@@ -289,3 +315,27 @@ class DataSourceListTestCase(ManySourcesTestCaseBase):
         source_list = resp.context['datasource_list']
         names = [s.name for s in source_list]
         self.assertEqual(names, sorted(names))
+
+
+class UpdateDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/update_source'
+
+    def test_no_login(self, *args, **kwargs):
+        super().test_no_login(rev_args=(1,))
+
+
+class RemoveDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/remove_source'
+
+    def test_no_login(self, *args, **kwargs):
+        super().test_no_login(rev_args=(1,))
+
+
+class ListRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/run_list'
