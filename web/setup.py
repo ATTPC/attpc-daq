@@ -8,5 +8,6 @@ setup(name='AT-TPC DAQ Controller',
       requires=['django>=1.9',
                 'django-crispy-forms',
                 'paramiko',
+                'celery',
                 'zeep']
       )

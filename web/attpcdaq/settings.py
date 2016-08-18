@@ -133,3 +133,11 @@ else:
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
+
+
+# Celery configuration
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_SERIALIZER = 'json'
+BROKER_URL = 'amqp://'
+CELERY_RESULT_BACKEND = 'rpc://'
