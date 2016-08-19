@@ -17,7 +17,7 @@ from .workertasks import WorkerInterface
 from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
-from .tasks import datasource_refresh_state_task, datasource_change_state_task
+from .tasks import datasource_change_state_task, organize_files_task
 
 
 # ================
@@ -333,8 +333,7 @@ def source_change_state_all(request):
     if is_stopping:
         # Organize the graw files on the data router host
         for source in DataSource.objects.all():
-            with WorkerInterface(source.data_router_ip_address) as wint:
-                wint.organize_files(experiment.name, run_number)
+            organize_files_task.delay(source.data_router_ip_address, experiment.name, run_number)
 
     overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
 

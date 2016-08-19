@@ -71,6 +71,8 @@ services:
     build: ./web
     env_file:
       - ./production.env
+    volumes:
+      - $HOME/.ssh/:/root/.ssh/
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432

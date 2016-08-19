@@ -2,6 +2,7 @@
 
 from celery import shared_task, group
 from .models import DataSource
+from .workertasks import WorkerInterface
 
 
 @shared_task
@@ -44,3 +45,21 @@ def datasource_change_state_task(datasource_pk, target_state):
     """
     ds = DataSource.objects.get(pk=datasource_pk)
     ds.change_state(target_state)
+
+
+@shared_task
+def organize_files_task(address, experiment_name, run_number):
+    """Connects to the DAQ worker nodes to organize files at the end of a run.
+
+    Parameters
+    ----------
+    address : str
+        The IP address of the worker
+    experiment_name : str
+        The name of the current experiment
+    run_number : int
+        The most recent run number
+
+    """
+    with WorkerInterface(address) as wint:
+        wint.organize_files(experiment_name, run_number)
