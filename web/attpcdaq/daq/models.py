@@ -11,7 +11,6 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import xml.etree.ElementTree as ET
 from zeep.client import Client as SoapClient
-from zeep.helpers import serialize_object
 import os
 from datetime import datetime
 
@@ -23,10 +22,47 @@ class ECCError(Exception):
 
 class EccClient(object):
     def __init__(self, ecc_url):
-        wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
-        client = SoapClient(wsdl_url)
-        self.service = client.create_service('{urn:ecc}ecc', ecc_url)
+        """A wrapper around the Zeep library's SOAP client.
 
+        This exists to help prevent future problems if the Client class from zeep changes. That
+        library is under heavy development, so it might break things in the future.
+
+        The methods of this class are implemented by overriding `__getattr__` to pass along calls to
+        the `self.service` attribute. The available methods are those defined by the SOAP protocol,
+        and they are listed below.
+
+        Methods
+        -------
+        GetConfigIDs()
+            Get a list of the config files known to the ECC server.
+        GetState()
+            Fetch the current state of the ECC state machine.
+        Describe(config_xml, datasource_xml)
+            Perform the Describe transition.
+        Prepare(config_xml, datasource_xml)
+            Perform the Prepare transition.
+        Configure(config_xml, datasource_xml)
+            Perform the Configure transition.
+        Start()
+            Start acquisition.
+        Stop()
+            Stop acquisition.
+        Breakup()
+            Performs the inverse of Configure.
+        Undo()
+            Performs the inverse of Prepare or Describe.
+
+        Parameters
+        ----------
+        ecc_url : str
+            The full URL of the ECC server (i.e. "http://{address}:{port}").
+
+        """
+        wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
+        client = SoapClient(wsdl_url)  # Loads the service definition from ecc.wsdl
+        self.service = client.create_service('{urn:ecc}ecc', ecc_url)  # This overrides the default URL from the file
+
+        # This is a list of valid operations which is used in __getattr__ below.
         self.operations = ['GetState',
                            'Describe',
                            'Prepare',
@@ -289,7 +325,7 @@ class DataSource(models.Model):
 
         Returns
         -------
-        zeep.client.Client
+        EccClient
             The configured SOAP client.
 
         """

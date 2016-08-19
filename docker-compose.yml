@@ -65,6 +65,7 @@ services:
     command: ['/bin/bash', './django_entrypoint.sh']
 
   celery:
+    # Celery is a task queue server. This allows non-blocking communication with the ECC servers.
     image: attpc/attpcdaq
     restart: unless-stopped
     build: ./web
