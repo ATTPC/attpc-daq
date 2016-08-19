@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
+from datetime import timedelta
 
 IS_PRODUCTION = 'DAQ_IS_PRODUCTION' in os.environ
 
@@ -141,3 +142,11 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_SERIALIZER = 'json'
 BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'rpc://'
+
+# Periodic tasks
+CELERYBEAT_SCHEDULE = {
+    'update-state-every-5-sec': {
+        'task': 'attpcdaq.daq.tasks.datasource_refresh_all_task',
+        'schedule': timedelta(seconds=5),
+    }
+}
