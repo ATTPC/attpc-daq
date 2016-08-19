@@ -8,4 +8,4 @@ then
     exit 1  # If we got here, something is wrong.
 fi
 
-celery -A attpcdaq worker -B  # start Celery
+celery -A attpcdaq worker -B --concurrency 10  # start Celery
