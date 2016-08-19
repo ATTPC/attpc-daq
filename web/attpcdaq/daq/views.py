@@ -17,6 +17,7 @@ from .workertasks import WorkerInterface
 from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
+from .tasks import datasource_refresh_state_task, datasource_change_state_task
 
 
 # ================
@@ -106,57 +107,11 @@ def _calculate_overall_state(source_list):
 # =====================================================================================================
 
 @login_required
-def source_get_state(request):
-    """Get the state of a given data source.
-
-    This looks up the data source in the database, sends a request to its ECC server to check its state,
-    and then returns the results as a JSON array.
-
-    Parameters
-    ----------
-    request : HttpRequest
-        The request must be made by GET (not POST), and the parameter ``pk`` must be included. ``pk`` is the
-        integer primary key of a data source in the database.
-
-    Returns
-    -------
-    JsonResponse
-        The results, as a JSON array. This will contain all keys identified in `_make_status_response`.
-
-    """
-    if request.method != 'GET':
-        return HttpResponseNotAllowed(['GET'])
-
-    # Get the data source
-    try:
-        pk = int(request.GET['pk'])
-    except KeyError:
-        resp = _make_status_response(success=False, error_message="No data source pk provided")
-        resp.status_code = 400
-        return resp
-
-    source = get_object_or_404(DataSource, pk=pk)
-
-    try:
-        source.refresh_state()
-    except Exception as e:
-        # This could be a ConnectionError, indicating that the ECC server is not running.
-        success = False
-        error_message = str(e)
-    else:
-        success = True
-        error_message = ""
-
-    return _make_status_response(success=success, pk=pk, error_message=error_message, state=source.state,
-                                 state_name=source.get_state_display(), transitioning=source.is_transitioning)
-
-
-@login_required
 def refresh_state_all(request):
-    """Refresh the state of all data sources and return the overall state of the system.
+    """Fetch the state of all data sources and return the overall state of the system.
 
-    This will poll all of the ECC servers to update the status of each data source. These will be returned
-    along with the overall state of the system and some information about the current experiment and run.
+    The value of the data source state that will be returned is whatever the database says. These values will be
+    returned along with the overall state of the system and some information about the current experiment and run.
 
     The JSON array returned will contain the following keys:
 
@@ -208,19 +163,10 @@ def refresh_state_all(request):
     results = []
 
     for source in DataSource.objects.all():
-        try:
-            source.refresh_state()
-        except Exception as e:
-            success = False
-            error_message = str(e)
-        else:
-            success = True
-            error_message = ""
-
         source_res = {
-            'success': success,
+            'success': True,
             'pk': source.pk,
-            'error_message': error_message,
+            'error_message': "",
             'state': source.state,
             'state_name': source.get_state_display(),
             'transitioning': source.is_transitioning,
@@ -254,7 +200,9 @@ def refresh_state_all(request):
 
 @login_required
 def source_change_state(request):
-    """Tells the ECC server to change a source's state.
+    """Submits a request to tell the ECC server to change a source's state.
+
+    The transition request is put in the Celery task queue.
 
     Parameters
     ----------
@@ -288,7 +236,7 @@ def source_change_state(request):
 
     # Request the transition
     try:
-        source.change_state(target_state)
+        datasource_change_state_task.delay(source.pk, target_state)
     except (ECCError, ValueError) as err:
         success = False
         error_message = str(err)
@@ -303,7 +251,9 @@ def source_change_state(request):
 
 @login_required
 def source_change_state_all(request):
-    """Change the state of all sources.
+    """Send requests to change the state of all sources.
+
+    The requests are queued to be performed asynchronously.
 
     Parameters
     ----------
@@ -341,7 +291,9 @@ def source_change_state_all(request):
     results = []
     for source in DataSource.objects.all():
         try:
-            source.change_state(target_state)
+            source.is_transitioning = True
+            source.save()
+            datasource_change_state_task.delay(source.pk, target_state)
         except (ECCError, ValueError) as err:
             success = False
             error_message = str(err)

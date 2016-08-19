@@ -5,12 +5,12 @@ from .models import DataSource
 
 
 @shared_task
-def datasource_refresh_state(datasource_pk):
+def datasource_refresh_state_task(datasource_pk):
     ds = DataSource.objects.get(pk=datasource_pk)
     ds.refresh_state()
 
 
 @shared_task
-def datasource_change_state(datasource_pk, target_state):
+def datasource_change_state_task(datasource_pk, target_state):
     ds = DataSource.objects.get(pk=datasource_pk)
     ds.change_state(target_state)

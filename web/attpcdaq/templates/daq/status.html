@@ -240,10 +240,6 @@
             {% endwith %}
         }
 
-        function get_state(pk) {
-            return $.get("{% url 'daq/source_get_state' %}", {pk: pk});
-        }
-
         function refresh_state_all() {
             return $.get("{% url 'daq/source_refresh_state_all' %}");
         }

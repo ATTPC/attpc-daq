@@ -19,86 +19,6 @@ class RequiresLoginTestMixin(object):
         self.assertEqual(resp.status_code, 302)
 
 
-@patch('attpcdaq.daq.models.EccClient')
-class SourceGetStateViewTestCase(RequiresLoginTestMixin, TestCase):
-    def setUp(self):
-        self.source_name = 'CoBo[0]'
-        self.ecc_ip_address = '123.45.67.8'
-        self.ecc_port = '1234'
-        self.data_router_ip_address = '123.456.78.9'
-        self.data_router_port = '1111'
-        self.selected_config = ConfigId(describe='describe',
-                                        prepare='prepare',
-                                        configure='configure')
-        self.selected_config.save()
-        self.datasource = DataSource(name=self.source_name,
-                                     ecc_ip_address=self.ecc_ip_address,
-                                     ecc_port=self.ecc_port,
-                                     data_router_ip_address=self.data_router_ip_address,
-                                     data_router_port=self.data_router_port,
-                                     selected_config=self.selected_config)
-        self.datasource.save()
-
-        self.user = User(username='test', password='test1234')
-        self.user.save()
-        self.view_name = 'daq/source_get_state'
-
-    def test_good(self, mock_client):
-        mock_instance = mock_client.return_value
-        mock_instance.GetState.return_value = FakeResponseState(state=DataSource.RUNNING)
-
-        self.client.force_login(self.user)
-        resp = self.client.get(reverse('daq/source_get_state'), {'pk': self.datasource.pk})
-        self.assertEqual(resp.resolver_match.func, views.source_get_state)
-
-        self.datasource.refresh_from_db()
-
-        response_json = resp.json()
-        expected_json = {'success': True,
-                         'pk': self.datasource.pk,
-                         'error_message': '',
-                         'state': self.datasource.state,
-                         'state_name': self.datasource.get_state_display(),
-                         'transitioning': False}
-
-        self.assertEqual(response_json, expected_json)
-
-        self.assertEqual(self.datasource.state, DataSource.RUNNING)
-
-    def test_without_pk(self, mock_client):
-        self.client.force_login(self.user)
-        resp = self.client.get(reverse('daq/source_get_state'))
-        self.assertEqual(resp.status_code, 400)
-
-        response_json = resp.json()
-        self.assertFalse(response_json['success'])
-        self.assertRegex(response_json['error_message'], '.*data source pk.*')
-
-    def test_put(self, mock_client):
-        self.client.force_login(self.user)
-        resp = self.client.put(reverse('daq/source_get_state'))
-        self.assertEqual(resp.status_code, 405)
-
-    def test_with_error(self, mock_client):
-        self.client.force_login(self.user)
-        mock_instance = mock_client.return_value
-        error_message = 'An error happened'
-        mock_instance.GetState.return_value = FakeResponseState(error_code=1, error_message=error_message)
-
-        resp = self.client.get(reverse('daq/source_get_state'), {'pk': self.datasource.pk})
-        self.assertEqual(resp.status_code, 200)
-
-        response_json = resp.json()
-        expected_json = {'success': False,
-                         'pk': self.datasource.pk,
-                         'error_message': error_message,
-                         'state': self.datasource.state,
-                         'state_name': self.datasource.get_state_display(),
-                         'transitioning': False}
-
-        self.assertEqual(response_json, expected_json)
-
-
 class ManySourcesTestCaseBase(TestCase):
     def setUp(self):
         self.ecc_ip_address = '123.45.67.8'
@@ -128,23 +48,21 @@ class ManySourcesTestCaseBase(TestCase):
                                                     user=self.user)
 
 
-@patch('attpcdaq.daq.models.EccClient')
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_refresh_state_all'
 
-    def test_post(self, mock_client):
+    def test_post(self):
         self.client.force_login(self.user)
         resp = self.client.post(reverse(self.view_name))
         self.assertEqual(resp.status_code, 405)
 
-    def test_good_request(self, mock_client):
+    def test_good_request(self):
         self.client.force_login(self.user)
-        mock_instance = mock_client.return_value
-        mock_instance.GetState.return_value = \
-            FakeResponseState(state=DataSource.RUNNING,
-                              trans=False)
+        for source in self.datasources:
+            source.state = DataSource.RUNNING
+            source.save()
 
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.resolver_match.func, views.refresh_state_all)
@@ -163,12 +81,8 @@ class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBas
             self.assertTrue(res['success'])
             self.assertEqual(res['error_message'], '')
 
-    def test_response_contains_run_info(self, mock_client):
+    def test_response_contains_run_info(self):
         self.client.force_login(self.user)
-        mock_instance = mock_client.return_value
-        mock_instance.service.GetState.return_value = \
-            FakeResponseState(state=DataSource.RUNNING,
-                              trans=False)
 
         for source in self.datasources:
             source.state = DataSource.RUNNING
@@ -192,21 +106,19 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
         self.view_name = 'daq/source_change_state'
 
 
-@patch('attpcdaq.daq.models.EccClient')
+@patch('attpcdaq.daq.views.datasource_change_state_task.delay')
 class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_change_state_all'
 
-    def test_get(self, mock_client):
+    def test_get(self, _):
         self.client.force_login(self.user)
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.status_code, 405)
 
-    def test_response_content(self, mock_client):
+    def test_response_content(self, mock_task_delay):
         self.client.force_login(self.user)
-        mock_instance = mock_client.return_value
-        mock_instance.Describe.return_value = FakeResponseText()
 
         run0 = RunMetadata.objects.create(run_number=0, experiment=self.experiment)
 
@@ -233,10 +145,8 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
             self.assertTrue(res['success'])
             self.assertEqual(res['error_message'], '')
 
-    def test_with_no_runs(self, mock_client):
+    def test_with_no_runs(self, mock_task_delay):
         self.client.force_login(self.user)
-        mock_instance = mock_client.return_value
-        mock_instance.Describe.return_value = FakeResponseText()
 
         resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
         self.assertEqual(resp.status_code, 200)
