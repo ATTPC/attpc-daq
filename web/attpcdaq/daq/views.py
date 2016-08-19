@@ -12,12 +12,14 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Min
-from .workertasks import WorkerInterface
 
 from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
 from .tasks import datasource_change_state_task, organize_files_task
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 # ================
@@ -158,6 +160,7 @@ def refresh_state_all(request):
 
     """
     if request.method != 'GET':
+        logger.error('Received non-GET HTTP request %s', request.method)
         return HttpResponseNotAllowed(['GET'])
 
     results = []
@@ -217,6 +220,7 @@ def source_change_state(request):
 
     """
     if request.method != 'POST':
+        logger.error('Received non-POST request %s', request.method)
         return HttpResponseNotAllowed(['POST'])
 
     try:
@@ -238,6 +242,7 @@ def source_change_state(request):
     try:
         datasource_change_state_task.delay(source.pk, target_state)
     except (ECCError, ValueError) as err:
+        logger.exception('Error while submitting change-state task')
         success = False
         error_message = str(err)
     else:
@@ -267,12 +272,14 @@ def source_change_state_all(request):
 
     """
     if request.method != 'POST':
+        logger.error('Received non-POST request %s', request.method)
         return HttpResponseNotAllowed(['POST'])
 
     # Get target state
     try:
         target_state = int(request.POST['target_state'])
     except (KeyError, TypeError):
+        logger.exception('Invalid or missing target_state')
         resp = _make_status_response(success=False,
                                      error_message="Must provide target state as integer.")
         resp.status_code = 400
@@ -295,6 +302,7 @@ def source_change_state_all(request):
             source.save()
             datasource_change_state_task.delay(source.pk, target_state)
         except (ECCError, ValueError) as err:
+            logger.exception('Failed to submit change_state task for data source %s', source.name)
             success = False
             error_message = str(err)
         else:

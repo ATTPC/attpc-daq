@@ -14,6 +14,9 @@ from zeep.client import Client as SoapClient
 import os
 from datetime import datetime
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ECCError(Exception):
     """Indicates that something went wrong during communication with the ECC server."""

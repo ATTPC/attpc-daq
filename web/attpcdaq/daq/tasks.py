@@ -4,6 +4,9 @@ from celery import shared_task, group
 from .models import DataSource
 from .workertasks import WorkerInterface
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 @shared_task
 def datasource_refresh_state_task(datasource_pk):
