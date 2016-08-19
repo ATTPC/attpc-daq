@@ -17,6 +17,6 @@ cd doc
 make html
 cd ..
 
-python manage.py migrate                       # Prepare the database
+python manage.py migrate --noinput             # Prepare the database
 
 gunicorn attpcdaq.wsgi -b :8000                # Start the Django app
