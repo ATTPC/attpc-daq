@@ -19,7 +19,7 @@ class RequiresLoginTestMixin(object):
         self.assertEqual(resp.status_code, 302)
 
 
-@patch('attpcdaq.daq.models.SoapClient')
+@patch('attpcdaq.daq.models.EccClient')
 class SourceGetStateViewTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):
         self.source_name = 'CoBo[0]'
@@ -45,7 +45,7 @@ class SourceGetStateViewTestCase(RequiresLoginTestMixin, TestCase):
 
     def test_good(self, mock_client):
         mock_instance = mock_client.return_value
-        mock_instance.service.GetState.return_value = FakeResponseState(state=DataSource.RUNNING)
+        mock_instance.GetState.return_value = FakeResponseState(state=DataSource.RUNNING)
 
         self.client.force_login(self.user)
         resp = self.client.get(reverse('daq/source_get_state'), {'pk': self.datasource.pk})
@@ -83,8 +83,7 @@ class SourceGetStateViewTestCase(RequiresLoginTestMixin, TestCase):
         self.client.force_login(self.user)
         mock_instance = mock_client.return_value
         error_message = 'An error happened'
-        mock_instance.service.GetState.return_value = \
-            FakeResponseState(error_code=1, error_message=error_message)
+        mock_instance.GetState.return_value = FakeResponseState(error_code=1, error_message=error_message)
 
         resp = self.client.get(reverse('daq/source_get_state'), {'pk': self.datasource.pk})
         self.assertEqual(resp.status_code, 200)
@@ -129,7 +128,7 @@ class ManySourcesTestCaseBase(TestCase):
                                                     user=self.user)
 
 
-@patch('attpcdaq.daq.models.SoapClient')
+@patch('attpcdaq.daq.models.EccClient')
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
@@ -143,7 +142,7 @@ class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBas
     def test_good_request(self, mock_client):
         self.client.force_login(self.user)
         mock_instance = mock_client.return_value
-        mock_instance.service.GetState.return_value = \
+        mock_instance.GetState.return_value = \
             FakeResponseState(state=DataSource.RUNNING,
                               trans=False)
 
@@ -193,7 +192,7 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
         self.view_name = 'daq/source_change_state'
 
 
-@patch('attpcdaq.daq.models.SoapClient')
+@patch('attpcdaq.daq.models.EccClient')
 class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
@@ -207,8 +206,7 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
     def test_response_content(self, mock_client):
         self.client.force_login(self.user)
         mock_instance = mock_client.return_value
-        mock_instance.service.Describe.return_value = \
-            FakeResponseText()
+        mock_instance.Describe.return_value = FakeResponseText()
 
         run0 = RunMetadata.objects.create(run_number=0, experiment=self.experiment)
 
@@ -238,8 +236,7 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
     def test_with_no_runs(self, mock_client):
         self.client.force_login(self.user)
         mock_instance = mock_client.return_value
-        mock_instance.service.Describe.return_value = \
-            FakeResponseText()
+        mock_instance.Describe.return_value = FakeResponseText()
 
         resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
         self.assertEqual(resp.status_code, 200)

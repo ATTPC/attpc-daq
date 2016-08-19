@@ -135,16 +135,7 @@ class DataSourceModelTestCase(TestCase):
         expected = 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
         self.assertEqual(ecc_url, expected)
 
-    def test_get_soap_client(self):
-        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
-            instance = mock_client.return_value
-            self.datasource._get_soap_client()
-
-            wsdl = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
-            mock_client.assert_called_once_with(wsdl)
-            instance.set_address.assert_called_once_with('ecc', 'ecc', self.datasource.ecc_url)
-
-    @patch('attpcdaq.daq.models.SoapClient')
+    @patch('attpcdaq.daq.models.EccClient')
     def test_get_transition_too_many_steps(self, mock_client):
         mock_instance = mock_client()
         for initial_state, final_state in permutations(DataSource.STATE_DICT.keys(), 2):
@@ -153,7 +144,7 @@ class DataSourceModelTestCase(TestCase):
                                        self.datasource._get_transition, mock_instance,
                                        initial_state, final_state)
 
-    @patch('attpcdaq.daq.models.SoapClient')
+    @patch('attpcdaq.daq.models.EccClient')
     def test_get_transition_same_state(self, mock_client):
         mock_instance = mock_client()
         for state in DataSource.STATE_DICT.keys():
@@ -171,20 +162,20 @@ class DataSourceModelTestCase(TestCase):
                 Text = configs_xml
             return FakeResult()
 
-        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+        with patch('attpcdaq.daq.models.EccClient') as mock_client:
             instance = mock_client.return_value
-            instance.service.GetConfigIDs.side_effect = return_side_effect
+            instance.GetConfigIDs.side_effect = return_side_effect
 
             self.datasource.refresh_configs()
 
-            instance.service.GetConfigIDs.assert_called_once_with()
+            instance.GetConfigIDs.assert_called_once_with()
 
         for config in configs:
             self.assertTrue(ConfigId.objects.filter(describe=config.describe,
                                                     prepare=config.prepare,
                                                     configure=config.configure).exists())
 
-    @patch('attpcdaq.daq.models.SoapClient')
+    @patch('attpcdaq.daq.models.EccClient')
     def test_refresh_configs_does_not_duplicate_existing(self, mock_client):
         config_names = ['A', 'B', 'C']
         configs = [ConfigId(describe=a, prepare=b, configure=c)
@@ -192,14 +183,14 @@ class DataSourceModelTestCase(TestCase):
         configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
 
         mock_inst = mock_client.return_value
-        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+        mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
         self.datasource.refresh_configs()
         self.datasource.refresh_configs()  # Call a second time to see if duplication occurs
 
         self.assertEqual(len(self.datasource.configid_set.all()), len(configs))
 
-    @patch('attpcdaq.daq.models.SoapClient')
+    @patch('attpcdaq.daq.models.EccClient')
     def test_refresh_configs_removes_outdated(self, mock_client):
         config_names = ['A', 'B', 'C']
         configs = [ConfigId(describe=a, prepare=b, configure=c)
@@ -207,7 +198,7 @@ class DataSourceModelTestCase(TestCase):
         configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
 
         mock_inst = mock_client.return_value
-        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+        mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
         self.datasource.refresh_configs()  # Get the initial list
 
@@ -215,7 +206,7 @@ class DataSourceModelTestCase(TestCase):
         removed_config = configs[0]
         del configs[0]
         configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
-        mock_inst.service.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
+        mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
         self.datasource.refresh_configs()  # Now pull in the updated list
 
@@ -226,26 +217,26 @@ class DataSourceModelTestCase(TestCase):
 
     def test_refresh_state(self):
         for (state, trans) in product(DataSource.STATE_DICT.keys(), [False, True]):
-            with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+            with patch('attpcdaq.daq.models.EccClient') as mock_client:
                 mock_inst = mock_client.return_value
-                mock_inst.service.GetState.return_value = \
+                mock_inst.GetState.return_value = \
                     FakeResponseState(state=state, trans=trans)
 
                 self.datasource.refresh_state()
 
-                mock_inst.service.GetState.assert_called_once_with()
+                mock_inst.GetState.assert_called_once_with()
 
             self.assertEqual(self.datasource.state, state)
             self.assertEqual(self.datasource.is_transitioning, trans)
 
     def _transition_test_helper(self, trans_func_name, initial_state, final_state,
                                 error_code=0, error_msg=""):
-        with patch('attpcdaq.daq.models.SoapClient') as mock_client:
+        with patch('attpcdaq.daq.models.EccClient') as mock_client:
             self.datasource.state = initial_state
             self.datasource.is_transitioning = False
 
             mock_instance = mock_client.return_value
-            mock_trans_func = getattr(mock_instance.service, trans_func_name)
+            mock_trans_func = getattr(mock_instance, trans_func_name)
             mock_trans_func.return_value = FakeTransitionResult(error_code, error_msg)
 
             self.datasource.change_state(final_state)

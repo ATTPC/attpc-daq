@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import xml.etree.ElementTree as ET
 from zeep.client import Client as SoapClient
+from zeep.helpers import serialize_object
 import os
 from datetime import datetime
 
@@ -18,6 +19,30 @@ from datetime import datetime
 class ECCError(Exception):
     """Indicates that something went wrong during communication with the ECC server."""
     pass
+
+
+class EccClient(object):
+    def __init__(self, ecc_url):
+        wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
+        client = SoapClient(wsdl_url)
+        self.service = client.create_service('{urn:ecc}ecc', ecc_url)
+
+        self.operations = ['GetState',
+                           'Describe',
+                           'Prepare',
+                           'Configure',
+                           'Start',
+                           'Stop',
+                           'Undo',
+                           'Breakup',
+                           'GetConfigIDs']
+
+    def __getattr__(self, item):
+        if item in self.operations:
+            return getattr(self.service, item)
+
+        else:
+            raise AttributeError('EccClient has no attribute {}'.format(item))
 
 
 class ConfigId(models.Model):
@@ -268,10 +293,7 @@ class DataSource(models.Model):
             The configured SOAP client.
 
         """
-        wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
-        client = SoapClient(wsdl_url)
-        client.set_address('ecc', 'ecc', self.ecc_url)
-        return client
+        return EccClient(self.ecc_url)
 
     @classmethod
     def _get_transition(cls, client, current_state, target_state):
@@ -310,17 +332,17 @@ class DataSource(models.Model):
             raise ValueError('No transition needed.')
 
         transitions = {
-            (cls.IDLE, cls.DESCRIBED): client.service.Describe,
-            (cls.DESCRIBED, cls.IDLE): client.service.Undo,
+            (cls.IDLE, cls.DESCRIBED): client.Describe,
+            (cls.DESCRIBED, cls.IDLE): client.Undo,
 
-            (cls.DESCRIBED, cls.PREPARED): client.service.Prepare,
-            (cls.PREPARED, cls.DESCRIBED): client.service.Undo,
+            (cls.DESCRIBED, cls.PREPARED): client.Prepare,
+            (cls.PREPARED, cls.DESCRIBED): client.Undo,
 
-            (cls.PREPARED, cls.READY): client.service.Configure,
-            (cls.READY, cls.PREPARED): client.service.Breakup,
+            (cls.PREPARED, cls.READY): client.Configure,
+            (cls.READY, cls.PREPARED): client.Breakup,
 
-            (cls.READY, cls.RUNNING): client.service.Start,
-            (cls.RUNNING, cls.READY): client.service.Stop,
+            (cls.READY, cls.RUNNING): client.Start,
+            (cls.RUNNING, cls.READY): client.Stop,
         }
 
         try:
@@ -341,7 +363,7 @@ class DataSource(models.Model):
 
         """
         client = self._get_soap_client()
-        result = client.service.GetConfigIDs()
+        result = client.GetConfigIDs()
         fetch_time = datetime.now()
 
         config_list_xml = ET.fromstring(result.Text)
@@ -366,7 +388,7 @@ class DataSource(models.Model):
             If the return code from the ECC server is nonzero.
         """
         client = self._get_soap_client()
-        result = client.service.GetState()
+        result = client.GetState()
 
         if int(result.ErrorCode) != 0:
             raise ECCError(result.ErrorMessage)
