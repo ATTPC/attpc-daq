@@ -28,6 +28,17 @@ services:
     env_file:
       - ./production.env
 
+  # This container provides the communication service for the Celery task queue
+  rabbitmq:
+    image: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672"
+    networks:
+      - daq
+    env_file:
+      - ./production.env
+
   web:
     # This container runs the Django app, which provides the dynamic content of the website.
     image: attpc/attpcdaq
@@ -46,9 +57,29 @@ services:
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
+      - CELERY_BROKER_HOST=rabbitmq
+      - CELERY_BROKER_PORT=5672
     depends_on:
       - db
-    command: ['/bin/bash', './docker_entrypoint.sh']
+      - celery
+    command: ['/bin/bash', './django_entrypoint.sh']
+
+  celery:
+    image: attpc/attpcdaq
+    restart: unless-stopped
+    build: ./web
+    env_file:
+      - ./production.env
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - CELERY_BROKER_HOST=rabbitmq
+      - CELERY_BROKER_PORT=5672
+    networks:
+      - daq
+    depends_on:
+      - rabbitmq
+    command: ['/bin/bash', './celery_entrypoint.sh']
 
   nginx:
     # The nginx container serves the static resources and proxies all of the requests to Django.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script is the main entrypoint for the Docker container. It gets executed on launch.
+# This script is the main entrypoint for the Django process. It gets executed on launch.
 # It begins by checking to see if the PostreSQL server is ready. Once it is, it prepares the
 # database and collects the static files to be served by nginx. Then it calls Gunicorn to serve
 # the dynamic part of the app.

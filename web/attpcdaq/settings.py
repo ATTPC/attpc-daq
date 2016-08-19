@@ -140,7 +140,12 @@ else:
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_SERIALIZER = 'json'
-BROKER_URL = 'amqp://'
+
+if IS_PRODUCTION:
+    BROKER_URL = 'amqp://{}:{}'.format(os.environ['CELERY_BROKER_HOST'], os.environ['CELERY_BROKER_PORT'])
+else:
+    BROKER_URL = 'amqp://'
+
 CELERY_RESULT_BACKEND = 'rpc://'
 
 # Periodic tasks
