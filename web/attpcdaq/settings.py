@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'attpcdaq.daq',
     'attpcdaq.tags',
     'attpcdaq.accounts',
+    'attpcdaq.logs',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -149,7 +150,11 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'level': 'INFO',
             'formatter': 'simple',
-        }
+        },
+        'database': {
+            'class': 'attpcdaq.logs.handler.DjangoDatabaseHandler',
+            'level': 'INFO',
+        },
     },
     'loggers': {
         'django': {
@@ -158,7 +163,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'attpcdaq': {
-            'handlers': ['console'],
+            'handlers': ['console', 'database'],
             'propagate': True,
             'level': 'INFO',
         }
