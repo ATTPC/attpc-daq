@@ -158,17 +158,12 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console', 'database'],
             'propagate': True,
-            'level': 'INFO',
+            'level': 'WARNING',
         },
         'attpcdaq': {
             'handlers': ['console', 'database'],
-            'propagate': True,
-            'level': 'INFO',
-        },
-        'celery.task': {
-            'handlers': ['database'],
             'propagate': True,
             'level': 'INFO',
         },

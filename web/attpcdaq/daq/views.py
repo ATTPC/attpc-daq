@@ -229,6 +229,7 @@ def source_change_state(request):
         pk = request.POST['pk']
         target_state = int(request.POST['target_state'])
     except KeyError:
+        logger.error('Must provide data source pk and target state')
         resp = _make_status_response(success=False,
                                      error_message="Must provide data source pk and target state")
         resp.status_code = 400
@@ -243,7 +244,7 @@ def source_change_state(request):
     # Request the transition
     try:
         datasource_change_state_task.delay(source.pk, target_state)
-    except (ECCError, ValueError) as err:
+    except Exception as err:
         logger.exception('Error while submitting change-state task')
         success = False
         error_message = str(err)
@@ -293,6 +294,7 @@ def source_change_state_all(request):
         if overall_state is not None:
             target_state = max(overall_state - 1, DataSource.IDLE)
         else:
+            logger.error('Cannot perform reset when overall state is inconsistent')
             resp = _make_status_response(success=False,
                                          error_message="Cannot perform reset when overall state is inconsistent.")
             return resp
