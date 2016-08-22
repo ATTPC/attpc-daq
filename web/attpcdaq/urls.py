@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.views.generic import RedirectView
 
 from .daq import urls as daq_urls
+from .logs import urls as logs_urls
 from .accounts import urls as account_urls
 
 
@@ -26,4 +27,5 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include(account_urls)),
     url(r'^daq/', include(daq_urls)),
+    url(r'^logs/', include(logs_urls)),
 ]

@@ -166,7 +166,12 @@ LOGGING = {
             'handlers': ['console', 'database'],
             'propagate': True,
             'level': 'INFO',
-        }
+        },
+        'celery.task': {
+            'handlers': ['database'],
+            'propagate': True,
+            'level': 'INFO',
+        },
     }
 }
 
@@ -175,6 +180,7 @@ LOGGING = {
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_SERIALIZER = 'json'
+CELERYD_HIJACK_ROOT_LOGGER = False
 
 if IS_PRODUCTION:
     BROKER_URL = 'amqp://{}:{}'.format(os.environ['CELERY_BROKER_HOST'], os.environ['CELERY_BROKER_PORT'])

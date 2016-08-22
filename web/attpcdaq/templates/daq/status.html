@@ -89,6 +89,9 @@
                     {% endfor %}
                 </table>
             </div>
+            <div id="log-panel">
+                {% include 'logs/log_list_panel_fragment.html' %}
+            </div>
         </div>
         <div class="col-md-3">
             <div class="panel panel-status bg-color-idle" id="system-status-panel">
@@ -304,6 +307,10 @@
             redraw_status($label, $spinner, data);
         }
 
+        function update_log_panel() {
+            $('[id*="log-panel"]').load("{% url 'logs/recent_panel' %}");
+        }
+
         $(document).ready(function() {
             // Set up the control buttons
             $(".source-ctrl-btn").click(function () {
@@ -325,6 +332,7 @@
             // Check periodically for changes in state
             check_for_state_changes();
             setInterval(check_for_state_changes, 5000);
+            setInterval(update_log_panel, 5000);
         });
     </script>
 {% endblock %}

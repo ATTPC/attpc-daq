@@ -18,8 +18,11 @@ def datasource_refresh_state_task(datasource_pk):
         The integer primary key of the DataSource object in the database.
 
     """
-    ds = DataSource.objects.get(pk=datasource_pk)
-    ds.refresh_state()
+    try:
+        ds = DataSource.objects.get(pk=datasource_pk)
+        ds.refresh_state()
+    except Exception:
+        logger.exception('Failed to refresh state of source with pk %d', datasource_pk)
 
 
 @shared_task
@@ -29,9 +32,12 @@ def datasource_refresh_all_task():
     This calls `datasource_refresh_state` for each source in the database.
 
     """
-    pk_list = [ds.pk for ds in DataSource.objects.all()]
-    gp = group([datasource_refresh_state_task.s(i) for i in pk_list])
-    gp()
+    try:
+        pk_list = [ds.pk for ds in DataSource.objects.all()]
+        gp = group([datasource_refresh_state_task.s(i) for i in pk_list])
+        gp()
+    except Exception:
+        logger.exception('Failed to refresh state of all data sources')
 
 
 @shared_task
@@ -46,8 +52,11 @@ def datasource_change_state_task(datasource_pk, target_state):
         The target state. Use one of the constants from the DataSource class.
 
     """
-    ds = DataSource.objects.get(pk=datasource_pk)
-    ds.change_state(target_state)
+    try:
+        ds = DataSource.objects.get(pk=datasource_pk)
+        ds.change_state(target_state)
+    except Exception:
+        logger.exception('Failed to change state of data source with pk %d', datasource_pk)
 
 
 @shared_task
@@ -64,5 +73,8 @@ def organize_files_task(address, experiment_name, run_number):
         The most recent run number
 
     """
-    with WorkerInterface(address) as wint:
-        wint.organize_files(experiment_name, run_number)
+    try:
+        with WorkerInterface(address) as wint:
+            wint.organize_files(experiment_name, run_number)
+    except Exception:
+        logger.exception('Organize files task failed')

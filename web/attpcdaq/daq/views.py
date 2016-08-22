@@ -18,6 +18,8 @@ from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
 from .tasks import datasource_change_state_task, organize_files_task
 
+from attpcdaq.logs.models import LogEntry
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -198,7 +200,6 @@ def refresh_state_all(request):
         'start_time': start_time,
         'run_duration': duration_str,
     }
-    logger.warning('Updated!')
     return JsonResponse(output)
 
 
@@ -386,9 +387,12 @@ def status(request):
     experiment = get_object_or_404(Experiment, user=request.user)
     latest_run = experiment.latest_run
 
+    logs = LogEntry.objects.order_by('-create_time')[:10]
+
     return render(request, 'daq/status.html', {'data_sources': sources,
                                                'latest_run': latest_run,
                                                'experiment': experiment,
+                                               'logentry_list': logs,
                                                'system_state': system_state})
 
 

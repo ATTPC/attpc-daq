@@ -33,6 +33,11 @@
                             <span class="fa fa-table"></span> Run metadata
                         </a>
                     </li>
+                    <li class="{% active request 'logs' %}">
+                        <a href="{% url 'logs/list' %}">
+                            <span class="fa fa-exclamation-triangle"></span> Error logs
+                        </a>
+                    </li>
                     <li class=""><a><span class="fa fa-wrench"></span> Setup</a>
                         <ul class="nav nav-sidebar-subnav">
                             <li class="{% active request 'experiment_settings' %}"><a href="{% url 'daq/experiment_settings' %}">Experiment settings</a></li>

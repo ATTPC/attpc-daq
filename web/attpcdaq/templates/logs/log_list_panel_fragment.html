@@ -1,0 +1,21 @@
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <span>Log entries</span>
+    </div>
+    <table class="table table-hover">
+        <tr>
+            <th>Time</th>
+            <th>Level</th>
+            <th>Logger</th>
+            <th>Message</th>
+        </tr>
+        {% for log in logentry_list %}
+        <tr class="{{ log.level_css_class_name }}">
+            <td>{{ log.create_time|date:'d-M-Y H:i:s' }}</td>
+            <td>{{ log.get_level_display }}</td>
+            <td>{{ log.logger_name }}</td>
+            <td>{{ log.message }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>

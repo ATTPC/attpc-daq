@@ -10,10 +10,9 @@ class DjangoDatabaseHandler(logging.Handler):
     def emit(self, record):
         from .models import LogEntry
         try:
-            entry = LogEntry(name=record.name,
+            entry = LogEntry(logger_name=record.name,
                              create_time=datetime.fromtimestamp(record.created),
-                             level_number=record.levelno,
-                             level_name=record.levelname,
+                             level=record.levelno,
                              path_name=record.pathname,
                              line_num=record.lineno,
                              function_name=record.funcName,
