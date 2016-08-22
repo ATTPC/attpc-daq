@@ -13,6 +13,7 @@ class LogEntry(models.Model):
     line_num = models.IntegerField()
     function_name = models.CharField(max_length=200)
     message = models.TextField()
+    traceback = models.TextField(null=True, blank=True)
 
     DEBUG = logging.DEBUG
     INFO = logging.INFO

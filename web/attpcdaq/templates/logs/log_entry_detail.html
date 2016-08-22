@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Log entry details - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <span>Log entry details</span>
+    </div>
+    <table class="table">
+        <tr>
+            <th>Date/time</th>
+            <td>{{ object.create_time|date:'d-M-Y H:i:s' }}</td>
+        </tr>
+        <tr>
+            <th>Logger name</th>
+            <td>{{ object.logger_name }}</td>
+        </tr>
+        <tr>
+            <th>Level</th>
+            <td>{{ object.get_level_display }}</td>
+        </tr>
+        <tr>
+            <th>Function name</th>
+            <td>{{ object.function_name }}</td>
+        </tr>
+        <tr>
+            <th>File path</th>
+            <td>{{ object.path_name }}:{{ object.line_num }}</td>
+        </tr>
+        <tr>
+            <th>Message</th>
+            <td>{{ object.message }}</td>
+        </tr>
+        {% if object.traceback %}
+        <tr>
+            <th>Traceback</th>
+            <td><pre>{{ object.traceback }}</pre></td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+{% endblock %}
+
+

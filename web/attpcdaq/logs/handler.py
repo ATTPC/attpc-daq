@@ -16,7 +16,8 @@ class DjangoDatabaseHandler(logging.Handler):
                              path_name=record.pathname,
                              line_num=record.lineno,
                              function_name=record.funcName,
-                             message=record.getMessage())
+                             message=record.getMessage(),
+                             traceback=record.exc_text)
             entry.save()
         except Exception:
             self.handleError(record)

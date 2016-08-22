@@ -11,7 +11,7 @@
         </tr>
         {% for log in logentry_list %}
         <tr class="{{ log.level_css_class_name }}">
-            <td>{{ log.create_time|date:'d-M-Y H:i:s' }}</td>
+            <td><a href="{% url 'logs/details' log.pk %}">{{ log.create_time|date:'d-M-Y H:i:s' }}</a></td>
             <td>{{ log.get_level_display }}</td>
             <td>{{ log.logger_name }}</td>
             <td>{{ log.message }}</td>
