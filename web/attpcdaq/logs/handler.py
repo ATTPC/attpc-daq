@@ -1,5 +1,5 @@
 import logging
-from .models import LogEntry
+from datetime import datetime
 
 
 class DjangoDatabaseHandler(logging.Handler):
@@ -8,9 +8,10 @@ class DjangoDatabaseHandler(logging.Handler):
         logging.Handler.__init__(self)
 
     def emit(self, record):
+        from .models import LogEntry
         try:
             entry = LogEntry(name=record.name,
-                             create_time=record.created,
+                             create_time=datetime.fromtimestamp(record.created),
                              level_number=record.levelno,
                              level_name=record.levelname,
                              path_name=record.pathname,

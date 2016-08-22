@@ -3,3 +3,4 @@
 __pycache__
 *.env
 web/doc/_build
+celerybeat-schedule.db

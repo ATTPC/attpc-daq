@@ -198,6 +198,7 @@ def refresh_state_all(request):
         'start_time': start_time,
         'run_duration': duration_str,
     }
+    logger.warning('Updated!')
     return JsonResponse(output)
 
 
