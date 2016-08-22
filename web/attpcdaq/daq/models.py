@@ -387,7 +387,7 @@ class DataSource(models.Model):
         try:
             trans = transitions[(current_state, target_state)]
         except KeyError:
-            raise ValueError('Can only transition one step at a time.')
+            raise ValueError('Can only transition one step at a time.') from None
 
         return trans
 
@@ -462,8 +462,8 @@ class DataSource(models.Model):
         # Get transition arguments
         try:
             config_xml = self.selected_config.as_xml()
-        except AttributeError:
-            raise RuntimeError("Data source has no config associated with it.")
+        except AttributeError as err:
+            raise RuntimeError("Data source has no config associated with it.") from err
 
         datalink_xml = self.get_data_link_xml()
 
