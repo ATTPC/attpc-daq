@@ -1,21 +1,48 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <span>Log entries</span>
+        <div class="pull-right">
+            <form method="POST" action="{% url 'logs/clear' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ clear_btn_redirect_target }}">
+                <input class="btn btn-danger btn-xs" type="submit" value="Clear">
+            </form>
+        </div>
     </div>
-    <table class="table table-hover">
-        <tr>
-            <th>Time</th>
-            <th>Level</th>
-            <th>Logger</th>
-            <th>Message</th>
-        </tr>
-        {% for log in logentry_list %}
-        <tr class="{{ log.level_css_class_name }}">
-            <td><a href="{% url 'logs/details' log.pk %}">{{ log.create_time|date:'d-M-Y H:i:s' }}</a></td>
-            <td>{{ log.get_level_display }}</td>
-            <td>{{ log.logger_name }}</td>
-            <td>{{ log.message }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    {% if logentry_list %}
+        <table class="table table-hover">
+            <tr>
+                <th>Time</th>
+                <th>Level</th>
+                <th>Logger</th>
+                <th>Message</th>
+            </tr>
+            {% for log in logentry_list %}
+                <tr class="{{ log.level_css_class_name }}">
+                    <td><a href="{% url 'logs/details' log.pk %}">{{ log.create_time|date:'d-M-Y H:i:s' }}</a></td>
+                    <td>{{ log.get_level_display }}</td>
+                    <td>{{ log.logger_name }}</td>
+                    <td>{{ log.message }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% if is_paginated %}
+            <div class="panel-footer">
+                <nav>
+                    <ul class="pager">
+                        {% if page_obj.has_previous %}
+                            <li><a href="{% url 'logs/list' %}?page={{ page_obj.previous_page_number }}">Newer</a></li>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                            <li><a href="{% url 'logs/list' %}?page={{ page_obj.next_page_number }}">Older</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="panel-body">
+            No log entries
+        </div>
+    {% endif %}
 </div>
