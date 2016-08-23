@@ -18,6 +18,7 @@ urlpatterns = [
 
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
     url(r'^runs/edit/(?P<pk>\d+)$', views.UpdateRunMetadataView.as_view(), name='daq/update_run_metadata'),
+    url(r'^runs/download$', views.download_run_metadata, name='daq/download_run_metadata'),
 
     url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),
 ]

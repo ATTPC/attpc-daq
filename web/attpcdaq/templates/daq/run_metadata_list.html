@@ -8,6 +8,11 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <span>Run information</span>
+            <div class="pull-right">
+                <a class="btn btn-default btn-xs" href="{% url 'daq/download_run_metadata' %}">
+                    <span class="fa fa-download"></span> Download as CSV
+                </a>
+            </div>
         </div>
         <table class="table table-hover">
             <tr>

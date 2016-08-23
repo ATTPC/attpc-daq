@@ -20,6 +20,8 @@ from .tasks import datasource_change_state_task, organize_files_task
 
 from attpcdaq.logs.models import LogEntry
 
+import csv
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -533,3 +535,23 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     template_name = 'daq/add_or_edit_item.html'
     panel_title = 'Edit run metadata'
     success_url = reverse_lazy('daq/run_list')
+
+
+# ===============================================================================================
+# Download Views:
+#
+# Use these views to download data from the database in more easily readable formats.
+# ===============================================================================================
+
+def download_run_metadata(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="run_metadata.csv"'
+
+    data = RunMetadata.objects.order_by('run_number')
+
+    writer = csv.writer(response)
+    writer.writerow(['Run number', 'Run title', 'Start time', 'Stop time'])
+    for item in data:
+        writer.writerow([item.run_number, item.title, item.start_datetime, item.stop_datetime])
+
+    return response
