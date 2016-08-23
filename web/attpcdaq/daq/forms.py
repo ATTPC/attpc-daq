@@ -2,7 +2,7 @@ from django.forms import ModelForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-from .models import DataSource, Experiment, ConfigId
+from .models import DataSource, Experiment, ConfigId, RunMetadata
 
 
 class DataSourceForm(ModelForm):
@@ -45,5 +45,18 @@ class ExperimentSettingsForm(ModelForm):
         super(ExperimentSettingsForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'experiment-settings-form'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class RunMetadataForm(ModelForm):
+    class Meta:
+        model = RunMetadata
+        fields = ['title']
+
+    def __init__(self, *args, **kwargs):
+        super(RunMetadataForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'runmetadata-form'
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))

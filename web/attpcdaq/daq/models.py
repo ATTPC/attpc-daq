@@ -621,6 +621,7 @@ class RunMetadata(models.Model):
     run_number = models.PositiveIntegerField()
     start_datetime = models.DateTimeField(null=True, blank=True)
     stop_datetime = models.DateTimeField(null=True, blank=True)
+    title = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):
         return "{} run {}".format(self.experiment.name, self.run_number)

@@ -20,6 +20,15 @@
                         <td id="run-number">{{ latest_run.run_number|default:'None' }}</td>
                     </tr>
                     <tr>
+                        <th>Run title:</th>
+                        <td id="run-title">
+                            {{ latest_run.title }}
+                            <a href="{% url 'daq/update_run_metadata' latest_run.pk %}">
+                                <span class="icon-btn fa fa-pencil" title="Edit" data-toggle="tooltip" data-placement="bottom"></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
                         <th>Start time:</th>
                         <td id="start-time">{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
                     </tr>
@@ -52,36 +61,36 @@
                             <td>
                                 {{ source.selected_config }}
                                 <a href="{% url 'daq/choose_config' source.pk %}">
-                                    <span class="source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip" data-placement="bottom"></span>
+                                    <span class="icon-btn source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip" data-placement="bottom"></span>
                                 </a>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-server" title="Describe" data-daq-state-target="{{ source.DESCRIBED }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-server" title="Describe" data-daq-state-target="{{ source.DESCRIBED }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-link" title="Prepare" data-daq-state-target="{{ source.PREPARED }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-link" title="Prepare" data-daq-state-target="{{ source.PREPARED }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-cog" title="Configure" data-daq-state-target="{{ source.READY }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-cog" title="Configure" data-daq-state-target="{{ source.READY }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-play" title="Start" data-daq-state-target="{{ source.RUNNING }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-play" title="Start" data-daq-state-target="{{ source.RUNNING }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-stop" title="Stop" data-daq-state-target="{{ source.READY }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-stop" title="Stop" data-daq-state-target="{{ source.READY }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>
                             <td width="35px" class="text-center">
-                                <span class="source-ctrl-btn fa fa-repeat" title="Reset" data-daq-state-target="{{ source.RESET }}"
+                                <span class="icon-btn source-ctrl-btn fa fa-repeat" title="Reset" data-daq-state-target="{{ source.RESET }}"
                                       data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
                                 </span>
                             </td>

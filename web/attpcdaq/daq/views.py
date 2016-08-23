@@ -15,7 +15,7 @@ from django.db.models import Min
 
 from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
-from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm
+from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm, RunMetadataForm
 from .tasks import datasource_change_state_task, organize_files_task
 
 from attpcdaq.logs.models import LogEntry
@@ -525,3 +525,11 @@ class ListRunMetadataView(LoginRequiredMixin, ListView):
         expt = get_object_or_404(Experiment, user=self.request.user)
         return RunMetadata.objects.filter(experiment=expt).order_by('run_number')
 
+
+class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    """Change run metadata"""
+    model = RunMetadata
+    form_class = RunMetadataForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Edit run metadata'
+    success_url = reverse_lazy('daq/run_list')

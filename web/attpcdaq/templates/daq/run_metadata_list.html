@@ -12,16 +12,24 @@
         <table class="table table-hover">
             <tr>
                 <th>Run number</th>
+                <th>Run title</th>
                 <th>Start</th>
                 <th>Stop</th>
                 <th>Duration</th>
+                <th></th>
             </tr>
             {% for run in runmetadata_list %}
             <tr>
                 <td>{{ run.run_number }}</td>
+                <td>{{ run.title }}</td>
                 <td>{{ run.start_datetime|date:'d-M-Y H:i:s' }}</td>
                 <td>{{ run.stop_datetime|date:'d-M-Y H:i:s' }}</td>
                 <td>{{ run.duration }}</td>
+                <td class="text-right">
+                    <a class="btn btn-xs btn-default" href="{% url 'daq/update_run_metadata' run.pk %}">
+                        <span class="fa fa-wrench"></span> Edit
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </table>
