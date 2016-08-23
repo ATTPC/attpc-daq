@@ -6,11 +6,68 @@
 @bgcolor: lighten(@navcolor, 78%);
 @titlecolor: #555555;
 
-@color-ready: #247BA0;
-@color-intermediate: #6C8484;
-@color-running: #70C1B3;
-@color-error: #F25F5C;
-@color-idle: #50514F;
+@color-idle: #34495e;
+@color-described: #9b59b6;
+@color-prepared: #5f63b4;
+@color-ready: #3498db;
+@color-running: #23c153;
+@color-error: #e74c3c;
+@color-reset: #f28027;
+
+.button-variant(@color; @background; @border) {
+  // Stolen from Bootstrap's file "less/mixins/buttons.less"
+  color: @color;
+  background-color: @background;
+  border-color: @border;
+
+  &:focus,
+  &.focus {
+    color: @color;
+    background-color: darken(@background, 10%);
+        border-color: darken(@border, 25%);
+  }
+  &:hover {
+    color: @color;
+    background-color: darken(@background, 10%);
+        border-color: darken(@border, 12%);
+  }
+  &:active,
+  &.active,
+  .open > .dropdown-toggle& {
+    color: @color;
+    background-color: darken(@background, 10%);
+        border-color: darken(@border, 12%);
+
+    &:hover,
+    &:focus,
+    &.focus {
+      color: @color;
+      background-color: darken(@background, 17%);
+          border-color: darken(@border, 25%);
+    }
+  }
+  &:active,
+  &.active,
+  .open > .dropdown-toggle& {
+    background-image: none;
+  }
+  &.disabled,
+  &[disabled],
+  fieldset[disabled] & {
+    &:hover,
+    &:focus,
+    &.focus {
+      background-color: @background;
+          border-color: @border;
+    }
+  }
+
+  .badge {
+    color: @background;
+    background-color: @color;
+  }
+}
+
 
 
 .shadow() {
@@ -158,24 +215,58 @@ a > .icon-btn:hover {
   color: hsl(0, 0, 0.5);
 }
 
+.label-idle,
 .bg-color-idle {
   background-color: @color-idle;
 }
 
+.label-described,
+.bg-color-described {
+  background-color: @color-described;
+}
+
+.btn-describe {
+  .button-variant(white; @color-described; darken(@color-described, 5%));
+}
+
+.label-prepared,
+.bg-color-prepared {
+  background-color: @color-prepared;
+}
+
+.btn-prepare {
+  .button-variant(white; @color-prepared; darken(@color-prepared, 5%));
+}
+
+.label-ready,
 .bg-color-ready {
   background-color: @color-ready;
 }
 
+.btn-configure {
+  .button-variant(white; @color-ready; darken(@color-ready, 5%));
+}
+
+.label-running,
 .bg-color-running {
   background-color: @color-running;
 }
 
+.btn-start {
+  .button-variant(white; @color-running; darken(@color-running, 5%));
+}
+
+.label-error,
 .bg-color-error {
   background-color: @color-error;
 }
 
-.bg-color-intermediate {
-  background-color: @color-intermediate;
+.btn-stop {
+  .button-variant(white; @color-error; darken(@color-error, 5%));
+}
+
+.btn-reset {
+  .button-variant(white; @color-reset; darken(@color-reset, 5%));
 }
 
 .login-page {

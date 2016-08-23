@@ -118,22 +118,22 @@
                 <div class="panel-body">
                     <div class="btn-toolbar" id="run-control-toolbar">
                         {% with aSource=data_sources.first %}
-                            <button class="btn btn-block btn-info" data-daq-state-target="{{ aSource.DESCRIBED }}" id="btn-describe-all">
+                            <button class="btn btn-block btn-describe" data-daq-state-target="{{ aSource.DESCRIBED }}" id="btn-describe-all">
                                 <span class="fa fa-server"></span> Describe all
                             </button>
-                            <button class="btn btn-block btn-info" data-daq-state-target="{{ aSource.PREPARED }}" id="btn-prepare-all">
+                            <button class="btn btn-block btn-prepare" data-daq-state-target="{{ aSource.PREPARED }}" id="btn-prepare-all">
                                 <span class="fa fa-link"></span> Prepare all
                             </button>
-                            <button class="btn btn-block btn-info" data-daq-state-target="{{ aSource.READY }}" id="btn-configure-all">
+                            <button class="btn btn-block btn-configure" data-daq-state-target="{{ aSource.READY }}" id="btn-configure-all">
                                 <span class="fa fa-cog"></span> Configure all
                             </button>
-                            <button class="btn btn-block btn-success" data-daq-state-target="{{ aSource.RUNNING }}" id="btn-start-all">
+                            <button class="btn btn-block btn-start" data-daq-state-target="{{ aSource.RUNNING }}" id="btn-start-all">
                                 <span class="fa fa-play"></span> Start all
                             </button>
-                            <button class="btn btn-block btn-danger" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all">
+                            <button class="btn btn-block btn-stop" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all">
                                 <span class="fa fa-stop"></span> Stop all
                             </button>
-                            <button class="btn btn-block btn-warning" data-daq-state-target="{{ aSource.RESET }}" id="btn-reset-all">
+                            <button class="btn btn-block btn-reset" data-daq-state-target="{{ aSource.RESET }}" id="btn-reset-all">
                                 <span class="fa fa-repeat"></span> Reset all
                             </button>
                         {% endwith %}
@@ -194,12 +194,12 @@
                     $label.text('Idle');
                 }
                 else if (state == {{ aSource.DESCRIBED }}) {
-                    $panel.addClass('bg-color-intermediate');
+                    $panel.addClass('bg-color-described');
                     $icon.addClass('fa-server');
                     $label.text('Described');
                 }
                 else if (state == {{ aSource.PREPARED }}) {
-                    $panel.addClass('bg-color-intermediate');
+                    $panel.addClass('bg-color-prepared');
                     $icon.addClass('fa-link');
                     $label.text('Prepared');
                 }
@@ -232,19 +232,22 @@
             $label.addClass('label');
             {% with aSource=data_sources.first %}
                 if (state < 0 || !success) {
-                    $label.addClass('label-danger');
+                    $label.addClass('label-error');
                 }
                 else if (state == {{ aSource.IDLE }}) {
-                    $label.addClass('label-default');
+                    $label.addClass('label-idle');
                 }
-                else if (state < {{ aSource.READY }}) {
-                    $label.addClass('label-info');
+                else if (state == {{ aSource.DESCRIBED }}) {
+                    $label.addClass('label-described');
+                }
+                else if (state == {{ aSource.PREPARED }}) {
+                    $label.addClass('label-prepared');
                 }
                 else if (state == {{ aSource.READY }}) {
                     $label.addClass('label-primary');
                 }
                 else if (state == {{ aSource.RUNNING }}) {
-                    $label.addClass('label-success');
+                    $label.addClass('label-running');
                 }
                 else {
                     $label.addClass('label-danger');
