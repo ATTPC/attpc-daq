@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>attpc.dataRouter</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DYLD_FALLBACK_LIBRARY_PATH</key>
+        <string>/opt/local/lib</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/daq/GET-20140516/software/pkg/bin/dataRouter</string>
+        <string>0.0.0.0</string>
+        <string>0.0.0.0</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/daq/GET-20140516/runtime</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/josh/Library/Logs/dataRouter.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/josh/Library/Logs/dataRouter.log</string>
+
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
