@@ -75,6 +75,7 @@
 </div>
 
 <script>
+    // Returns a class to set the color of the status label
     function get_label_class(state_name) {
         if (state_name == 'Idle') {
             return 'label-idle';
@@ -96,6 +97,7 @@
         }
     }
 
+    // Updates the given status label based on the given state name
     function set_label($label, state_name) {
         $label.text(state_name);
 
@@ -104,10 +106,12 @@
         $label.addClass(get_label_class(state_name));
     }
 
+    // Updates the status of the source with the given id (pk)
     function set_source_status(source_id, state_name, is_transitioning) {
         var $label = $('[id*="status-label"][data-daq-source-id=' + source_id + ']');
         var $spinner = $('[id*="status-spinner"][data-daq-source-id=' + source_id + ']');
 
+        // Update the text and color of the status label
         set_label($label, state_name);
 
         // Update spinner and visibility
@@ -121,17 +125,20 @@
         }
     }
 
+    // Tells a single source to perform a transition
     function change_state(pk, target) {
         return $.post("{% url 'daq/source_change_state' %}",
                 {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
     }
 
+    // Make the source panel be updated when 'daq:refreshState' is fired
     $(document).on('daq:refreshState', function (event, data) {
         $.each(data.individual_results, function(index, value) {
             set_source_status(value.pk, value.state_name, value.transitioning);
         });
     });
 
+    // Add click handlers to the source control buttons
     $(document).ready(function () {
         $(".source-ctrl-btn").click(function () {
             var pk = $(this).data('daq-source-id');

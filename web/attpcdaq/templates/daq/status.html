@@ -21,16 +21,19 @@
 
 {% block scripts %}
     <script>
+        // Makes an AJAX call to get the current state of the system.
         function refresh_state_all() {
             return $.get("{% url 'daq/source_refresh_state_all' %}");
         }
 
+        // Gets the current state and fires refreshState to update the page.
         function check_for_state_changes() {
             refresh_state_all().success(function (data) {
                 $(document).trigger('daq:refreshState', data);
             });
         }
 
+        // Fetches and redraws the recent logs panel
         function update_log_panel() {
             $('[id*="log-panel"]').load("{% url 'logs/recent_panel' %}");
         }

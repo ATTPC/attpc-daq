@@ -33,11 +33,13 @@
 </div>
 
 <script>
+    // Tell *all* sources to perform a transition
     function change_state_all(target) {
         return $.post("{% url 'daq/source_change_state_all' %}",
                 {target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
     }
 
+    // Set up click handlers on the buttons
     $(document).ready(function () {
         $("#run-control-toolbar").children("button").click(function () {
             var target = $(this).data('daq-state-target');

@@ -10,14 +10,18 @@
         var $panel = $("#system-status-panel");
         var $icon = $("#system-status-icon");
         var $label = $("#system-status-label");
+
+        // Remove outdated classes
         $panel.removeClass();
         $panel.addClass('panel panel-status');
 
         $icon.removeClass();
         $icon.addClass('fa');
 
+        // Set the text content of the panel
         $label.text(state_name);
 
+        // Set the color and icon on the panel
         if (state_name == 'Idle') {
             $panel.addClass('bg-color-idle');
             $icon.addClass('fa-power-off');
@@ -45,6 +49,7 @@
         }
     }
 
+    // Update then panel when 'daq:refreshState' is triggered
     $(document).on('daq:refreshState', function (event, data) {
         update_system_status_panel(data.overall_state_name);
     });

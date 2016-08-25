@@ -33,11 +33,13 @@
 </div>
 
 <script>
+    // Updates the run info panel's values
     function update_run_info_panel(event, data) {
         $("#run-number").text(data.run_number);
         $("#start-time").text(data.start_time);
         $("#run-duration").text(data.run_duration);
     }
 
+    // Register this function to be called when 'daq:refreshState' is triggered
     $(document).on('daq:refreshState', update_run_info_panel);
 </script>
