@@ -5,7 +5,7 @@ actions from the DAQ.
 
 """
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -104,6 +104,46 @@ def _calculate_overall_state(source_list):
     return overall_state, overall_state_name
 
 
+def _get_status(request):
+    results = []
+
+    for source in DataSource.objects.all():
+        source_res = {
+            'success': True,
+            'pk': source.pk,
+            'error_message': "",
+            'state': source.state,
+            'state_name': source.get_state_display(),
+            'transitioning': source.is_transitioning,
+        }
+
+        results.append(source_res)
+
+    overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
+
+    experiment = get_object_or_404(Experiment, user=request.user)
+    current_run = experiment.latest_run
+    if current_run is not None:
+        run_number = current_run.run_number
+        start_time = current_run.start_datetime.strftime('%b %d %Y, %H:%M:%S')
+        duration_str = current_run.duration_string
+    else:
+        run_number = None
+        start_time = None
+        duration_str = None
+
+    output = {
+        'overall_state': overall_state,
+        'overall_state_name': overall_state_name,
+        'individual_results': results,
+        'run_number': run_number,
+        'start_time': start_time,
+        'run_duration': duration_str,
+    }
+
+    return output
+
+
 # =====================================================================================================
 # ECC Server Communication:
 #
@@ -167,41 +207,8 @@ def refresh_state_all(request):
         logger.error('Received non-GET HTTP request %s', request.method)
         return HttpResponseNotAllowed(['GET'])
 
-    results = []
+    output = _get_status(request)
 
-    for source in DataSource.objects.all():
-        source_res = {
-            'success': True,
-            'pk': source.pk,
-            'error_message': "",
-            'state': source.state,
-            'state_name': source.get_state_display(),
-            'transitioning': source.is_transitioning,
-        }
-
-        results.append(source_res)
-
-    overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
-
-    experiment = get_object_or_404(Experiment, user=request.user)
-    current_run = experiment.latest_run
-    if current_run is not None:
-        run_number = current_run.run_number
-        start_time = current_run.start_datetime.strftime('%b %d %Y, %H:%M:%S')
-        duration_str = current_run.duration_string
-    else:
-        run_number = None
-        start_time = None
-        duration_str = None
-
-    output = {
-        'overall_state': overall_state,
-        'overall_state_name': overall_state_name,
-        'individual_results': results,
-        'run_number': run_number,
-        'start_time': start_time,
-        'run_duration': duration_str,
-    }
     return JsonResponse(output)
 
 
@@ -232,10 +239,7 @@ def source_change_state(request):
         target_state = int(request.POST['target_state'])
     except KeyError:
         logger.error('Must provide data source pk and target state')
-        resp = _make_status_response(success=False,
-                                     error_message="Must provide data source pk and target state")
-        resp.status_code = 400
-        return resp
+        return HttpResponseBadRequest("Must provide data source pk and target state")
 
     source = get_object_or_404(DataSource, pk=pk)
 
@@ -245,18 +249,15 @@ def source_change_state(request):
 
     # Request the transition
     try:
+        source.is_transitioning = True
+        source.save()
         datasource_change_state_task.delay(source.pk, target_state)
-    except Exception as err:
+    except Exception:
         logger.exception('Error while submitting change-state task')
-        success = False
-        error_message = str(err)
-    else:
-        success = True
-        error_message = ""
 
-    return _make_status_response(success=success, error_message=error_message,
-                                 pk=pk, state=source.state, state_name=source.get_state_display(),
-                                 transitioning=source.is_transitioning)
+    state = _get_status(request)
+
+    return JsonResponse(state)
 
 
 @login_required
@@ -285,10 +286,7 @@ def source_change_state_all(request):
         target_state = int(request.POST['target_state'])
     except (KeyError, TypeError):
         logger.exception('Invalid or missing target_state')
-        resp = _make_status_response(success=False,
-                                     error_message="Must provide target state as integer.")
-        resp.status_code = 400
-        return resp
+        return HttpResponseBadRequest('Invalid or missing target_state')
 
     # Handle "reset" case
     if target_state == DataSource.RESET:
@@ -297,11 +295,8 @@ def source_change_state_all(request):
             target_state = max(overall_state - 1, DataSource.IDLE)
         else:
             logger.error('Cannot perform reset when overall state is inconsistent')
-            resp = _make_status_response(success=False,
-                                         error_message="Cannot perform reset when overall state is inconsistent.")
-            return resp
+            return HttpResponseBadRequest('Cannot perform reset when overall state is inconsistent')
 
-    results = []
     for source in DataSource.objects.all():
         try:
             source.is_transitioning = True
@@ -309,22 +304,6 @@ def source_change_state_all(request):
             datasource_change_state_task.delay(source.pk, target_state)
         except (ECCError, ValueError) as err:
             logger.exception('Failed to submit change_state task for data source %s', source.name)
-            success = False
-            error_message = str(err)
-        else:
-            success = True
-            error_message = ""
-
-        source_result = {
-            'success': success,
-            'error_message': error_message,
-            'pk': source.pk,
-            'state': source.state,
-            'state_name': source.get_state_display(),
-            'transitioning': source.is_transitioning,
-        }
-
-        results.append(source_result)
 
     experiment = get_object_or_404(Experiment, user=request.user)
 
@@ -335,30 +314,11 @@ def source_change_state_all(request):
         experiment.start_run()
     elif is_stopping:
         experiment.stop_run()
-
-    current_run = experiment.latest_run
-    if current_run is not None:
-        run_number = current_run.run_number
-        start_datetime = current_run.start_datetime
-    else:
-        run_number = None
-        start_datetime = None
-
-    if is_stopping:
-        # Organize the graw files on the data router host
+        run_number = experiment.latest_run.run_number
         for source in DataSource.objects.all():
             organize_files_task.delay(source.data_router_ip_address, experiment.name, run_number)
 
-    overall_state, overall_state_name = _calculate_overall_state(DataSource.objects.all())
-
-    output = {
-        'success': all((s['success'] for s in results)),
-        'run_number': run_number,
-        'start_time': start_datetime,
-        'overall_state': overall_state,
-        'overall_state_name': overall_state_name,
-        'individual_results': results,
-    }
+    output = _get_status(request)
 
     return JsonResponse(output)
 
