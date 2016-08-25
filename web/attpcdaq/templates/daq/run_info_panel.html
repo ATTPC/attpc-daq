@@ -1,0 +1,43 @@
+<div class="panel panel-default" id="run-info-panel">
+    <div class="panel-heading">
+        Run Information
+    </div>
+    <table class="table">
+        <tr>
+            <th>Experiment name:</th>
+            <td>{{ experiment.name }}</td>
+        </tr>
+        <tr>
+            <th>Run number:</th>
+            <td id="run-number">{{ latest_run.run_number|default:'None' }}</td>
+        </tr>
+        <tr>
+            <th>Run title:</th>
+            <td id="run-title">
+                {{ latest_run.title }}
+                <a href="{% url 'daq/update_run_metadata' latest_run.pk %}">
+                    <span class="icon-btn fa fa-pencil" title="Edit" data-toggle="tooltip"
+                          data-placement="bottom"></span>
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <th>Start time:</th>
+            <td id="start-time">{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
+        </tr>
+        <tr>
+            <th>Current run duration:</th>
+            <td id="run-duration">{{ latest_run.duration_string|default:'No runs' }}</td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function update_run_info_panel(event, data) {
+        $("#run-number").text(data.run_number);
+        $("#start-time").text(data.start_time);
+        $("#run-duration").text(data.run_duration);
+    }
+
+    $(document).on('daq:refreshState', update_run_info_panel);
+</script>

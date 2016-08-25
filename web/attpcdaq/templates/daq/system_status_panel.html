@@ -1,0 +1,51 @@
+<div class="panel panel-status bg-color-idle" id="system-status-panel">
+    <span class="status-icon">
+        <span class="fa fa-power-off" id="system-status-icon"></span>
+    </span>
+    <span class="status-text" id="system-status-label">Idle</span>
+</div>
+
+<script>
+    function update_system_status_panel(state_name) {
+        var $panel = $("#system-status-panel");
+        var $icon = $("#system-status-icon");
+        var $label = $("#system-status-label");
+        $panel.removeClass();
+        $panel.addClass('panel panel-status');
+
+        $icon.removeClass();
+        $icon.addClass('fa');
+
+        $label.text(state_name);
+
+        if (state_name == 'Idle') {
+            $panel.addClass('bg-color-idle');
+            $icon.addClass('fa-power-off');
+        }
+        else if (state_name == 'Described') {
+            $panel.addClass('bg-color-described');
+            $icon.addClass('fa-server');
+        }
+        else if (state_name == 'Prepared') {
+            $panel.addClass('bg-color-prepared');
+            $icon.addClass('fa-link');
+        }
+        else if (state_name == 'Ready') {
+            $panel.addClass('bg-color-ready');
+            $icon.addClass('fa-check-circle');
+        }
+        else if (state_name == 'Running') {
+            $panel.addClass('bg-color-running');
+            $icon.addClass('fa-play');
+        }
+        else {
+            $panel.addClass('bg-color-error');
+            $icon.addClass('fa-warning');
+            $label.text('Error');
+        }
+    }
+
+    $(document).on('daq:refreshState', function (event, data) {
+        update_system_status_panel(data.overall_state_name);
+    });
+</script>

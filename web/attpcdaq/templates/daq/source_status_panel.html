@@ -1,0 +1,144 @@
+<div class="panel panel-default" id="source-status-panel">
+    <div class="panel-heading">
+        Data Source Status
+    </div>
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Selected Config</th>
+            <th colspan="6">Controls</th>
+        </tr>
+        {% for source in data_sources %}
+            <tr>
+                <td>{{ source.name }}</td>
+                <td id="{{ source.name }}-status-cell" data-daq-source-id="{{ source.pk }}">
+                                <span class="label label-default" data-daq-source-id="{{ source.pk }}"
+                                      id="{{ source.name }}-status-label">
+                                    {{ source.get_state_display }}
+                                </span>
+                    <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner"
+                          data-daq-source-id="{{ source.pk }}"></span>
+                </td>
+                <td>
+                    {{ source.selected_config }}
+                    <a href="{% url 'daq/choose_config' source.pk %}">
+                        <span class="icon-btn source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip"
+                              data-placement="bottom"></span>
+                    </a>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-server" title="Describe"
+                                      data-daq-state-target="{{ source.DESCRIBED }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-link" title="Prepare"
+                                      data-daq-state-target="{{ source.PREPARED }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-cog" title="Configure"
+                                      data-daq-state-target="{{ source.READY }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-play" title="Start"
+                                      data-daq-state-target="{{ source.RUNNING }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-stop" title="Stop"
+                                      data-daq-state-target="{{ source.READY }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+                <td width="35px" class="text-center">
+                                <span class="icon-btn source-ctrl-btn fa fa-repeat" title="Reset"
+                                      data-daq-state-target="{{ source.RESET }}"
+                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip"
+                                      data-placement="bottom">
+                                </span>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<script>
+    function get_label_class(state_name) {
+        if (state_name == 'Idle') {
+            return 'label-idle';
+        }
+        else if (state_name == 'Described') {
+            return 'label-described';
+        }
+        else if (state_name == 'Prepared') {
+            return 'label-prepared';
+        }
+        else if (state_name == 'Ready') {
+            return 'label-ready';
+        }
+        else if (state_name == 'Running') {
+            return 'label-running';
+        }
+        else {
+            return 'label-error';
+        }
+    }
+
+    function set_label($label, state_name) {
+        $label.text(state_name);
+
+        $label.removeClass();
+        $label.addClass('label');
+        $label.addClass(get_label_class(state_name));
+    }
+
+    function set_source_status(source_id, state_name, is_transitioning) {
+        var $label = $('[id*="status-label"][data-daq-source-id=' + source_id + ']');
+        var $spinner = $('[id*="status-spinner"][data-daq-source-id=' + source_id + ']');
+
+        set_label($label, state_name);
+
+        // Update spinner and visibility
+        if (is_transitioning) {
+            $spinner.show();
+            $label.hide();
+        }
+        else {
+            $spinner.hide();
+            $label.show();
+        }
+    }
+
+    function change_state(pk, target) {
+        return $.post("{% url 'daq/source_change_state' %}",
+                {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
+    }
+
+    $(document).on('daq:refreshState', function (event, data) {
+        $.each(data.individual_results, function(index, value) {
+            set_source_status(value.pk, value.state_name, value.transitioning);
+        });
+    });
+
+    $(document).ready(function () {
+        $(".source-ctrl-btn").click(function () {
+            var pk = $(this).data('daq-source-id');
+            var target = $(this).data('daq-state-target');
+            change_state(pk, target).success(function (data) {
+                $(document).trigger('daq:refreshState', data);
+            });
+        });
+    });
+</script>

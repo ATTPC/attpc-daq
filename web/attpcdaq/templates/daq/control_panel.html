@@ -1,0 +1,49 @@
+<div class="panel panel-default" id="system-control-panel">
+    <div class="panel-heading">
+        Controls
+    </div>
+    <div class="panel-body">
+        <div class="btn-toolbar" id="run-control-toolbar">
+            {% with aSource=data_sources.first %}
+                <button class="btn btn-block btn-describe" data-daq-state-target="{{ aSource.DESCRIBED }}"
+                        id="btn-describe-all">
+                    <span class="fa fa-server"></span> Describe all
+                </button>
+                <button class="btn btn-block btn-prepare" data-daq-state-target="{{ aSource.PREPARED }}"
+                        id="btn-prepare-all">
+                    <span class="fa fa-link"></span> Prepare all
+                </button>
+                <button class="btn btn-block btn-configure" data-daq-state-target="{{ aSource.READY }}"
+                        id="btn-configure-all">
+                    <span class="fa fa-cog"></span> Configure all
+                </button>
+                <button class="btn btn-block btn-start" data-daq-state-target="{{ aSource.RUNNING }}"
+                        id="btn-start-all">
+                    <span class="fa fa-play"></span> Start all
+                </button>
+                <button class="btn btn-block btn-stop" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all">
+                    <span class="fa fa-stop"></span> Stop all
+                </button>
+                <button class="btn btn-block btn-reset" data-daq-state-target="{{ aSource.RESET }}" id="btn-reset-all">
+                    <span class="fa fa-repeat"></span> Reset all
+                </button>
+            {% endwith %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function change_state_all(target) {
+        return $.post("{% url 'daq/source_change_state_all' %}",
+                {target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
+    }
+
+    $(document).ready(function () {
+        $("#run-control-toolbar").children("button").click(function () {
+            var target = $(this).data('daq-state-target');
+            change_state_all(target).success(function (data) {
+                $(document).trigger('daq:refreshState', data);
+            });
+        });
+    });
+</script>

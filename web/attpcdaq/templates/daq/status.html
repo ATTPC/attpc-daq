@@ -6,317 +6,29 @@
 {% block body %}
     <div class="row">
         <div class="col-md-9">
-            <div class="panel panel-default" id="run-info-panel">
-                <div class="panel-heading">
-                    Run Information
-                </div>
-                <table class="table">
-                    <tr>
-                        <th>Experiment name:</th>
-                        <td>{{ experiment.name }}</td>
-                    </tr>
-                    <tr>
-                        <th>Run number:</th>
-                        <td id="run-number">{{ latest_run.run_number|default:'None' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Run title:</th>
-                        <td id="run-title">
-                            {{ latest_run.title }}
-                            <a href="{% url 'daq/update_run_metadata' latest_run.pk %}">
-                                <span class="icon-btn fa fa-pencil" title="Edit" data-toggle="tooltip" data-placement="bottom"></span>
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Start time:</th>
-                        <td id="start-time">{{ latest_run.start_datetime|date:'M d Y, H:i:s'|default:'No runs' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Current run duration:</th>
-                        <td id="run-duration">{{ latest_run.duration_string|default:'No runs' }}</td>
-                    </tr>
-                </table>
-            </div>
-            <div class="panel panel-default" id="source-status-panel">
-                <div class="panel-heading">
-                    Data Source Status
-                </div>
-                <table class="table">
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Selected Config</th>
-                        <th colspan="6">Controls</th>
-                    </tr>
-                    {% for source in data_sources %}
-                        <tr>
-                            <td>{{ source.name }}</td>
-                            <td id="{{ source.name }}-status-cell" data-daq-source-id="{{ source.pk }}">
-                                <span class="label label-default" data-daq-source-id="{{ source.pk }}" id="{{ source.name }}-status-label">
-                                    {{ source.get_state_display }}
-                                </span>
-                                <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner" data-daq-source-id="{{ source.pk }}"></span>
-                            </td>
-                            <td>
-                                {{ source.selected_config }}
-                                <a href="{% url 'daq/choose_config' source.pk %}">
-                                    <span class="icon-btn source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip" data-placement="bottom"></span>
-                                </a>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-server" title="Describe" data-daq-state-target="{{ source.DESCRIBED }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-link" title="Prepare" data-daq-state-target="{{ source.PREPARED }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-cog" title="Configure" data-daq-state-target="{{ source.READY }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-play" title="Start" data-daq-state-target="{{ source.RUNNING }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-stop" title="Stop" data-daq-state-target="{{ source.READY }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                            <td width="35px" class="text-center">
-                                <span class="icon-btn source-ctrl-btn fa fa-repeat" title="Reset" data-daq-state-target="{{ source.RESET }}"
-                                      data-daq-source-id="{{ source.pk }}" data-toggle="tooltip" data-placement="bottom">
-                                </span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
+            {% include 'daq/run_info_panel.html' %}
+            {% include 'daq/source_status_panel.html' %}
             <div id="log-panel">
                 {% include 'logs/log_list_panel_fragment.html' %}
             </div>
         </div>
         <div class="col-md-3">
-            <div class="panel panel-status bg-color-idle" id="system-status-panel">
-                <span class="status-icon">
-                    <span class="fa fa-power-off" id="system-status-icon"></span>
-                </span>
-                <span class="status-text" id="system-status-label">
-                    Idle
-                </span>
-            </div>
-            <div class="panel panel-default" id="system-control-panel">
-                <div class="panel-heading">
-                    Controls
-                </div>
-                <div class="panel-body">
-                    <div class="btn-toolbar" id="run-control-toolbar">
-                        {% with aSource=data_sources.first %}
-                            <button class="btn btn-block btn-describe" data-daq-state-target="{{ aSource.DESCRIBED }}" id="btn-describe-all">
-                                <span class="fa fa-server"></span> Describe all
-                            </button>
-                            <button class="btn btn-block btn-prepare" data-daq-state-target="{{ aSource.PREPARED }}" id="btn-prepare-all">
-                                <span class="fa fa-link"></span> Prepare all
-                            </button>
-                            <button class="btn btn-block btn-configure" data-daq-state-target="{{ aSource.READY }}" id="btn-configure-all">
-                                <span class="fa fa-cog"></span> Configure all
-                            </button>
-                            <button class="btn btn-block btn-start" data-daq-state-target="{{ aSource.RUNNING }}" id="btn-start-all">
-                                <span class="fa fa-play"></span> Start all
-                            </button>
-                            <button class="btn btn-block btn-stop" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all">
-                                <span class="fa fa-stop"></span> Stop all
-                            </button>
-                            <button class="btn btn-block btn-reset" data-daq-state-target="{{ aSource.RESET }}" id="btn-reset-all">
-                                <span class="fa fa-repeat"></span> Reset all
-                            </button>
-                        {% endwith %}
-                    </div>
-                </div>
-            </div>
+            {% include 'daq/system_status_panel.html' %}
+            {% include 'daq/control_panel.html' %}
         </div>
     </div>
-
-
-    <div id="alerts">
-    </div>
-
-
 {% endblock %}
 
 {% block scripts %}
     <script>
-        function redraw_status($label, $spinner, state_res) {
-            // Update label
-            if (state_res.success) {
-                $label.text(state_res.state_name);
-            }
-            else {
-                $label.text('Error');
-            }
-            set_label_color($label, state_res.state, state_res.success);
-
-            // Update spinner and visibility
-            if (state_res.transitioning) {
-                $spinner.show();
-                $label.hide();
-            }
-            else {
-                $spinner.hide();
-                $label.show();
-            }
-        }
-
-        function update_status_panel(state) {
-            var $panel = $("#system-status-panel");
-            var $icon = $("#system-status-icon");
-            var $label = $("#system-status-label");
-            $panel.removeClass();
-            $panel.addClass('panel panel-status');
-
-            $icon.removeClass();
-            $icon.addClass('fa');
-            {% with aSource=data_sources.first %}
-                if (state < 0) {
-                    $panel.addClass('bg-color-error');
-                    $icon.addClass('fa-warning');
-                    $label.text('Error');
-                }
-                else if (state == {{ aSource.IDLE }}) {
-                    $panel.addClass('bg-color-idle');
-                    $icon.addClass('fa-power-off');
-                    $label.text('Idle');
-                }
-                else if (state == {{ aSource.DESCRIBED }}) {
-                    $panel.addClass('bg-color-described');
-                    $icon.addClass('fa-server');
-                    $label.text('Described');
-                }
-                else if (state == {{ aSource.PREPARED }}) {
-                    $panel.addClass('bg-color-prepared');
-                    $icon.addClass('fa-link');
-                    $label.text('Prepared');
-                }
-                else if (state == {{ aSource.READY }}) {
-                    $panel.addClass('bg-color-ready');
-                    $icon.addClass('fa-check-circle');
-                    $label.text('Ready');
-                }
-                else if (state == {{ aSource.RUNNING }}) {
-                    $panel.addClass('bg-color-running');
-                    $icon.addClass('fa-play');
-                    $label.text('Running');
-                }
-                else {
-                    $panel.addClass('bg-color-error');
-                    $icon.addClass('fa-warning');
-                    $label.text('Error');
-                }
-            {% endwith %}
-        }
-
-        function update_run_info_panel(run_number, start_time, run_duration) {
-            $("#run-number").text(run_number);
-            $("#start-time").text(start_time);
-            $("#run-duration").text(run_duration);
-        }
-
-        function set_label_color($label, state, success) {
-            $label.removeClass();
-            $label.addClass('label');
-            {% with aSource=data_sources.first %}
-                if (state < 0 || !success) {
-                    $label.addClass('label-error');
-                }
-                else if (state == {{ aSource.IDLE }}) {
-                    $label.addClass('label-idle');
-                }
-                else if (state == {{ aSource.DESCRIBED }}) {
-                    $label.addClass('label-described');
-                }
-                else if (state == {{ aSource.PREPARED }}) {
-                    $label.addClass('label-prepared');
-                }
-                else if (state == {{ aSource.READY }}) {
-                    $label.addClass('label-primary');
-                }
-                else if (state == {{ aSource.RUNNING }}) {
-                    $label.addClass('label-running');
-                }
-                else {
-                    $label.addClass('label-danger');
-                }
-            {% endwith %}
-        }
-
         function refresh_state_all() {
             return $.get("{% url 'daq/source_refresh_state_all' %}");
         }
 
-        function handle_refresh_state_all_results(data) {
-            update_status_panel(data.overall_state);
-            update_run_info_panel(data.run_number, data.start_time, data.run_duration);
-
-            $.each(data.individual_results, function (index, value) {
-                handle_state_change_result(value);
-            });
-        }
-
         function check_for_state_changes() {
-            refresh_state_all().success(handle_refresh_state_all_results);
-        }
-
-        function change_state(pk, target) {
-            return $.post("{% url 'daq/source_change_state' %}",
-                    {pk: pk, target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
-        }
-
-        function change_state_all(target) {
-            return $.post("{% url 'daq/source_change_state_all' %}",
-                    {target_state: target, csrfmiddlewaretoken: '{{ csrf_token }}'});
-        }
-
-        function add_alert(message) {
-            var alert_html = '<div class="alert alert-dismissable alert-danger fade in">Error: ' + message + '</div>';
-            var $alerts = $('#alerts');
-            if ($alerts.children('.alert').size() >= 5) {
-                $alerts.children('.alert:first-child').alert('close');
-            }
-            $alerts.append(alert_html);
-        }
-
-        function add_error_popover(pk, message) {
-            var $label = $('[id*="status-label"][data-daq-source-id=' + pk + ']');
-            $label.data('title', 'Error message');
-            $label.data('content', message);
-            $label.data('toggle', 'popover');
-            $label.data('trigger', 'hover');
-            $label.popover();
-        }
-
-        function remove_error_popover(pk) {
-            $('[id*="status-label"][data-daq-source-id=' + pk + ']').popover('destroy');
-        }
-
-        function handle_state_change_result(data) {
-            var pk = data.pk;
-            var $label = $('[id*="status-label"][data-daq-source-id=' + pk + ']');
-            var $spinner = $('[id*="status-spinner"][data-daq-source-id=' + pk + ']');
-
-            if (!data.success) {
-                add_error_popover(pk, data.error_message);
-            }
-            else {
-                remove_error_popover(pk);
-            }
-
-            redraw_status($label, $spinner, data);
+            refresh_state_all().success(function (data) {
+                $(document).trigger('daq:refreshState', data);
+            });
         }
 
         function update_log_panel() {
@@ -324,20 +36,6 @@
         }
 
         $(document).ready(function() {
-            // Set up the control buttons
-            $(".source-ctrl-btn").click(function () {
-                var pk = $(this).data('daq-source-id');
-                var target = $(this).data('daq-state-target');
-                change_state(pk, target).success(handle_state_change_result);
-            });
-
-            $("#run-control-toolbar").children("button").click(function () {
-                var target = $(this).data('daq-state-target');
-                change_state_all(target).success(function (data) {
-                    handle_refresh_state_all_results(data);
-                });
-            });
-
             // Enable tooltips
             $('[data-toggle="tooltip"]').tooltip();
 
