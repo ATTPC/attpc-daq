@@ -11,6 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.core import serializers
 from django.db.models import Min
 
 from .models import DataSource, RunMetadata, Experiment
@@ -515,3 +516,25 @@ def download_run_metadata(request):
         writer.writerow([item.run_number, item.title, item.start_datetime, item.stop_datetime])
 
     return response
+
+
+def download_datasource_list(request):
+    response = HttpResponse(content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename="data_sources.json"'
+
+    JSONSerializer = serializers.get_serializer('json')
+    serializer = JSONSerializer()
+
+    serializer.serialize(DataSource.objects.all(), indent=4, stream=response,
+                         fields=('name',
+                                 'ecc_ip_address',
+                                 'ecc_port',
+                                 'data_router_ip_address',
+                                 'data_router_port',
+                                 'data_router_type'))
+
+    return response
+
+
+def upload_datasource_list(request):
+    
