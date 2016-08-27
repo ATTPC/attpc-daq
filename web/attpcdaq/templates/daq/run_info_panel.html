@@ -15,10 +15,12 @@
             <th>Run title:</th>
             <td id="run-title">
                 {{ latest_run.title }}
+                {% if latest_run %}
                 <a href="{% url 'daq/update_run_metadata' latest_run.pk %}">
                     <span class="icon-btn fa fa-pencil" title="Edit" data-toggle="tooltip"
                           data-placement="bottom"></span>
                 </a>
+                {% endif %}
             </td>
         </tr>
         <tr>
