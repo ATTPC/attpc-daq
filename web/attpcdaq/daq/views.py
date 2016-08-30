@@ -534,7 +534,3 @@ def download_datasource_list(request):
                                  'data_router_type'))
 
     return response
-
-
-def upload_datasource_list(request):
-    

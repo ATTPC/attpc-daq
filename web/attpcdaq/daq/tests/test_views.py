@@ -4,7 +4,6 @@ from django.core.urlresolvers import reverse
 from unittest.mock import patch
 from datetime import datetime
 from ..models import DataSource, ConfigId, Experiment, RunMetadata
-from .utilities import FakeResponseState, FakeResponseText
 from .. import views
 
 
@@ -116,34 +115,6 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
         self.client.force_login(self.user)
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.status_code, 405)
-
-    def test_response_content(self, mock_task_delay):
-        self.client.force_login(self.user)
-
-        run0 = RunMetadata.objects.create(run_number=0, experiment=self.experiment)
-
-        resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
-
-        self.assertEqual(resp.resolver_match.func, views.source_change_state_all)
-        self.assertEqual(resp.status_code, 200)
-
-        resp_json = resp.json()
-
-        self.assertTrue(resp_json['success'])
-        self.assertEqual(resp_json['run_number'], run0.run_number)
-        self.assertEqual(resp_json['start_time'], run0.start_datetime)
-        self.assertEqual(resp_json['overall_state'], DataSource.IDLE)
-        self.assertEqual(resp_json['overall_state_name'], DataSource.STATE_DICT[DataSource.IDLE])
-
-        for res in resp_json['individual_results']:
-            pk = int(res['pk'])
-            source = DataSource.objects.get(pk=pk)
-            self.assertEqual(res['state'], source.state)
-            self.assertEqual(res['state'], DataSource.IDLE)
-            self.assertEqual(res['state_name'], source.get_state_display())
-            self.assertEqual(res['transitioning'], True)
-            self.assertTrue(res['success'])
-            self.assertEqual(res['error_message'], '')
 
     def test_with_no_runs(self, mock_task_delay):
         self.client.force_login(self.user)
