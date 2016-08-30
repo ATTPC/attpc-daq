@@ -162,6 +162,11 @@ LOGGING = {
             'propagate': True,
             'level': 'WARNING',
         },
+        'django.server': {
+            'handlers': ['console'],
+            'propagate': False,
+            'level': 'INFO',
+        },
         'attpcdaq': {
             'handlers': ['console', 'database'],
             'propagate': True,
