@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from unittest.mock import patch
 from datetime import datetime
+import tempfile
+import json
 from ..models import DataSource, ConfigId, Experiment, RunMetadata
 from .. import views
 
@@ -253,3 +255,33 @@ class ListRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
 
         run_list = resp.context['runmetadata_list']
         self.assertNotIn(newrun, run_list)
+
+
+class UploadDataSourceListTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.view_name = 'daq/upload_datasource_list'
+
+    def _get_data(self):
+        download_resp = self.client.get(reverse('daq/download_datasource_list'))
+
+        data = download_resp.json()
+        for node in data:
+            if 'pk' in node:
+                del node['pk']
+
+        return data
+
+    def test_upload_when_db_list_full(self):
+        self.client.force_login(self.user)
+
+        data = self._get_data()
+
+        with tempfile.NamedTemporaryFile(mode='w+') as fp:
+            json.dump(data, fp)
+            fp.seek(0)
+            upload_resp = self.client.post(reverse(self.view_name), data={'data_source_list': fp})
+
+        data_new = self._get_data()
+        self.assertEqual(data, data_new)
+

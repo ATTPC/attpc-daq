@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^sources/choose_config/(\d+)$', views.choose_config, name='daq/choose_config'),
 
     url(r'^sources/download/$', views.download_datasource_list, name='daq/download_datasource_list'),
+    url(r'^sources/upload/$', views.upload_datasource_list, name='daq/upload_datasource_list'),
 
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
     url(r'^runs/edit/(?P<pk>\d+)$', views.UpdateRunMetadataView.as_view(), name='daq/update_run_metadata'),
