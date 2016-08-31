@@ -136,3 +136,23 @@ class WorkerInterface(object):
         self.client.exec_command('mkdir -p {}'.format(run_dir_esc))
 
         self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir_esc))
+
+    def tail_file(self, path, num_lines=50):
+        """Retrieve the tail of a text file on the remote host.
+
+        Note that this assumes the file is ASCII-encoded plain text.
+
+        Parameters
+        ----------
+        path : str
+            Path to the file.
+        num_lines : int
+            The number of lines to include.
+
+        Returns
+        -------
+        str
+            The tail of the file's contents.
+        """
+        _, stdout, _ = self.client.exec_command('tail -n {:d} {:s}'.format(num_lines, path))
+        return stdout.read().decode('ascii')

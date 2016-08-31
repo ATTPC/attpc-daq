@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Remote status - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <span>Remote status</span>
+            </span>
+        </div>
+        <table class="table table-hover">
+            <tr>
+                <th>Data source</th>
+                <th class="text-center">ECC alive</th>
+                <th class="text-center">Data router alive</th>
+                <th class="text-center">ECC log</th>
+                <th class="text-center">Data router log</th>
+            </tr>
+            {% for source in datasource_list %}
+                <tr>
+                    <td>{{ source.name }}</td>
+                    <td class="text-center">
+                        {% if source.ecc_is_alive %}
+                            <span class="fa fa-check-circle text-success"></span>
+                        {% else %}
+                            <span class="fa fa-times-circle text-danger"></span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if source.data_router_is_alive %}
+                            <span class="fa fa-check-circle text-success"></span>
+                        {% else %}
+                            <span class="fa fa-times-circle text-danger"></span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'daq/show_log' 'ecc' source.pk %}">Show</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'daq/show_log' 'data_router' source.pk %}">Show</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

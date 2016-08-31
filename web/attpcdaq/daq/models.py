@@ -264,6 +264,12 @@ class DataSource(models.Model):
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
     is_transitioning = models.BooleanField(default=False)
 
+    # Information about recording processes
+    ecc_is_alive = models.BooleanField(default=False)
+    data_router_is_alive = models.BooleanField(default=False)
+    ecc_log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
+    data_router_log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
+
     def __str__(self):
         return self.name
 

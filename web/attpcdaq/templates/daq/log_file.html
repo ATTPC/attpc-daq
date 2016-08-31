@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Log file - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <span>Log file</span>
+            </span>
+        </div>
+        <div class="panel-body">
+            <pre>{{ log_content }}</pre>
+        </div>
+    </div>
+
+{% endblock %}

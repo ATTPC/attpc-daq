@@ -19,6 +19,7 @@ from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm, RunMetadataForm, DataSourceListUploadForm
 from .tasks import datasource_change_state_task, organize_files_task
+from .workertasks import WorkerInterface
 
 from attpcdaq.logs.models import LogEntry
 
@@ -418,6 +419,51 @@ def experiment_settings(request):
     else:
         form = ExperimentSettingsForm(instance=experiment)
         return render(request, 'daq/experiment_settings.html', {'form': form})
+
+
+@login_required
+def remote_status(request):
+    """Renders a page showing the status of the remote processes (ECC server and data router)."""
+    datasource_list = DataSource.objects.all()
+    return render(request, 'daq/remote_status.html', context={'datasource_list': datasource_list})
+
+
+@login_required
+def show_log_page(request, pk, program):
+    """Retrieve and render the log file for the given program.
+
+    This can be used to display the end of the log file for the ECC server process or the
+    data router process.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request object.
+    pk : int
+        The integer primary key of the data source whose logs we want to view.
+    program : str
+        The program whose logs we want. Must be one of 'ecc' or 'data_router'.
+
+    Returns
+    -------
+    HttpResponse
+        Renders the log_file.html template with the given log file as content.
+
+    """
+    ds = get_object_or_404(DataSource, pk=pk)
+
+    if program == 'ecc':
+        path = ds.ecc_log_path
+    elif program == 'data_router':
+        path = ds.data_router_log_path
+    else:
+        logger.error('Cannot show log for program %s', program)
+        return HttpResponseBadRequest('Bad program name')
+
+    with WorkerInterface(ds.ecc_ip_address) as wint:
+        log_content = wint.tail_file(path)
+
+    return render(request, 'daq/log_file.html', context={'log_content': log_content})
 
 
 # ===============================================================================================

@@ -24,4 +24,7 @@ urlpatterns = [
     url(r'^runs/download$', views.download_run_metadata, name='daq/download_run_metadata'),
 
     url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),
+
+    url(r'^remote/$', views.remote_status, name='daq/remote_status'),
+    url(r'^remote/(?P<program>ecc|data_router)_log/(?P<pk>\d+)/$', views.show_log_page, name='daq/show_log'),
 ]
