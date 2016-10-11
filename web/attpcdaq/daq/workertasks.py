@@ -119,7 +119,7 @@ class WorkerInterface(object):
         bool
             True if there are files in the working directory, False otherwise.
         """
-        return len(self.get_graw_list()) > 0
+        return len(self.get_graw_list()) == 0
 
     def check_process_status(self):
         """Checks if the data router and ECC server are running.
