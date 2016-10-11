@@ -1,3 +1,5 @@
+{% load daq_model_tags %}
+
 <div class="panel panel-default" id="source-status-panel">
     <div class="panel-heading">
         Data Source Status
@@ -132,16 +134,16 @@
         }
     }
 
-    function set_source_daq_status(source_id, status_string) {
+    function set_source_daq_status(source_id, status, status_string) {
         var $label = $('[id*="daq-status"][data-daq-source-id=' + source_id + ']');
         $label.text(status_string);
 
         $label.removeClass();
         $label.addClass('label');
-        if (status_string == 'Running') {
+        if (status == {% daq_state 'DAQ_RUNNING' %}) {
             $label.addClass('label-running');
         }
-        else if (status_string == 'Ready') {
+        else if (status == {% daq_state 'DAQ_READY' %}) {
             $label.addClass('label-ready');
         }
         else {
@@ -159,7 +161,7 @@
     $(document).on('daq:refreshState', function (event, data) {
         $.each(data.individual_results, function(index, value) {
             set_source_status(value.pk, value.state_name, value.transitioning);
-            set_source_daq_status(value.pk, value.daq_status);
+            set_source_daq_status(value.pk, value.daq_state, value.daq_state_string);
         });
     });
 

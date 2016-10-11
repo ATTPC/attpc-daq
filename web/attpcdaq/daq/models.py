@@ -265,30 +265,38 @@ class DataSource(models.Model):
     is_transitioning = models.BooleanField(default=False)
 
     # Information about recording processes
-    ecc_is_alive = models.BooleanField(default=False)
-    data_router_is_alive = models.BooleanField(default=False)
     ecc_log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
     data_router_log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
-    staging_directory_is_clean = models.BooleanField(default=True)
+
+    # DAQ state machine
+    DAQ_OFF = 0
+    DAQ_ECC_ONLY = 1
+    DAQ_DATA_ROUTER_ONLY = 2
+    DAQ_READY = 3
+    DAQ_RUNNING = 4
+    DAQ_CLEAN_UP = 5
+    DAQ_STATE_CHOICES = (
+        (DAQ_OFF, 'Both dead'),
+        (DAQ_ECC_ONLY, 'Router dead'),
+        (DAQ_DATA_ROUTER_ONLY, 'ECC dead'),
+        (DAQ_READY, 'Ready'),
+        (DAQ_RUNNING, 'Running'),
+        (DAQ_CLEAN_UP, 'Cleaning up'),
+    )
+    daq_state = models.IntegerField(default=DAQ_OFF, choices=DAQ_STATE_CHOICES)
 
     @property
-    def daq_status_string(self):
-        if not self.staging_directory_is_clean:
-            if self.state == self.RUNNING:
-                return 'Running'
-            else:
-                return 'Dirty'
-        else:
-            if self.ecc_is_alive:
-                if self.data_router_is_alive:
-                    return 'Ready'
-                else:
-                    return 'Router dead'
-            else:
-                if self.data_router_is_alive:
-                    return 'ECC dead'
-                else:
-                    return 'Both dead'
+    def data_router_is_alive(self):
+        return self.daq_state not in (self.DAQ_OFF, self.DAQ_ECC_ONLY)
+
+    @property
+    def ecc_is_alive(self):
+        return self.daq_state not in (self.DAQ_OFF, self.DAQ_DATA_ROUTER_ONLY)
+
+    @property
+    def staging_directory_is_clean(self):
+        # If the system is running, the directory is presumed to be dirty
+        return self.daq_state not in (self.DAQ_RUNNING, self.DAQ_CLEAN_UP)
 
     def __str__(self):
         return self.name
