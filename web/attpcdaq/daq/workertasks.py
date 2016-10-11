@@ -7,7 +7,7 @@ for example, organize files at the end of a run.
 
 from paramiko.client import SSHClient
 from paramiko.config import SSHConfig
-from paramiko import WarningPolicy
+from paramiko import AutoAddPolicy
 import os
 import re
 import shlex
@@ -41,7 +41,7 @@ class WorkerInterface(object):
         self.client = SSHClient()
 
         self.client.load_system_host_keys()
-        self.client.set_missing_host_key_policy(WarningPolicy())
+        self.client.set_missing_host_key_policy(AutoAddPolicy())
 
         if config_path is None:
             config_path = os.path.join(os.path.expanduser('~'), '.ssh', 'config')
