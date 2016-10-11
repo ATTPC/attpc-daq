@@ -27,6 +27,8 @@ services:
       - daq
     env_file:
       - ./production.env
+    volumes:
+      - daqdb:/var/lib/postgresql/data
 
   # This container provides the communication service for the Celery task queue
   rabbitmq:
@@ -108,4 +110,6 @@ volumes:
   static:
     driver: local
   doc:
+    driver: local
+  daqdb:
     driver: local
