@@ -28,7 +28,7 @@ def datasource_refresh_state_task(datasource_pk):
         logger.exception('Failed to refresh state of source with pk %d', datasource_pk)
 
 
-@shared_task
+@shared_task(soft_time_limit=8, time_limit=10)
 def datasource_refresh_all_task():
     """Fetch the state of all data sources from their respective ECC servers.
 
@@ -39,6 +39,8 @@ def datasource_refresh_all_task():
         pk_list = [ds.pk for ds in DataSource.objects.all()]
         gp = group([datasource_refresh_state_task.s(i) for i in pk_list])
         gp()
+    except SoftTimeLimitExceeded:
+        logger.error('Time limit exceeded while refreshing state of all data sources')
     except Exception:
         logger.exception('Failed to refresh state of all data sources')
 
