@@ -273,6 +273,31 @@ class DataSourceModelTestCase(TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Data source has no config associated with it.'):
             self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
 
+    def test_set_daq_state(self):
+        perms = {
+            # (ecc, router, dir_clean, running): result
+            (False, False, False, False): DataSource.DAQ_OFF,
+            (False, False, False, True): DataSource.DAQ_OFF,
+            (False, False, True, False): DataSource.DAQ_OFF,
+            (False, False, True, True): DataSource.DAQ_OFF,
+            (False, True, False, False): DataSource.DAQ_DATA_ROUTER_ONLY,
+            (False, True, False, True): DataSource.DAQ_DATA_ROUTER_ONLY,
+            (False, True, True, False): DataSource.DAQ_DATA_ROUTER_ONLY,
+            (False, True, True, True): DataSource.DAQ_DATA_ROUTER_ONLY,
+            (True, False, False, False): DataSource.DAQ_ECC_ONLY,
+            (True, False, False, True): DataSource.DAQ_ECC_ONLY,
+            (True, False, True, False): DataSource.DAQ_ECC_ONLY,
+            (True, False, True, True): DataSource.DAQ_ECC_ONLY,
+            (True, True, False, False): DataSource.DAQ_CLEAN_UP,
+            (True, True, False, True): DataSource.DAQ_RUNNING,
+            (True, True, True, False): DataSource.DAQ_READY,
+            (True, True, True, True): DataSource.DAQ_RUNNING,
+        }
+
+        for (ecc, router, dir_clean, running), expected_state in perms.items():
+            self.datasource.state = DataSource.RUNNING if running else DataSource.READY
+            self.datasource.set_daq_state(ecc_alive=ecc, data_router_alive=router, staging_dir_clean=dir_clean)
+            self.assertEqual(self.datasource.daq_state, expected_state)
 
 class ExperimentModelTestCase(TestCase):
     def setUp(self):

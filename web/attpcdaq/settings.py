@@ -194,5 +194,9 @@ CELERYBEAT_SCHEDULE = {
     'update-state-every-5-sec': {
         'task': 'attpcdaq.daq.tasks.datasource_refresh_all_task',
         'schedule': timedelta(seconds=5),
+    },
+    'update-daq-remote-state-every-15-sec': {
+        'task': 'attpcdaq.daq.tasks.check_remote_state_all_task',
+        'schedule': timedelta(seconds=15),
     }
 }

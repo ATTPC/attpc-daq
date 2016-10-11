@@ -223,6 +223,9 @@ class DataSource(models.Model):
         A dictionary for retrieving display names for the above states.
     ICE, ZBUF, TCP, FDT : str
         These are the choices for the data router type.
+    daq_state : Models.IntegerField
+        The state of the remote DAQ processes. This can indicate if the ECC server and data router are
+        alive, and whether the data router's working directory is clean.
 
     """
     name = models.CharField(max_length=50, unique=True)
@@ -284,6 +287,45 @@ class DataSource(models.Model):
         (DAQ_CLEAN_UP, 'Cleaning up'),
     )
     daq_state = models.IntegerField(default=DAQ_OFF, choices=DAQ_STATE_CHOICES)
+
+    def set_daq_state(self, ecc_alive=True, data_router_alive=True, staging_dir_clean=True):
+        """Set the state of the DAQ status state machine.
+
+        This updates the field `self.daq_state`.
+
+        Parameters
+        ----------
+        ecc_alive : bool
+            Whether the ECC server is alive.
+        data_router_alive : bool
+            Whether the data router is alive.
+        staging_dir_clean : bool
+            Whether the data router working directory contains any GRAW files.
+
+        """
+        if ecc_alive:
+            if data_router_alive:
+                if self.state == DataSource.RUNNING:
+                    # Both processes are running, and a run is ongoing: DAQ_RUNNING
+                    self.daq_state = DataSource.DAQ_RUNNING
+                else:
+                    if staging_dir_clean:
+                        # No ongoing run, but the processes are ok and the dir is clean: DAQ_READY
+                        self.daq_state = DataSource.DAQ_READY
+                    else:
+                        # No ongoing run, processes ok, but dir is not clean: DAQ_CLEAN_UP
+                        self.daq_state = DataSource.DAQ_CLEAN_UP
+            else:
+                # ECC is ok, but data router is not: DAQ_ECC_ONLY
+                self.daq_state = DataSource.DAQ_ECC_ONLY
+        else:
+            if data_router_alive:
+                # Data router is ok, but ECC is not: DAQ_DATA_ROUTER_ONLY
+                self.daq_state = DataSource.DAQ_DATA_ROUTER_ONLY
+            else:
+                # Neither data router nor ECC is ok: DAQ_OFF
+                self.daq_state = DataSource.DAQ_OFF
+
 
     @property
     def data_router_is_alive(self):
