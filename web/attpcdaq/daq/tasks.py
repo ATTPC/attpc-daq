@@ -127,13 +127,25 @@ def check_remote_state_all_task():
 
 
 @shared_task(soft_time_limit=30, time_limit=40)
-def organize_files_task(address, experiment_name, run_number):
+def organize_files_all_task(experiment_name, run_number):
+    try:
+        pk_list = [ds.pk for ds in DataSource.objects.all()]
+        gp = group([organize_files_task.s(i, experiment_name, run_number) for i in pk_list])
+        gp()
+    except SoftTimeLimitExceeded:
+        logger.error('Time limit exceeded while rearranging remote files on all nodes')
+    except Exception:
+        logger.exception('Failed to reorganize files on all nodes')
+
+
+@shared_task(soft_time_limit=30, time_limit=40)
+def organize_files_task(datasource_pk, experiment_name, run_number):
     """Connects to the DAQ worker nodes to organize files at the end of a run.
 
     Parameters
     ----------
-    address : str
-        The IP address of the worker
+    datasource_pk : int
+        Integer primary key of the data source
     experiment_name : str
         The name of the current experiment
     run_number : int
@@ -141,9 +153,14 @@ def organize_files_task(address, experiment_name, run_number):
 
     """
     try:
-        with WorkerInterface(address) as wint:
+        ds = DataSource.objects.get(pk=datasource_pk)
+        with WorkerInterface(ds.data_router_ip_address) as wint:
             wint.organize_files(experiment_name, run_number)
+
+        ds.set_daq_state(ecc_alive=ds.ecc_is_alive,
+                         data_router_alive=ds.data_router_is_alive,
+                         staging_dir_clean=True)
     except SoftTimeLimitExceeded:
-        logger.error('Time limit exceeded while organizing files at %s', address)
+        logger.error('Time limit exceeded while organizing files at for data source %s', ds.name)
     except Exception:
         logger.exception('Organize files task failed')

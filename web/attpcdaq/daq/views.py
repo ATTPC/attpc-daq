@@ -18,7 +18,7 @@ from django.db import transaction
 from .models import DataSource, RunMetadata, Experiment
 from .models import ECCError
 from .forms import DataSourceForm, ExperimentSettingsForm, ConfigSelectionForm, RunMetadataForm, DataSourceListUploadForm
-from .tasks import datasource_change_state_task, organize_files_task
+from .tasks import datasource_change_state_task, organize_files_all_task
 from .workertasks import WorkerInterface
 
 from attpcdaq.logs.models import LogEntry
@@ -327,8 +327,7 @@ def source_change_state_all(request):
     elif is_stopping:
         experiment.stop_run()
         run_number = experiment.latest_run.run_number
-        for source in DataSource.objects.all():
-            organize_files_task.delay(source.data_router_ip_address, experiment.name, run_number)
+        organize_files_all_task.delay(experiment.name, run_number)
 
     output = _get_status(request)
 
