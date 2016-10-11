@@ -86,6 +86,37 @@ class WorkerInterfaceTestCase(TestCase):
             self.assertRaisesRegex(RuntimeError, r"lsof found .* instead of dataRouter",
                                    wint.find_data_router)
 
+    def _check_process_impl(self, client, ecc_server_running=True, data_router_running=True):
+        if ecc_server_running:
+            ecc_line = ' 1234 ??         0:01.23 /path/to/getEccSoapServer --args something\n'
+        else:
+            ecc_line = ''
+
+        if data_router_running:
+            data_router_line = ' 1235 ??         0:03.45 /path/to/dataRouter --args 123.345.567.789\n'
+        else:
+            data_router_line = ''
+
+        client.exec_command.return_value = ([], (ecc_line, data_router_line), [])
+
+        with WorkerInterface(self.hostname) as wint:
+            ecc_server_running_res, data_router_running_res = wint.check_process_status()
+
+        self.assertIs(ecc_server_running_res, ecc_server_running)
+        self.assertIs(data_router_running_res, data_router_running)
+
+    def test_check_process_status_both(self, mock_client, mock_config):
+        self._check_process_impl(mock_client.return_value, ecc_server_running=True, data_router_running=True)
+
+    def test_check_process_status_ecc_only(self, mock_client, mock_config):
+        self._check_process_impl(mock_client.return_value, ecc_server_running=True, data_router_running=False)
+
+    def test_check_process_status_data_router_only(self, mock_client, mock_config):
+        self._check_process_impl(mock_client.return_value, ecc_server_running=False, data_router_running=True)
+
+    def test_check_process_status_neither(self, mock_client, mock_config):
+        self._check_process_impl(mock_client.return_value, ecc_server_running=False, data_router_running=False)
+
     @patch('attpcdaq.daq.workertasks.WorkerInterface.get_graw_list')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
     def test_organize_files(self, mock_find_data_router, mock_get_graw_list, mock_client, mock_config):

@@ -111,6 +111,38 @@ class WorkerInterface(object):
 
         return graws
 
+    def working_dir_is_clean(self):
+        """Check if there are GRAW files in the data router's working directory.
+
+        Returns
+        -------
+        bool
+            True if there are files in the working directory, False otherwise.
+        """
+        return len(self.get_graw_list()) > 0
+
+    def check_process_status(self):
+        """Checks if the data router and ECC server are running.
+
+        Returns
+        -------
+        ecc_server_running, data_router_running : bool
+            Each is True if the process is running on the remote node, or False otherwise.
+
+        """
+
+        _, stdout, _ = self.client.exec_command('ps -e')
+
+        ecc_server_running = False
+        data_router_running = False
+        for line in stdout:
+            if re.search(r'getEccSoapServer', line):
+                ecc_server_running = True
+            elif re.search(r'dataRouter', line):
+                data_router_running = True
+
+        return ecc_server_running, data_router_running
+
     def organize_files(self, experiment_name, run_number):
         """Organize the GRAW files at the end of a run.
 
