@@ -5,7 +5,8 @@
     <table class="table">
         <tr>
             <th>Name</th>
-            <th>Status</th>
+            <th>CoBo Status</th>
+            <th>DAQ Status</th>
             <th>Selected Config</th>
             <th colspan="6">Controls</th>
         </tr>
@@ -19,6 +20,12 @@
                                 </span>
                     <span class="fa fa-pulse fa-spinner" id="{{ source.name }}-status-spinner"
                           data-daq-source-id="{{ source.pk }}"></span>
+                </td>
+                <td data-daq-source-id="{{ source.pk }}">
+                    <span class="label label-default" id="{{ source.name }}-daq-status"
+                          data-daq-source-id="{{ source.pk }}">
+                        {{ source.daq_status_string }}
+                    </span>
                 </td>
                 <td>
                     {{ source.selected_config }}
@@ -125,6 +132,23 @@
         }
     }
 
+    function set_source_daq_status(source_id, status_string) {
+        var $label = $('[id*="daq-status"][data-daq-source-id=' + source_id + ']');
+        $label.text(status_string);
+
+        $label.removeClass();
+        $label.addClass('label');
+        if (status_string == 'Running') {
+            $label.addClass('label-running');
+        }
+        else if (status_string == 'Ready') {
+            $label.addClass('label-ready');
+        }
+        else {
+            $label.addClass('label-error');
+        }
+    }
+
     // Tells a single source to perform a transition
     function change_state(pk, target) {
         return $.post("{% url 'daq/source_change_state' %}",
@@ -135,6 +159,7 @@
     $(document).on('daq:refreshState', function (event, data) {
         $.each(data.individual_results, function(index, value) {
             set_source_status(value.pk, value.state_name, value.transitioning);
+            set_source_daq_status(value.pk, value.daq_status);
         });
     });
 

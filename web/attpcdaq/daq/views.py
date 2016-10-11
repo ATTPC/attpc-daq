@@ -118,6 +118,7 @@ def _get_status(request):
             'state': source.state,
             'state_name': source.get_state_display(),
             'transitioning': source.is_transitioning,
+            'daq_status': source.daq_status_string,
         }
 
         results.append(source_res)

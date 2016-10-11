@@ -269,6 +269,26 @@ class DataSource(models.Model):
     data_router_is_alive = models.BooleanField(default=False)
     ecc_log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
     data_router_log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
+    staging_directory_is_clean = models.BooleanField(default=True)
+
+    @property
+    def daq_status_string(self):
+        if not self.staging_directory_is_clean:
+            if self.state == self.RUNNING:
+                return 'Running'
+            else:
+                return 'Dirty'
+        else:
+            if self.ecc_is_alive:
+                if self.data_router_is_alive:
+                    return 'Ready'
+                else:
+                    return 'Router dead'
+            else:
+                if self.data_router_is_alive:
+                    return 'ECC dead'
+                else:
+                    return 'Both dead'
 
     def __str__(self):
         return self.name
