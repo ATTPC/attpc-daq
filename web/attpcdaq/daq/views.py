@@ -302,6 +302,13 @@ def source_change_state_all(request):
             logger.error('Cannot perform reset when overall state is inconsistent')
             return HttpResponseBadRequest('Cannot perform reset when overall state is inconsistent')
 
+    # Handle "start" case
+    if target_state == DataSource.RUNNING:
+        daq_not_ready = DataSource.objects.exclude(daq_state=DataSource.DAQ_READY).exists()
+        if daq_not_ready:
+            logger.error('Remote DAQ processes are not ready')
+            return HttpResponseBadRequest('Remote DAQ processare are not ready')
+
     for source in DataSource.objects.all():
         try:
             source.is_transitioning = True
