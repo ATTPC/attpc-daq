@@ -8,6 +8,7 @@ Contents
    :maxdepth: 2
 
    overview.rst
+   operations.rst
    code_docs.rst
 
 
