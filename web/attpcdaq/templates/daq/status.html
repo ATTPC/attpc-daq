@@ -44,6 +44,7 @@
 
             // Check periodically for changes in state
             check_for_state_changes();
+            update_log_panel();
             setInterval(check_for_state_changes, 5000);
             setInterval(update_log_panel, 5000);
         });
