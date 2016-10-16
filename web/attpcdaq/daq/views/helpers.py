@@ -7,52 +7,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def make_status_response(success=True, pk=None, error_message=None, state=None,
-                         state_name=None, transitioning=False):
-    """A helper function to generate a JSON response for the main status page.
-
-    Parameters
-    ----------
-    success : bool, optional
-        Did the request succeed?
-    pk : int, optional
-        The primary key of the object associated with the request.
-    error_message : str, optional
-        An error message to display, if applicable.
-    state : int, optional
-        The integer identifying the current state of the object with primary key ``pk``, if applicable.
-    state_name : str, optional
-        The display name of the state.
-    transitioning : bool, optional
-        Is the system undergoing a transition?
-
-    Returns
-    -------
-    JsonResponse
-        Contains a JSON array of the above keys.
-
-    """
-    output = {
-        'success': success,
-        'pk': pk,
-        'error_message': error_message,
-        'state': state,
-        'state_name': state_name,
-        'transitioning': transitioning,
-    }
-    return JsonResponse(output)
-
-
-def make_runcontrol_response(success, run_number=None, start_time=None, error_message=None):
-    output = {
-        'success': success,
-        'run_number': run_number,
-        'start_time': start_time,
-        'error_message': error_message,
-    }
-    return JsonResponse(output)
-
-
 def calculate_overall_state(source_list):
     """Find the overall state of the system.
 
