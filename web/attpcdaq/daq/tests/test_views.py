@@ -107,7 +107,7 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
         self.view_name = 'daq/source_change_state'
 
 
-@patch('attpcdaq.daq.views.datasource_change_state_task.delay')
+@patch('attpcdaq.daq.views.api.datasource_change_state_task.delay')
 class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
