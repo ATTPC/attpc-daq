@@ -1,3 +1,10 @@
+"""View helper functions
+
+The functions in this module are helpers to get information for the main views. These
+could be shared between multiple views.
+
+"""
+
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 

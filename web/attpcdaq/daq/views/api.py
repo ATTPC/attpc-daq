@@ -1,3 +1,11 @@
+"""API views
+
+This module contains views to manipulate database objects. It also contains
+the views that respond to AJAX requests from the front end. This includes the
+views that control refreshing the state of the system and changing the state.
+
+"""
+
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseNotAllowed, HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -14,14 +22,6 @@ from .helpers import get_status, calculate_overall_state
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-# ===============================================================================================
-# CRUD Views:
-#
-# These views are used to create, update, list, and delete the objects contained in the database.
-# This is used to render the pages for adding ECC servers, for example.
-# ===============================================================================================
 
 
 @login_required

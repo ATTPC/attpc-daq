@@ -1,3 +1,11 @@
+"""IO Views
+
+The views in this module process data from the DB to create output files
+for downloading. There are also functions to process an uploaded file and
+create entries in the database from it.
+
+"""
+
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required

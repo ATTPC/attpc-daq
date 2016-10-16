@@ -1,3 +1,9 @@
+"""Main page views
+
+The views in this module render the pages of the web app.
+
+"""
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
