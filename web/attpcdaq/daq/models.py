@@ -110,7 +110,7 @@ class ConfigId(models.Model):
     prepare = models.CharField(max_length=120)
     configure = models.CharField(max_length=120)
 
-    data_source = models.ForeignKey('DataSource', on_delete=models.CASCADE, null=True, blank=True)
+    ecc_server = models.ForeignKey('ECCServer', on_delete=models.CASCADE, null=True, blank=True)
 
     last_fetched = models.DateTimeField(default=datetime.now)
 
@@ -182,74 +182,15 @@ class ConfigId(models.Model):
         return new_config
 
 
-class DataSource(models.Model):
-    """A source of data, probably a CoBo.
-
-    This is the main object in the program. It represents a data source (CoBo) by knowing information about its
-    controlling ECC server and corresponding data router and configuration files. It also maintains a record
-    of the current state of the ECC state machine, which tells us what the CoBo is doing.
-
-    Attributes
-    ----------
-    name : models.CharField
-        A unique name for the data source. For a CoBo, this *must* correspond to an entry in the appropriate
-        config file. For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
-        "CoBo[3]". If this is not correct, the ECC server will return an error during the Configure transition.
-    ecc_ip_address : models.GenericIPAddressField
-        The IP address of the ECC server.
-    ecc_port : models.PositiveIntegerField
-        The TCP port that the ECC server listens on.
-    data_router_ip_address : models.GenericIPAddressField
-        The IP address of the data router. This is where the data will be recorded.
-    data_router_port : models.PositiveIntegerField
-        The TCP port that the dataRouter process listens on.
-    data_router_type : models.CharField
-        The type of data stream expected by the data router. This is shown in the output of the data router
-        when it first starts, although it is also configurable with a command-line option. The type
-        specified must be one of the choices defined in this class.
-    selected_config : models.ForeignKey
-        The configuration file set this source will use.
-    state : models.IntegerField
-        The state of the data source, as known by the ECC server. This must be one of the choices defined by
-        the constants attached to this class.
-    is_transitioning : models.BooleanField
-        Whether the data source is currently changing state.
-    IDLE, DESCRIBED, PREPARED, READY, RUNNING : int
-        Constants representing valid states.
-    RESET : int
-        A constant to be used in the reset transition. This is not a real state machine state, but is used
-        to compute which state should be requested.
-    STATE_DICT : dict
-        A dictionary for retrieving display names for the above states.
-    ICE, ZBUF, TCP, FDT : str
-        These are the choices for the data router type.
-    daq_state : Models.IntegerField
-        The state of the remote DAQ processes. This can indicate if the ECC server and data router are
-        alive, and whether the data router's working directory is clean.
-
-    """
+class ECCServer(models.Model):
     name = models.CharField(max_length=50, unique=True)
-
-    # ECC server information
-    ecc_ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
-    ecc_port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
-
-    # Data router information
-    data_router_ip_address = models.GenericIPAddressField(verbose_name='Data router IP address')
-    data_router_port = models.PositiveIntegerField(verbose_name='Data router port', default=46005)
-
-    ICE = 'ICE'
-    ZBUF = 'ZBUF'
-    TCP = 'TCP'
-    FDT = 'FDT'
-    DATA_ROUTER_TYPES = ((ICE, 'ICE'),
-                         (TCP, 'TCP'),
-                         (FDT, 'FDT'),
-                         (ZBUF, 'ZBUF'))
-    data_router_type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
+    ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
+    port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
 
     # Config file information
     selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
+
+    log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
 
     # Status information
     IDLE = 1
@@ -267,134 +208,13 @@ class DataSource(models.Model):
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
     is_transitioning = models.BooleanField(default=False)
 
-    # Information about recording processes
-    ecc_log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
-    data_router_log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
-
-    # DAQ state machine
-    DAQ_OFF = 0
-    DAQ_ECC_ONLY = 1
-    DAQ_DATA_ROUTER_ONLY = 2
-    DAQ_READY = 3
-    DAQ_RUNNING = 4
-    DAQ_CLEAN_UP = 5
-    DAQ_STATE_CHOICES = (
-        (DAQ_OFF, 'Both dead'),
-        (DAQ_ECC_ONLY, 'Router dead'),
-        (DAQ_DATA_ROUTER_ONLY, 'ECC dead'),
-        (DAQ_READY, 'Ready'),
-        (DAQ_RUNNING, 'Running'),
-        (DAQ_CLEAN_UP, 'Cleaning up'),
-    )
-    daq_state = models.IntegerField(default=DAQ_OFF, choices=DAQ_STATE_CHOICES)
-
-    def set_daq_state(self, ecc_alive=True, data_router_alive=True, staging_dir_clean=True):
-        """Set the state of the DAQ status state machine.
-
-        This updates the field `self.daq_state`.
-
-        Parameters
-        ----------
-        ecc_alive : bool
-            Whether the ECC server is alive.
-        data_router_alive : bool
-            Whether the data router is alive.
-        staging_dir_clean : bool
-            Whether the data router working directory contains any GRAW files.
-
-        """
-        if ecc_alive:
-            if data_router_alive:
-                if self.state == DataSource.RUNNING:
-                    # Both processes are running, and a run is ongoing: DAQ_RUNNING
-                    self.daq_state = DataSource.DAQ_RUNNING
-                else:
-                    if staging_dir_clean:
-                        # No ongoing run, but the processes are ok and the dir is clean: DAQ_READY
-                        self.daq_state = DataSource.DAQ_READY
-                    else:
-                        # No ongoing run, processes ok, but dir is not clean: DAQ_CLEAN_UP
-                        self.daq_state = DataSource.DAQ_CLEAN_UP
-            else:
-                # ECC is ok, but data router is not: DAQ_ECC_ONLY
-                self.daq_state = DataSource.DAQ_ECC_ONLY
-        else:
-            if data_router_alive:
-                # Data router is ok, but ECC is not: DAQ_DATA_ROUTER_ONLY
-                self.daq_state = DataSource.DAQ_DATA_ROUTER_ONLY
-            else:
-                # Neither data router nor ECC is ok: DAQ_OFF
-                self.daq_state = DataSource.DAQ_OFF
-
-
-    @property
-    def data_router_is_alive(self):
-        return self.daq_state not in (self.DAQ_OFF, self.DAQ_ECC_ONLY)
-
-    @property
-    def ecc_is_alive(self):
-        return self.daq_state not in (self.DAQ_OFF, self.DAQ_DATA_ROUTER_ONLY)
-
-    @property
-    def staging_directory_is_clean(self):
-        # If the system is running, the directory is presumed to be dirty
-        return self.daq_state not in (self.DAQ_RUNNING, self.DAQ_CLEAN_UP)
-
-    def __str__(self):
-        return self.name
-
-    @property
-    def data_router_name(self):
-        """The name of the data router.
-
-        This is sent to the CoBo during configuration, but is generally not useful otherwise.
-
-        Returns
-        -------
-        str
-            A name for the data router. This is currently set to the data source name suffixed with "_dataRouter".
-
-        """
-        return self.name + "_dataRouter"
-
-    def get_data_link_xml(self):
-        """Get an XML representation of the data link for this source.
-
-        This is used by the ECC server to establish a connection between the CoBo and the
-        data router. The format is as follows:
-
-        .. code-block:: xml
-
-            <DataLinkSet>
-                <DataLink>
-                    <DataSender id="[DataSource.name]">
-                    <DataRouter name="[DataSource.data_router_name]"
-                                ipAddress="[DataSource.data_router_ip_address]"
-                                port="[DataSource.data_router_port]"
-                                type="[DataSource.data_router_type]">
-                </DataLink>
-            </DataLinkSet>
-
-        Returns
-        -------
-        str
-            The XML data.
-
-        """
-        dl_set = ET.Element('DataLinkSet')
-        dl = ET.SubElement(dl_set, 'DataLink')
-        ET.SubElement(dl, 'DataSender', attrib={'id': self.name})
-        ET.SubElement(dl, 'DataRouter', attrib={'name': self.data_router_name,
-                                                'ipAddress': self.data_router_ip_address,
-                                                'port': str(self.data_router_port),
-                                                'type': self.data_router_type})
-        return ET.tostring(dl_set, encoding='unicode')
+    is_online = models.BooleanField(default=False)
 
     @property
     def ecc_url(self):
         """Get the URL of the ECC server as a string.
         """
-        return 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
+        return 'http://{}:{}/'.format(self.ip_address, self.port)
 
     def _get_soap_client(self):
         """Creates a SOAP client for communicating with the ECC server.
@@ -419,7 +239,7 @@ class DataSource(models.Model):
 
         Parameters
         ----------
-        client : zeep.client.Client
+        client : EccClient
             The SOAP client. One of its methods will be returned.
         current_state : int
             The current state of the ECC state machine.
@@ -467,6 +287,37 @@ class DataSource(models.Model):
 
         return trans
 
+    def get_data_link_xml_from_clients(self):
+        """Get an XML representation of the data link for this source.
+
+        This is used by the ECC server to establish a connection between the CoBo and the
+        data router. The format is as follows:
+
+        .. code-block:: xml
+
+            <DataLinkSet>
+                <DataLink>
+                    <DataSender id="[DataSource.name]">
+                    <DataRouter name="[DataSource.data_router_name]"
+                                ipAddress="[DataSource.data_router_ip_address]"
+                                port="[DataSource.data_router_port]"
+                                type="[DataSource.data_router_type]">
+                </DataLink>
+            </DataLinkSet>
+
+        Returns
+        -------
+        str
+            The XML data.
+
+        """
+        datalink_set = ET.Element('DataLinkSet')
+        for source in self.datasource_set.all():
+            source_node = source.get_data_link_xml()
+            datalink_set.append(source_node)
+
+        return ET.tostring(datalink_set, encoding='unicode')
+
     def refresh_configs(self):
         """Fetches the list of configs from the ECC server and updates the database.
 
@@ -487,7 +338,7 @@ class DataSource(models.Model):
             ConfigId.objects.update_or_create(describe=config.describe,
                                               prepare=config.prepare,
                                               configure=config.configure,
-                                              data_source=self,
+                                              ecc_server=self,
                                               defaults={'last_fetched': fetch_time})
 
         self.configid_set.filter(last_fetched__lt=fetch_time).delete()
@@ -541,7 +392,7 @@ class DataSource(models.Model):
         except AttributeError as err:
             raise RuntimeError("Data source has no config associated with it.") from err
 
-        datalink_xml = self.get_data_link_xml()
+        datalink_xml = self.get_data_link_xml_from_clients()
 
         client = self._get_soap_client()
 
@@ -556,6 +407,113 @@ class DataSource(models.Model):
             raise ECCError(res.ErrorMessage)
         else:
             self.is_transitioning = True
+
+
+class DataRouter(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    ip_address = models.GenericIPAddressField(verbose_name='Data router IP address')
+    port = models.PositiveIntegerField(verbose_name='Data router port', default=46005)
+
+    ICE = 'ICE'
+    ZBUF = 'ZBUF'
+    TCP = 'TCP'
+    FDT = 'FDT'
+    DATA_ROUTER_TYPES = ((ICE, 'ICE'),
+                         (TCP, 'TCP'),
+                         (FDT, 'FDT'),
+                         (ZBUF, 'ZBUF'))
+    connection_type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
+
+    log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
+
+    is_online = models.BooleanField(default=False)
+    staging_directory_is_clean = models.BooleanField(default=True)
+
+
+class DataSource(models.Model):
+    """A source of data, probably a CoBo.
+
+    This is the main object in the program. It represents a data source (CoBo) by knowing information about its
+    controlling ECC server and corresponding data router and configuration files. It also maintains a record
+    of the current state of the ECC state machine, which tells us what the CoBo is doing.
+
+    Attributes
+    ----------
+    name : models.CharField
+        A unique name for the data source. For a CoBo, this *must* correspond to an entry in the appropriate
+        config file. For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
+        "CoBo[3]". If this is not correct, the ECC server will return an error during the Configure transition.
+    ecc_ip_address : models.GenericIPAddressField
+        The IP address of the ECC server.
+    ecc_port : models.PositiveIntegerField
+        The TCP port that the ECC server listens on.
+    data_router_ip_address : models.GenericIPAddressField
+        The IP address of the data router. This is where the data will be recorded.
+    data_router_port : models.PositiveIntegerField
+        The TCP port that the dataRouter process listens on.
+    data_router_type : models.CharField
+        The type of data stream expected by the data router. This is shown in the output of the data router
+        when it first starts, although it is also configurable with a command-line option. The type
+        specified must be one of the choices defined in this class.
+    selected_config : models.ForeignKey
+        The configuration file set this source will use.
+    state : models.IntegerField
+        The state of the data source, as known by the ECC server. This must be one of the choices defined by
+        the constants attached to this class.
+    is_transitioning : models.BooleanField
+        Whether the data source is currently changing state.
+    IDLE, DESCRIBED, PREPARED, READY, RUNNING : int
+        Constants representing valid states.
+    RESET : int
+        A constant to be used in the reset transition. This is not a real state machine state, but is used
+        to compute which state should be requested.
+    STATE_DICT : dict
+        A dictionary for retrieving display names for the above states.
+    ICE, ZBUF, TCP, FDT : str
+        These are the choices for the data router type.
+    daq_state : Models.IntegerField
+        The state of the remote DAQ processes. This can indicate if the ECC server and data router are
+        alive, and whether the data router's working directory is clean.
+
+    """
+    name = models.CharField(max_length=50, unique=True)
+    ecc_server = models.ForeignKey(ECCServer, on_delete=models.SET_NULL, null=True)
+    data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_data_link_xml(self):
+        """Get an XML representation of the data link for this source.
+
+        This is used by the ECC server to establish a connection between the CoBo and the
+        data router. The format is as follows:
+
+        .. code-block:: xml
+
+            <DataLink>
+                <DataSender id="[DataSource.name]">
+                <DataRouter name="[DataSource.data_router_name]"
+                            ipAddress="[DataSource.data_router_ip_address]"
+                            port="[DataSource.data_router_port]"
+                            type="[DataSource.data_router_type]">
+            </DataLink>
+
+        This must be wrapped in ``<DataLinkSet>'' tags before sending it to the ECC server.
+
+        Returns
+        -------
+        xml.etree.ElementTree.Element
+            The XML data for this source.
+
+        """
+        dl = ET.Element('DataLink')
+        ET.SubElement(dl, 'DataSender', attrib={'id': self.name})
+        ET.SubElement(dl, 'DataRouter', attrib={'name': self.data_router.name,
+                                                'ipAddress': self.data_router.ip_address,
+                                                'port': str(self.data_router.port),
+                                                'type': self.data_router.connection_type})
+        return dl
 
 
 class Experiment(models.Model):

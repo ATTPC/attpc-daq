@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
 from .utilities import FakeResponseState, FakeResponseText
-from ..models import DataSource, ConfigId, Experiment, RunMetadata
+from ..models import DataSource, ECCServer, DataRouter, ConfigId, Experiment, RunMetadata
 from ..models import ECCError
 import xml.etree.ElementTree as ET
 import os
@@ -83,72 +83,50 @@ class ConfigIdModelTestCase(TestCase):
         self.assertRaisesRegex(ValueError, 'Unknown or missing config type: BadType', ConfigId.from_xml, self.xml_root)
 
 
-class DataSourceModelTestCase(TestCase):
+class ECCServerModelTestCase(TestCase):
     def setUp(self):
-        self.name = 'CoBo[0]'
-        self.ecc_ip_address = '123.45.67.8'
-        self.ecc_port = '1234'
-        self.data_router_ip_address = '123.45.67.89'
-        self.data_router_port = 46005
-        self.data_router_type = DataSource.TCP
-        self.selected_config = ConfigId(describe='describe',
-                                        prepare='prepare',
-                                        configure='configure')
-        self.datasource = DataSource(name=self.name,
-                                     ecc_ip_address=self.ecc_ip_address,
-                                     ecc_port=self.ecc_port,
-                                     data_router_ip_address=self.data_router_ip_address,
-                                     data_router_port=self.data_router_port,
-                                     data_router_type=self.data_router_type,
-                                     selected_config=self.selected_config)
+        self.name = 'ECC'
+        self.ip_address = '123.45.67.8'
+        self.port = '1234'
+        self.selected_config = ConfigId(
+            describe='describe',
+            prepare='prepare',
+            configure='configure'
+        )
+        self.ecc_server = ECCServer(
+            name=self.name,
+            ip_address=self.ip_address,
+            port=self.port,
+            selected_config=self.selected_config
+        )
         self.selected_config.save()
-        self.datasource.save()
+        self.ecc_server.save()
 
-    def test_str(self):
-        s = str(self.datasource)
-        self.assertEqual(s, self.name)
+    def test_ecc_url(self):
+        ecc_url = self.ecc_server.ecc_url
+        expected = 'http://{}:{}/'.format(self.ip_address, self.port)
+        self.assertEqual(ecc_url, expected)
 
     def test_get_data_link_xml(self):
-        xml_string = self.datasource.get_data_link_xml()
+        xml_string = self.ecc_server.get_data_link_xml_from_clients()
         root = ET.fromstring(xml_string)
 
         self.assertEqual(root.tag, 'DataLinkSet')
-        self.assertEqual(len(root), 1, 'Root node should have one child')
-
-        dl_node = root[0]
-        self.assertEqual(dl_node.tag, 'DataLink')
-
-        sender_nodes = dl_node.findall('DataSender')
-        self.assertEqual(len(sender_nodes), 1, 'Must have only one sender node')
-        self.assertEqual(sender_nodes[0].attrib, {'id': self.datasource.name})
-
-        router_nodes = dl_node.findall('DataRouter')
-        self.assertEqual(len(router_nodes), 1, 'Must have only one router node')
-
-        self.assertEqual(router_nodes[0].attrib, {'name': self.datasource.data_router_name,
-                                                  'ipAddress': str(self.data_router_ip_address),
-                                                  'port': str(self.data_router_port),
-                                                  'type': self.data_router_type})
-
-    def test_ecc_url(self):
-        ecc_url = self.datasource.ecc_url
-        expected = 'http://{}:{}/'.format(self.ecc_ip_address, self.ecc_port)
-        self.assertEqual(ecc_url, expected)
 
     @patch('attpcdaq.daq.models.EccClient')
     def test_get_transition_too_many_steps(self, mock_client):
         mock_instance = mock_client()
-        for initial_state, final_state in permutations(DataSource.STATE_DICT.keys(), 2):
+        for initial_state, final_state in permutations(ECCServer.STATE_DICT.keys(), 2):
             if final_state - initial_state not in (1, -1):
                 self.assertRaisesRegex(ValueError, 'Can only transition one step at a time\.',
-                                       self.datasource._get_transition, mock_instance,
+                                       self.ecc_server._get_transition, mock_instance,
                                        initial_state, final_state)
 
     @patch('attpcdaq.daq.models.EccClient')
     def test_get_transition_same_state(self, mock_client):
         mock_instance = mock_client()
-        for state in DataSource.STATE_DICT.keys():
-            self.assertRaisesRegex(ValueError, 'No transition needed.', self.datasource._get_transition,
+        for state in ECCServer.STATE_DICT.keys():
+            self.assertRaisesRegex(ValueError, 'No transition needed.', self.ecc_server._get_transition,
                                    mock_instance, state, state)
 
     def test_refresh_configs(self):
@@ -166,7 +144,7 @@ class DataSourceModelTestCase(TestCase):
             instance = mock_client.return_value
             instance.GetConfigIDs.side_effect = return_side_effect
 
-            self.datasource.refresh_configs()
+            self.ecc_server.refresh_configs()
 
             instance.GetConfigIDs.assert_called_once_with()
 
@@ -185,10 +163,10 @@ class DataSourceModelTestCase(TestCase):
         mock_inst = mock_client.return_value
         mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
-        self.datasource.refresh_configs()
-        self.datasource.refresh_configs()  # Call a second time to see if duplication occurs
+        self.ecc_server.refresh_configs()
+        self.ecc_server.refresh_configs()  # Call a second time to see if duplication occurs
 
-        self.assertEqual(len(self.datasource.configid_set.all()), len(configs))
+        self.assertEqual(len(self.ecc_server.configid_set.all()), len(configs))
 
     @patch('attpcdaq.daq.models.EccClient')
     def test_refresh_configs_removes_outdated(self, mock_client):
@@ -200,7 +178,7 @@ class DataSourceModelTestCase(TestCase):
         mock_inst = mock_client.return_value
         mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
-        self.datasource.refresh_configs()  # Get the initial list
+        self.ecc_server.refresh_configs()  # Get the initial list
 
         # Remove a config and update the mock response
         removed_config = configs[0]
@@ -208,96 +186,115 @@ class DataSourceModelTestCase(TestCase):
         configs_xml = '<ConfigIdList>' + ''.join((c.as_xml() for c in configs)) + '</ConfigIdList>'
         mock_inst.GetConfigIDs.return_value = FakeResponseText(text=configs_xml)
 
-        self.datasource.refresh_configs()  # Now pull in the updated list
+        self.ecc_server.refresh_configs()  # Now pull in the updated list
 
-        self.assertFalse(self.datasource.configid_set.filter(describe=removed_config.describe,
-                                                             prepare=removed_config.prepare,
-                                                             configure=removed_config.configure).exists(),
-                         msg='Removed config was still present in database.')
+        self.assertFalse(
+            self.ecc_server.configid_set.filter(
+                describe=removed_config.describe,
+                prepare=removed_config.prepare,
+                configure=removed_config.configure
+            ).exists(),
+            msg='Removed config was still present in database.'
+        )
 
     def test_refresh_state(self):
-        for (state, trans) in product(DataSource.STATE_DICT.keys(), [False, True]):
+        for (state, trans) in product(ECCServer.STATE_DICT.keys(), [False, True]):
             with patch('attpcdaq.daq.models.EccClient') as mock_client:
                 mock_inst = mock_client.return_value
                 mock_inst.GetState.return_value = \
                     FakeResponseState(state=state, trans=trans)
 
-                self.datasource.refresh_state()
+                self.ecc_server.refresh_state()
 
                 mock_inst.GetState.assert_called_once_with()
 
-            self.assertEqual(self.datasource.state, state)
-            self.assertEqual(self.datasource.is_transitioning, trans)
+            self.assertEqual(self.ecc_server.state, state)
+            self.assertEqual(self.ecc_server.is_transitioning, trans)
 
     def _transition_test_helper(self, trans_func_name, initial_state, final_state,
                                 error_code=0, error_msg=""):
         with patch('attpcdaq.daq.models.EccClient') as mock_client:
-            self.datasource.state = initial_state
-            self.datasource.is_transitioning = False
+            self.ecc_server.state = initial_state
+            self.ecc_server.is_transitioning = False
 
             mock_instance = mock_client.return_value
             mock_trans_func = getattr(mock_instance, trans_func_name)
             mock_trans_func.return_value = FakeTransitionResult(error_code, error_msg)
 
-            self.datasource.change_state(final_state)
+            self.ecc_server.change_state(final_state)
 
-            config_xml = self.datasource.selected_config.as_xml()
-            datalink_xml = self.datasource.get_data_link_xml()
+            config_xml = self.ecc_server.selected_config.as_xml()
+            datalink_xml = self.ecc_server.get_data_link_xml_from_clients()
             mock_trans_func.assert_called_once_with(config_xml, datalink_xml)
 
-            self.assertTrue(self.datasource.is_transitioning)
+            self.assertTrue(self.ecc_server.is_transitioning)
 
     def test_change_state(self):
-        self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
-        self._transition_test_helper('Undo', DataSource.DESCRIBED, DataSource.IDLE)
+        self._transition_test_helper('Describe', ECCServer.IDLE, ECCServer.DESCRIBED)
+        self._transition_test_helper('Undo', ECCServer.DESCRIBED, ECCServer.IDLE)
 
-        self._transition_test_helper('Prepare', DataSource.DESCRIBED, DataSource.PREPARED)
-        self._transition_test_helper('Undo', DataSource.PREPARED, DataSource.DESCRIBED)
+        self._transition_test_helper('Prepare', ECCServer.DESCRIBED, ECCServer.PREPARED)
+        self._transition_test_helper('Undo', ECCServer.PREPARED, ECCServer.DESCRIBED)
 
-        self._transition_test_helper('Configure', DataSource.PREPARED, DataSource.READY)
-        self._transition_test_helper('Breakup', DataSource.READY, DataSource.PREPARED)
+        self._transition_test_helper('Configure', ECCServer.PREPARED, ECCServer.READY)
+        self._transition_test_helper('Breakup', ECCServer.READY, ECCServer.PREPARED)
 
-        self._transition_test_helper('Start', DataSource.READY, DataSource.RUNNING)
-        self._transition_test_helper('Stop', DataSource.RUNNING, DataSource.READY)
+        self._transition_test_helper('Start', ECCServer.READY, ECCServer.RUNNING)
+        self._transition_test_helper('Stop', ECCServer.RUNNING, ECCServer.READY)
 
     def test_change_state_with_error(self):
         error_code = 1
         error_msg = 'An error occurred'
 
         with self.assertRaisesRegex(ECCError, '.*' + error_msg):
-            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED,
+            self._transition_test_helper('Describe', ECCServer.IDLE, ECCServer.DESCRIBED,
                                          error_code, error_msg)
 
     def test_change_state_with_no_config(self):
-        self.datasource.selected_config = None
+        self.ecc_server.selected_config = None
         with self.assertRaisesRegex(RuntimeError, 'Data source has no config associated with it.'):
-            self._transition_test_helper('Describe', DataSource.IDLE, DataSource.DESCRIBED)
+            self._transition_test_helper('Describe', ECCServer.IDLE, ECCServer.DESCRIBED)
 
-    def test_set_daq_state(self):
-        perms = {
-            # (ecc, router, dir_clean, running): result
-            (False, False, False, False): DataSource.DAQ_OFF,
-            (False, False, False, True): DataSource.DAQ_OFF,
-            (False, False, True, False): DataSource.DAQ_OFF,
-            (False, False, True, True): DataSource.DAQ_OFF,
-            (False, True, False, False): DataSource.DAQ_DATA_ROUTER_ONLY,
-            (False, True, False, True): DataSource.DAQ_DATA_ROUTER_ONLY,
-            (False, True, True, False): DataSource.DAQ_DATA_ROUTER_ONLY,
-            (False, True, True, True): DataSource.DAQ_DATA_ROUTER_ONLY,
-            (True, False, False, False): DataSource.DAQ_ECC_ONLY,
-            (True, False, False, True): DataSource.DAQ_ECC_ONLY,
-            (True, False, True, False): DataSource.DAQ_ECC_ONLY,
-            (True, False, True, True): DataSource.DAQ_ECC_ONLY,
-            (True, True, False, False): DataSource.DAQ_CLEAN_UP,
-            (True, True, False, True): DataSource.DAQ_RUNNING,
-            (True, True, True, False): DataSource.DAQ_READY,
-            (True, True, True, True): DataSource.DAQ_RUNNING,
-        }
 
-        for (ecc, router, dir_clean, running), expected_state in perms.items():
-            self.datasource.state = DataSource.RUNNING if running else DataSource.READY
-            self.datasource.set_daq_state(ecc_alive=ecc, data_router_alive=router, staging_dir_clean=dir_clean)
-            self.assertEqual(self.datasource.daq_state, expected_state)
+class DataSourceModelTestCase(TestCase):
+    def setUp(self):
+        self.name = 'CoBo[0]'
+        self.ecc_server = ECCServer(
+            name='ECC0',
+            ip_address='123.456.789.0',
+        )
+        self.data_router = DataRouter(
+            name='Router0',
+            ip_address='111.111.111.111',
+            connection_type=DataRouter.FDT,
+        )
+        self.datasource = DataSource(
+            name=self.name,
+            ecc_server=self.ecc_server,
+            data_router=self.data_router,
+        )
+        self.ecc_server.save()
+        self.data_router.save()
+        self.datasource.save()
+
+
+    def test_get_data_link_xml(self):
+        root = self.datasource.get_data_link_xml()
+
+        self.assertEqual(root.tag, 'DataLink')
+
+        sender_nodes = root.findall('DataSender')
+        self.assertEqual(len(sender_nodes), 1, 'Must have only one sender node')
+        self.assertEqual(sender_nodes[0].attrib, {'id': self.datasource.name})
+
+        router_nodes = root.findall('DataRouter')
+        self.assertEqual(len(router_nodes), 1, 'Must have only one router node')
+
+        self.assertEqual(router_nodes[0].attrib, {'name': self.data_router.name,
+                                                  'ipAddress': str(self.data_router.ip_address),
+                                                  'port': str(self.data_router.port),
+                                                  'type': self.data_router.connection_type})
+
 
 class ExperimentModelTestCase(TestCase):
     def setUp(self):

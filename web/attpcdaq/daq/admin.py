@@ -1,13 +1,24 @@
 from django.contrib import admin
 
-from .models import DataSource, ConfigId, RunMetadata, Experiment
+from .models import DataSource, DataRouter, ECCServer, ConfigId, RunMetadata, Experiment
+
+
+@admin.register(ECCServer)
+class ECCServerAdmin(admin.ModelAdmin):
+    model = ECCServer
+    list_display = ['name', 'ip_address', 'port', 'selected_config', 'get_state_display']
+
+
+@admin.register(DataRouter)
+class DataRouterAdmin(admin.ModelAdmin):
+    model = DataRouter
+    list_display = ['name', 'ip_address', 'port', 'connection_type']
 
 
 @admin.register(DataSource)
 class DataSourceAdmin(admin.ModelAdmin):
     model = DataSource
-    list_display = ['name', 'ecc_ip_address', 'ecc_port', 'data_router_ip_address', 'data_router_port',
-                    'selected_config', 'get_state_display']
+    list_display = ['name', 'ecc_server', 'data_router']
 
 
 @admin.register(ConfigId)

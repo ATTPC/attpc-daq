@@ -9,8 +9,7 @@ from .models import DataSource, Experiment, ConfigId, RunMetadata
 class DataSourceForm(forms.ModelForm):
     class Meta:
         model = DataSource
-        fields = ['name', 'ecc_ip_address', 'ecc_port', 'data_router_ip_address', 'data_router_port',
-                  'data_router_type']
+        fields = ['name']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +23,7 @@ class DataSourceForm(forms.ModelForm):
 class ConfigSelectionForm(forms.ModelForm):
     class Meta:
         model = DataSource
-        fields = ['selected_config']
+        fields = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
