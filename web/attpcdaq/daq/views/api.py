@@ -17,7 +17,7 @@ from django.core.urlresolvers import reverse_lazy
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm
-from ..tasks import datasource_change_state_task, organize_files_all_task
+from ..tasks import eccserver_change_state_task, organize_files_all_task
 from .helpers import get_status, calculate_overall_state
 
 import logging
@@ -93,7 +93,7 @@ def source_change_state(request):
     Parameters
     ----------
     request : HttpRequest
-        The request must include the primary key ``pk`` of the data source and the integer ``target_state``
+        The request must include the primary key ``pk`` of the ECC server and the integer ``target_state``
         to change to. The request must be made via POST.
 
     Returns
@@ -110,20 +110,20 @@ def source_change_state(request):
         pk = request.POST['pk']
         target_state = int(request.POST['target_state'])
     except KeyError:
-        logger.error('Must provide data source pk and target state')
-        return HttpResponseBadRequest("Must provide data source pk and target state")
+        logger.error('Must provide ECC server pk and target state')
+        return HttpResponseBadRequest("Must provide ECC server pk and target state")
 
-    source = get_object_or_404(DataSource, pk=pk)
+    ecc_server = get_object_or_404(ECCServer, pk=pk)
 
     # Handle "reset" case
-    if target_state == DataSource.RESET:
-        target_state = max(source.state - 1, DataSource.IDLE)
+    if target_state == ECCServer.RESET:
+        target_state = max(ecc_server.state - 1, ECCServer.IDLE)
 
     # Request the transition
     try:
-        source.is_transitioning = True
-        source.save()
-        datasource_change_state_task.delay(source.pk, target_state)
+        ecc_server.is_transitioning = True
+        ecc_server.save()
+        eccserver_change_state_task.delay(ecc_server.pk, target_state)
     except Exception:
         logger.exception('Error while submitting change-state task')
 
@@ -134,7 +134,7 @@ def source_change_state(request):
 
 @login_required
 def source_change_state_all(request):
-    """Send requests to change the state of all sources.
+    """Send requests to change the state of all ECC servers.
 
     The requests are queued to be performed asynchronously.
 
@@ -146,7 +146,7 @@ def source_change_state_all(request):
     Returns
     -------
     JsonResponse
-        A JSON array containing status information about all sources.
+        A JSON array containing status information about all ECC servers.
 
     """
     if request.method != 'POST':
@@ -161,33 +161,33 @@ def source_change_state_all(request):
         return HttpResponseBadRequest('Invalid or missing target_state')
 
     # Handle "reset" case
-    if target_state == DataSource.RESET:
-        overall_state, _ = calculate_overall_state(DataSource.objects.all())
+    if target_state == ECCServer.RESET:
+        overall_state, _ = calculate_overall_state()
         if overall_state is not None:
-            target_state = max(overall_state - 1, DataSource.IDLE)
+            target_state = max(overall_state - 1, ECCServer.IDLE)
         else:
             logger.error('Cannot perform reset when overall state is inconsistent')
             return HttpResponseBadRequest('Cannot perform reset when overall state is inconsistent')
 
     # Handle "start" case
-    if target_state == DataSource.RUNNING:
-        daq_not_ready = DataSource.objects.exclude(daq_state=DataSource.DAQ_READY).exists()
+    if target_state == ECCServer.RUNNING:
+        daq_not_ready = DataRouter.objects.exclude(staging_directory_is_clean=True).exists()
         if daq_not_ready:
-            logger.error('Remote DAQ processes are not ready')
-            return HttpResponseBadRequest('Remote DAQ processare are not ready')
+            logger.error('Data routers are not ready')
+            return HttpResponseBadRequest('Data routers are not ready')
 
-    for source in DataSource.objects.all():
+    for ecc_server in ECCServer.objects.all():
         try:
-            source.is_transitioning = True
-            source.save()
-            datasource_change_state_task.delay(source.pk, target_state)
-        except (ECCError, ValueError) as err:
-            logger.exception('Failed to submit change_state task for data source %s', source.name)
+            ecc_server.is_transitioning = True
+            ecc_server.save()
+            eccserver_change_state_task.delay(ecc_server.pk, target_state)
+        except (ECCError, ValueError):
+            logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
 
     experiment = get_object_or_404(Experiment, user=request.user)
 
-    is_starting = target_state == DataSource.RUNNING and not experiment.is_running
-    is_stopping = target_state == DataSource.READY and experiment.is_running
+    is_starting = target_state == ECCServer.RUNNING and not experiment.is_running
+    is_stopping = target_state == ECCServer.READY and experiment.is_running
 
     if is_starting:
         experiment.start_run()

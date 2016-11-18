@@ -121,27 +121,47 @@ class WorkerInterface(object):
         """
         return len(self.get_graw_list()) == 0
 
-    def check_process_status(self):
-        """Checks if the data router and ECC server are running.
+    def _check_process_status(self, process_name):
+        """Checks if the given process is running.
+
+        Parameters
+        ----------
+        process_name : str
+            The name of the process to look for
 
         Returns
         -------
-        ecc_server_running, data_router_running : bool
-            Each is True if the process is running on the remote node, or False otherwise.
-
+        bool
+            True if the process is running.
         """
 
         _, stdout, _ = self.client.exec_command('ps -e')
 
-        ecc_server_running = False
-        data_router_running = False
         for line in stdout:
-            if re.search(r'getEccSoapServer', line):
-                ecc_server_running = True
-            elif re.search(r'dataRouter', line):
-                data_router_running = True
+            if re.search(process_name, line):
+                return True
+        else:
+            return False
 
-        return ecc_server_running, data_router_running
+    def check_ecc_server_status(self):
+        """Checks if the ECC server is running.
+
+        Returns
+        -------
+        bool
+            True if ``getEccSoapServer`` is running.
+        """
+        return self._check_process_status(r'getEccSoapServer')
+
+    def check_data_router_status(self):
+        """Checks if the data router is running.
+
+        Returns
+        -------
+        bool
+            True if ``dataRouter`` is running.
+        """
+        return self._check_process_status(r'dataRouter')
 
     def organize_files(self, experiment_name, run_number):
         """Organize the GRAW files at the end of a run.
