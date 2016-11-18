@@ -105,17 +105,45 @@ class WorkerInterfaceTestCase(TestCase):
         self.assertIs(ecc_server_running_res, ecc_server_running)
         self.assertIs(data_router_running_res, data_router_running)
 
-    def test_check_process_status_both(self, mock_client, mock_config):
-        self._check_process_impl(mock_client.return_value, ecc_server_running=True, data_router_running=True)
+    def _check_ecc_running_impl(self, mock_client, is_running):
+        if is_running:
+            ecc_line = ' 1234 ??         0:01.23 /path/to/getEccSoapServer --args something\n'
+        else:
+            ecc_line = ''
 
-    def test_check_process_status_ecc_only(self, mock_client, mock_config):
-        self._check_process_impl(mock_client.return_value, ecc_server_running=True, data_router_running=False)
+        client = mock_client.return_value
+        client.exec_command.return_value = ([], (ecc_line,), [])
 
-    def test_check_process_status_data_router_only(self, mock_client, mock_config):
-        self._check_process_impl(mock_client.return_value, ecc_server_running=False, data_router_running=True)
+        with WorkerInterface(self.hostname) as wint:
+            ecc_server_running_res = wint.check_ecc_server_status()
 
-    def test_check_process_status_neither(self, mock_client, mock_config):
-        self._check_process_impl(mock_client.return_value, ecc_server_running=False, data_router_running=False)
+        self.assertIs(ecc_server_running_res, is_running)
+
+    def test_check_ecc_running_when_true(self, mock_client, mock_config):
+        self._check_ecc_running_impl(mock_client, True)
+
+    def test_check_ecc_running_when_false(self, mock_client, mock_config):
+        self._check_ecc_running_impl(mock_client, False)
+
+    def _check_data_router_running_impl(self, mock_client, is_running):
+        if is_running:
+            dr_line = ' 1234 ??         0:01.23 /path/to/dataRouter --args something\n'
+        else:
+            dr_line = ''
+
+        client = mock_client.return_value
+        client.exec_command.return_value = ([], [dr_line], [])
+
+        with WorkerInterface(self.hostname) as wint:
+            dr_status_result = wint.check_data_router_status()
+
+        self.assertIs(dr_status_result, is_running)
+
+    def test_check_data_router_running_when_true(self, mock_client, mock_config):
+        self._check_data_router_running_impl(mock_client, True)
+
+    def test_check_data_router_running_when_false(self, mock_client, mock_config):
+        self._check_data_router_running_impl(mock_client, False)
 
     @patch('attpcdaq.daq.workertasks.WorkerInterface.get_graw_list')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
