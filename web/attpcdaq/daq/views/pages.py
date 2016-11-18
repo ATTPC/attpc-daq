@@ -58,7 +58,7 @@ def status(request):
 
 @login_required
 def choose_config(request, pk):
-    """Renders a page for choosing the config for a DataSource.
+    """Renders a page for choosing the config for an ECC server.
 
     This renders the `attpcdaq.daq.forms.ConfigSelectionForm` to pick the configuration.
 
@@ -67,7 +67,7 @@ def choose_config(request, pk):
     request : HttpRequest
         The request object
     pk : int
-        The primary key of the data source to configure.
+        The primary key of the ECC server to configure.
 
     Returns
     -------
@@ -75,7 +75,7 @@ def choose_config(request, pk):
         Redirects back to the main page on success.
 
     """
-    source = get_object_or_404(DataSource, pk=pk)
+    source = get_object_or_404(ECCServer, pk=pk)
 
     if request.method == 'POST':
         form = ConfigSelectionForm(request.POST, instance=source)

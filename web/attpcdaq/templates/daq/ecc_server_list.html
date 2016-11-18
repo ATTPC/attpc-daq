@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}ECC Servers - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <span>ECC Servers</span>
+                <div class="pull-right">
+                    <a class="btn btn-primary btn-xs" href="{% url 'daq/add_ecc_server' %}">
+                        <span class="fa fa-plus"></span> Add
+                    </a>
+{#                    <a class="btn btn-default btn-xs" href="{% url 'daq/upload_datasource_list' %}">#}
+{#                        <span class="fa fa-upload"></span> Upload#}
+{#                    </a>#}
+{#                    <a class="btn btn-default btn-xs" href="{% url 'daq/download_datasource_list' %}">#}
+{#                        <span class="fa fa-download"></span> Download#}
+{#                    </a>#}
+                </div>
+            </span>
+        </div>
+        <table class="table table-hover">
+            <tr>
+                <th>Name</th>
+                <th>IP address</th>
+                <th>Port</th>
+                <th></th>
+            </tr>
+            {% for server in eccserver_list %}
+            <tr>
+                <td>{{ server.name }}</td>
+                <td>{{ server.ip_address|default:'None' }}</td>
+                <td>{{ server.port|default:'None' }}</td>
+                <td class="text-right">
+                    <a role="button" class="btn btn-xs btn-default"
+                       href="{% url 'daq/update_ecc_server' server.pk %}">
+                        <span class="glyphicon glyphicon-wrench"></span> Edit
+                    </a>
+                    <a role="button" class="btn btn-xs btn-danger"
+                       href="{% url 'daq/remove_ecc_server' server.pk %}">
+                        <span class="glyphicon glyphicon-trash"></span> Remove
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

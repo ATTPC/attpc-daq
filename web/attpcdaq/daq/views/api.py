@@ -14,9 +14,9 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse_lazy
 
-from ..models import DataSource, RunMetadata, Experiment
+from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment
 from ..models import ECCError
-from ..forms import DataSourceForm, RunMetadataForm
+from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm
 from ..tasks import datasource_change_state_task, organize_files_all_task
 from .helpers import get_status, calculate_overall_state
 
@@ -221,6 +221,9 @@ class PanelTitleMixin(object):
         return context
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+
+
 class AddDataSourceView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a data source."""
     model = DataSource
@@ -251,6 +254,71 @@ class RemoveDataSourceView(LoginRequiredMixin, DeleteView):
     model = DataSource
     template_name = 'daq/remove_item.html'
     success_url = reverse_lazy('daq/data_source_list')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+class AddECCServerView(LoginRequiredMixin, PanelTitleMixin, CreateView):
+    model = ECCServer
+    form_class = ECCServerForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'New ECC server'
+    success_url = reverse_lazy('daq/ecc_server_list')
+
+
+class ListECCServersView(LoginRequiredMixin, ListView):
+    model = ECCServer
+    queryset = ECCServer.objects.order_by('name')
+    template_name = 'daq/ecc_server_list.html'
+
+
+class UpdateECCServerView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    model = ECCServer
+    form_class = ECCServerForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Edit ECC server'
+    success_url = reverse_lazy('daq/ecc_server_list')
+
+
+class RemoveECCServerView(LoginRequiredMixin, DeleteView):
+    model = ECCServer
+    template_name = 'daq/remove_item.html'
+    success_url = reverse_lazy('daq/ecc_server_list')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+class AddDataRouterView(LoginRequiredMixin, PanelTitleMixin, CreateView):
+    model = DataRouter
+    form_class = DataRouterForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'New data router'
+    success_url = reverse_lazy('daq/data_router_list')
+
+
+class ListDataRoutersView(LoginRequiredMixin, ListView):
+    model = DataRouter
+    queryset = DataRouter.objects.order_by('name')
+    template_name = 'daq/data_router_list.html'
+
+
+class UpdateDataRouterView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    model = DataRouter
+    form_class = DataRouterForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Edit data router'
+    success_url = reverse_lazy('daq/data_router_list')
+
+
+class RemoveDataRouterView(LoginRequiredMixin, DeleteView):
+    model = DataRouter
+    template_name = 'daq/remove_item.html'
+    success_url = reverse_lazy('daq/data_router_list')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 class ListRunMetadataView(LoginRequiredMixin, ListView):

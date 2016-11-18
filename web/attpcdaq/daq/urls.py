@@ -16,6 +16,16 @@ urlpatterns = [
     url(r'^sources/change_state_all/$', views.source_change_state_all, name='daq/source_change_state_all'),
     url(r'^sources/choose_config/(\d+)$', views.choose_config, name='daq/choose_config'),
 
+    url(r'^ecc_servers/$', views.ListECCServersView.as_view(), name='daq/ecc_server_list'),
+    url(r'^ecc_servers/add/$', views.AddECCServerView.as_view(), name='daq/add_ecc_server'),
+    url(r'^ecc_servers/edit/(?P<pk>\d+)$', views.UpdateECCServerView.as_view(), name='daq/update_ecc_server'),
+    url(r'^ecc_servers/remove/(?P<pk>\d+)$', views.RemoveECCServerView.as_view(), name='daq/remove_ecc_server'),
+
+    url(r'^data_routers/$', views.ListDataRoutersView.as_view(), name='daq/data_router_list'),
+    url(r'^data_routers/add/$', views.AddDataRouterView.as_view(), name='daq/add_data_router'),
+    url(r'^data_routers/edit/(?P<pk>\d+)$', views.UpdateDataRouterView.as_view(), name='daq/update_data_router'),
+    url(r'^data_routers/remove/(?P<pk>\d+)$', views.RemoveDataRouterView.as_view(), name='daq/remove_data_router'),
+
     url(r'^sources/download/$', views.download_datasource_list, name='daq/download_datasource_list'),
     url(r'^sources/upload/$', views.upload_datasource_list, name='daq/upload_datasource_list'),
 

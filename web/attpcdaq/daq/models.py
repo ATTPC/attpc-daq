@@ -114,6 +114,9 @@ class ConfigId(models.Model):
 
     last_fetched = models.DateTimeField(default=datetime.now)
 
+    class Meta:
+        ordering = ('describe', 'prepare', 'configure')
+
     def __str__(self):
         return '{}/{}/{}'.format(self.describe, self.prepare, self.configure)
 
@@ -184,8 +187,8 @@ class ConfigId(models.Model):
 
 class ECCServer(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    ip_address = models.GenericIPAddressField(verbose_name='ECC server IP address')
-    port = models.PositiveIntegerField(verbose_name='ECC server port', default=8083)
+    ip_address = models.GenericIPAddressField(verbose_name='IP address')
+    port = models.PositiveIntegerField(default=8083)
 
     # Config file information
     selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
@@ -414,8 +417,8 @@ class ECCServer(models.Model):
 
 class DataRouter(models.Model):
     name = models.CharField(max_length=50, unique=True)
-    ip_address = models.GenericIPAddressField(verbose_name='Data router IP address')
-    port = models.PositiveIntegerField(verbose_name='Data router port', default=46005)
+    ip_address = models.GenericIPAddressField(verbose_name='IP address')
+    port = models.PositiveIntegerField(default=46005)
 
     ICE = 'ICE'
     ZBUF = 'ZBUF'
