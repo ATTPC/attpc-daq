@@ -4,27 +4,27 @@
     </div>
     <div class="panel-body">
         <div class="btn-toolbar" id="run-control-toolbar">
-            {% with aSource=data_sources.first %}
-                <button class="btn btn-block btn-describe" data-daq-state-target="{{ aSource.DESCRIBED }}"
+            {% with aServer=ecc_servers.first %}
+                <button class="btn btn-block btn-describe" data-daq-state-target="{{ aServer.DESCRIBED }}"
                         id="btn-describe-all">
                     <span class="fa fa-server"></span> Describe all
                 </button>
-                <button class="btn btn-block btn-prepare" data-daq-state-target="{{ aSource.PREPARED }}"
+                <button class="btn btn-block btn-prepare" data-daq-state-target="{{ aServer.PREPARED }}"
                         id="btn-prepare-all">
                     <span class="fa fa-link"></span> Prepare all
                 </button>
-                <button class="btn btn-block btn-configure" data-daq-state-target="{{ aSource.READY }}"
+                <button class="btn btn-block btn-configure" data-daq-state-target="{{ aServer.READY }}"
                         id="btn-configure-all">
                     <span class="fa fa-cog"></span> Configure all
                 </button>
-                <button class="btn btn-block btn-start" data-daq-state-target="{{ aSource.RUNNING }}"
+                <button class="btn btn-block btn-start" data-daq-state-target="{{ aServer.RUNNING }}"
                         id="btn-start-all">
                     <span class="fa fa-play"></span> Start all
                 </button>
-                <button class="btn btn-block btn-stop" data-daq-state-target="{{ aSource.READY }}" id="btn-stop-all">
+                <button class="btn btn-block btn-stop" data-daq-state-target="{{ aServer.READY }}" id="btn-stop-all">
                     <span class="fa fa-stop"></span> Stop all
                 </button>
-                <button class="btn btn-block btn-reset" data-daq-state-target="{{ aSource.RESET }}" id="btn-reset-all">
+                <button class="btn btn-block btn-reset" data-daq-state-target="{{ aServer.RESET }}" id="btn-reset-all">
                     <span class="fa fa-repeat"></span> Reset all
                 </button>
             {% endwith %}

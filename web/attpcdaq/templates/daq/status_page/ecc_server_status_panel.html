@@ -141,7 +141,7 @@
     // Add click handlers to the source control buttons
     $(document).ready(function () {
         $(".source-ctrl-btn").click(function () {
-            var pk = $(this).data('daq-source-id');
+            var pk = $(this).data('ecc-server-id');
             var target = $(this).data('daq-state-target');
             change_state(pk, target).success(function (data) {
                 $(document).trigger('daq:refreshState', data);
