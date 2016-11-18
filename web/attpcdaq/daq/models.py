@@ -213,6 +213,9 @@ class ECCServer(models.Model):
 
     is_online = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('name',)
+
     def __str__(self):
         return self.name
 
@@ -435,6 +438,9 @@ class DataRouter(models.Model):
     is_online = models.BooleanField(default=False)
     staging_directory_is_clean = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ('name',)
+
     def __str__(self):
         return self.name
 
@@ -488,6 +494,9 @@ class DataSource(models.Model):
     name = models.CharField(max_length=50, unique=True)
     ecc_server = models.ForeignKey(ECCServer, on_delete=models.SET_NULL, null=True)
     data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return self.name

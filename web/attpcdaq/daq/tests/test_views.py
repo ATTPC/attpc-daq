@@ -5,7 +5,7 @@ from unittest.mock import patch
 from datetime import datetime
 import tempfile
 import json
-from ..models import DataSource, ConfigId, Experiment, RunMetadata
+from ..models import DataSource, ECCServer, DataRouter, ConfigId, Experiment, RunMetadata
 from .. import views
 
 
@@ -26,27 +26,44 @@ class ManySourcesTestCaseBase(TestCase):
         self.ecc_port = '1234'
         self.data_router_ip_address = '123.456.78.9'
         self.data_router_port = '1111'
-        self.selected_config = ConfigId(describe='describe',
-                                        prepare='prepare',
-                                        configure='configure')
-        self.selected_config.save()
+        self.selected_config = ConfigId.objects.create(
+            describe='describe',
+            prepare='prepare',
+            configure='configure'
+        )
 
+        self.ecc_servers = []
+        self.data_routers = []
         self.datasources = []
         for i in range(10):
-            d = DataSource(name='CoBo[{}]'.format(i),
-                           ecc_ip_address=self.ecc_ip_address,
-                           ecc_port=self.ecc_port,
-                           data_router_ip_address=self.data_router_ip_address,
-                           data_router_port=self.data_router_port,
-                           selected_config=self.selected_config)
-            d.save()
-            self.datasources.append(d)
+            ecc = ECCServer.objects.create(
+                name='ECC{}'.format(i),
+                ip_address=self.ecc_ip_address,
+                port=self.ecc_port,
+            )
+            self.ecc_servers.append(ecc)
+
+            router = DataRouter.objects.create(
+                name='DataRouter{}'.format(i),
+                ip_address=self.data_router_ip_address,
+                port=self.data_router_port,
+            )
+            self.data_routers.append(router)
+
+            source = DataSource.objects.create(
+                name='CoBo[{}]'.format(i),
+                ecc_server=ecc,
+                data_router=router,
+            )
+            self.datasources.append(source)
 
         self.user = User(username='test', password='test1234')
         self.user.save()
 
-        self.experiment = Experiment.objects.create(name='Test experiment',
-                                                    user=self.user)
+        self.experiment = Experiment.objects.create(
+            name='Test experiment',
+            user=self.user
+        )
 
 
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
@@ -61,33 +78,39 @@ class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBas
 
     def test_good_request(self):
         self.client.force_login(self.user)
-        for source in self.datasources:
-            source.state = DataSource.RUNNING
-            source.save()
+        for ecc in self.ecc_servers:
+            ecc.state = ECCServer.RUNNING
+            ecc.save()
 
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.resolver_match.func, views.refresh_state_all)
 
         response_json = resp.json()
-        self.assertEqual(response_json['overall_state'], DataSource.RUNNING)
-        self.assertEqual(response_json['overall_state_name'], DataSource.STATE_DICT[DataSource.RUNNING])
+        self.assertEqual(response_json['overall_state'], ECCServer.RUNNING)
+        self.assertEqual(response_json['overall_state_name'], ECCServer.STATE_DICT[ECCServer.RUNNING])
 
-        for res in response_json['individual_results']:
+        for res in response_json['ecc_server_status_list']:
             pk = int(res['pk'])
-            source = DataSource.objects.get(pk=pk)
-            self.assertEqual(res['state'], source.state)
-            self.assertEqual(res['state'], DataSource.RUNNING)
-            self.assertEqual(res['state_name'], source.get_state_display())
-            self.assertEqual(res['transitioning'], source.is_transitioning)
+            ecc_server = ECCServer.objects.get(pk=pk)
+            self.assertEqual(res['state'], ECCServer.RUNNING)
+            self.assertEqual(res['state_name'], ecc_server.get_state_display())
+            self.assertEqual(res['transitioning'], ecc_server.is_transitioning)
             self.assertTrue(res['success'])
             self.assertEqual(res['error_message'], '')
+
+        for res in response_json['data_router_status_list']:
+            pk = int(res['pk'])
+            router = DataRouter.objects.get(pk=pk)
+            self.assertEqual(res['is_online'], router.is_online)
+            self.assertEqual(res['is_clean'], router.staging_directory_is_clean)
+            self.assertTrue(res['success'])
 
     def test_response_contains_run_info(self):
         self.client.force_login(self.user)
 
-        for source in self.datasources:
-            source.state = DataSource.RUNNING
-            source.save()
+        for ecc_server in self.ecc_servers:
+            ecc_server.state = ECCServer.RUNNING
+            ecc_server.save()
 
         run0 = RunMetadata.objects.create(run_number=0,
                                           experiment=self.experiment,
@@ -107,7 +130,7 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
         self.view_name = 'daq/source_change_state'
 
 
-@patch('attpcdaq.daq.views.api.datasource_change_state_task.delay')
+@patch('attpcdaq.daq.views.api.eccserver_change_state_task.delay')
 class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
@@ -121,7 +144,7 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
     def test_with_no_runs(self, mock_task_delay):
         self.client.force_login(self.user)
 
-        resp = self.client.post(reverse(self.view_name), {'target_state': DataSource.DESCRIBED})
+        resp = self.client.post(reverse(self.view_name), {'target_state': ECCServer.DESCRIBED})
         self.assertEqual(resp.status_code, 200)
         self.assertIsNone(resp.json()['run_number'])
 
@@ -131,24 +154,29 @@ class StatusTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
         super().setUp()
         self.view_name = 'daq/status'
 
-    def test_sources_are_sorted_in_table(self):
+    def _sorting_test_impl(self, model, context_item_name):
         self.client.force_login(self.user)
 
-        # Add new sources to make sure they aren't just listed in the order they were added (i.e. by pk)
+        # Add new instances to make sure they aren't just listed in the order they were added (i.e. by pk)
         for i in (15, 14, 13, 12, 11):
-            d = DataSource.objects.create(name='CoBo[{}]'.format(i),
-                                          ecc_ip_address=self.ecc_ip_address,
-                                          ecc_port=self.ecc_port,
-                                          data_router_ip_address=self.data_router_ip_address,
-                                          data_router_port=self.data_router_port,
-                                          selected_config=self.selected_config)
+            model.objects.create(
+                name='Item{}'.format(i),
+                ip_address='117.0.0.1',
+                port='1234',
+            )
 
         resp = self.client.get(reverse(self.view_name))
         self.assertEqual(resp.status_code, 200)
 
-        source_list = resp.context['data_sources']
-        names = [s.name for s in source_list]
+        item_list = resp.context[context_item_name]
+        names = [s.name for s in item_list]
         self.assertEqual(names, sorted(names))
+
+    def test_ecc_list_is_sorted(self):
+        self._sorting_test_impl(ECCServer, 'ecc_servers')
+
+    def test_data_router_list_is_sorted(self):
+        self._sorting_test_impl(DataRouter, 'data_routers')
 
 
 class ChooseConfigTestCase(RequiresLoginTestMixin, TestCase):
@@ -170,31 +198,6 @@ class AddDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/add_source'
-
-
-class DataSourceListTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
-    def setUp(self):
-        super().setUp()
-        self.view_name = 'daq/data_source_list'
-
-    def test_sources_are_sorted_in_table(self):
-        self.client.force_login(self.user)
-
-        # Add new sources to make sure they aren't just listed in the order they were added (i.e. by pk)
-        for i in (15, 14, 13, 12, 11):
-            d = DataSource.objects.create(name='CoBo[{}]'.format(i),
-                                          ecc_ip_address=self.ecc_ip_address,
-                                          ecc_port=self.ecc_port,
-                                          data_router_ip_address=self.data_router_ip_address,
-                                          data_router_port=self.data_router_port,
-                                          selected_config=self.selected_config)
-
-        resp = self.client.get(reverse(self.view_name))
-        self.assertEqual(resp.status_code, 200)
-
-        source_list = resp.context['datasource_list']
-        names = [s.name for s in source_list]
-        self.assertEqual(names, sorted(names))
 
 
 class UpdateDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
