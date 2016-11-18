@@ -8,18 +8,18 @@ could be shared between multiple views.
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 
-from ..models import DataSource, Experiment
+from ..models import DataSource, ECCServer, DataRouter, Experiment
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-def calculate_overall_state(source_list):
+def calculate_overall_state():
     """Find the overall state of the system.
 
     Parameters
     ----------
-    source_list : QuerySet
+    ecc_server_list : QuerySet
         A set of DataSource objects.
 
     Returns
@@ -31,10 +31,11 @@ def calculate_overall_state(source_list):
         consistent state.
 
     """
-    if len(set(s.state for s in source_list)) == 1:
+    ecc_server_list = ECCServer.objects.all()
+    if len(set(s.state for s in ecc_server_list)) == 1:
         # All states are the same
-        overall_state = source_list.first().state
-        overall_state_name = source_list.first().get_state_display()
+        overall_state = ecc_server_list.first().state
+        overall_state_name = ecc_server_list.first().get_state_display()
     else:
         overall_state = None
         overall_state_name = 'Mixed'
@@ -42,24 +43,39 @@ def calculate_overall_state(source_list):
     return overall_state, overall_state_name
 
 
-def get_status(request):
-    results = []
-
-    for source in DataSource.objects.all():
-        source_res = {
+def get_ecc_server_statuses():
+    ecc_server_status_list = []
+    for ecc_server in ECCServer.objects.all():
+        ecc_res = {
             'success': True,
-            'pk': source.pk,
+            'pk': ecc_server.pk,
             'error_message': "",
-            'state': source.state,
-            'state_name': source.get_state_display(),
-            'transitioning': source.is_transitioning,
-            'daq_state': source.daq_state,
-            'daq_state_string': source.get_daq_state_display(),
+            'state': ecc_server.state,
+            'state_name': ecc_server.get_state_display(),
+            'transitioning': ecc_server.is_transitioning,
         }
+        ecc_server_status_list.append(ecc_res)
 
-        results.append(source_res)
+    return ecc_server_status_list
 
-    overall_state, overall_state_name = calculate_overall_state(DataSource.objects.all())
+
+def get_data_router_statuses():
+    data_router_status_list = []
+    for router in DataRouter.objects.all():
+        router_res = {
+            'success': True,
+            'pk': router.pk,
+            'is_online': router.is_online,
+            'is_clean': router.staging_directory_is_clean,
+        }
+        data_router_status_list.append(router_res)
+
+    return data_router_status_list
+
+def get_status(request):
+    ecc_server_status_list = get_ecc_server_statuses()
+    data_router_status_list = get_data_router_statuses()
+    overall_state, overall_state_name = calculate_overall_state()
 
     experiment = get_object_or_404(Experiment, user=request.user)
     current_run = experiment.latest_run
@@ -75,7 +91,8 @@ def get_status(request):
     output = {
         'overall_state': overall_state,
         'overall_state_name': overall_state_name,
-        'individual_results': results,
+        'ecc_server_status_list': ecc_server_status_list,
+        'data_router_status_list': data_router_status_list,
         'run_number': run_number,
         'start_time': start_time,
         'run_duration': duration_str,

@@ -6,15 +6,16 @@
 {% block body %}
     <div class="row">
         <div class="col-md-9">
-            {% include 'daq/run_info_panel.html' %}
-            {% include 'daq/source_status_panel.html' %}
+            {% include 'daq/status_page/run_info_panel.html' %}
+            {% include 'daq/status_page/ecc_server_status_panel.html' %}
+            {% include 'daq/status_page/data_router_status_panel.html' %}
             <div id="log-panel">
                 {% include 'logs/log_list_panel_fragment.html' %}
             </div>
         </div>
         <div class="col-md-3">
-            {% include 'daq/system_status_panel.html' %}
-            {% include 'daq/control_panel.html' %}
+            {% include 'daq/status_page/system_status_panel.html' %}
+            {% include 'daq/status_page/control_panel.html' %}
         </div>
     </div>
 {% endblock %}

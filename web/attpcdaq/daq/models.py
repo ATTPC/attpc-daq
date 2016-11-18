@@ -210,6 +210,9 @@ class ECCServer(models.Model):
 
     is_online = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.name
+
     @property
     def ecc_url(self):
         """Get the URL of the ECC server as a string.
@@ -428,6 +431,9 @@ class DataRouter(models.Model):
 
     is_online = models.BooleanField(default=False)
     staging_directory_is_clean = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
 
 class DataSource(models.Model):

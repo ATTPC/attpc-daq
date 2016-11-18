@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.db.models import Min
 
-from ..models import DataSource, Experiment
+from ..models import DataSource, ECCServer, DataRouter, Experiment
 from ..forms import ExperimentSettingsForm, ConfigSelectionForm
 from ..workertasks import WorkerInterface
 
@@ -36,18 +36,24 @@ def status(request):
 
     """
     sources = DataSource.objects.order_by('name')
-    system_state = sources.aggregate(Min('state'))['state__min']
+    ecc_servers = ECCServer.objects.order_by('name')
+    data_routers = DataRouter.objects.order_by('name')
+    system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
 
     experiment = get_object_or_404(Experiment, user=request.user)
     latest_run = experiment.latest_run
 
     logs = LogEntry.objects.order_by('-create_time')[:10]
 
-    return render(request, 'daq/status.html', {'data_sources': sources,
-                                               'latest_run': latest_run,
-                                               'experiment': experiment,
-                                               'logentry_list': logs,
-                                               'system_state': system_state})
+    return render(request, 'daq/status_page/status.html', {
+        'data_sources': sources,
+        'ecc_servers': ecc_servers,
+        'data_routers': data_routers,
+        'latest_run': latest_run,
+        'experiment': experiment,
+        'logentry_list': logs,
+        'system_state': system_state
+    })
 
 
 @login_required
