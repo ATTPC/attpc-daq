@@ -120,10 +120,13 @@ def check_data_router_status_task(datarouter_pk):
     try:
         with WorkerInterface(data_router.ip_address) as wint:
             data_router_alive = wint.check_data_router_status()
-            staging_dir_clean = wint.working_dir_is_clean()
+            data_router.is_online = data_router_alive
 
-        data_router.is_online = data_router_alive
-        data_router.staging_directory_is_clean = staging_dir_clean
+            if data_router_alive:
+                # If the router isn't running, this next step will fail anyway
+                staging_dir_clean = wint.working_dir_is_clean()
+                data_router.staging_directory_is_clean = staging_dir_clean
+
         data_router.save()
     except SoftTimeLimitExceeded:
         logger.error('Time limit exceeded while checking whether %s is online', data_router.name)
