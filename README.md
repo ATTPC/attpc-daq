@@ -37,11 +37,34 @@ docker-compose up
 ```
     
 The build process will take a few moments as it downloads the required containers from Docker Hub and installs the Python
-dependencies. Once that's done, three containers should be up and running:
-
-1. A container running PostgreSQL, probably called `attpcdaq_db_1`. This hosts the DAQ system's internal data, but *not*
-the experimental data recorded by the system.
-2. A container running NGINX, probably called `attpcdaq_nginx_1`, to host the static resources of the site and to handle requests.
-3. A container running Gunicorn, probably called `attpcdaq_web_1`, which runs the Django app itself and provides dynamic content.
+dependencies. Once that's done, several containers should be up and running. See the [documentation][docs] for more details.
 
 The system can be stopped by pressing <kbd>Ctrl</kbd>-<kbd>C</kbd> in the terminal window where you ran `docker-compose`.
+
+### Testing
+
+| Branch  | Status  |
+|---------|---------|
+| master  | [![Build Status](https://travis-ci.org/ATTPC/attpc-daq.svg?branch=master)](https://travis-ci.org/ATTPC/attpc-daq)  |
+| develop | [![Build Status](https://travis-ci.org/ATTPC/attpc-daq.svg?branch=develop)](https://travis-ci.org/ATTPC/attpc-daq) |
+
+To run the unit tests for this code, you will need to install it in a Python environment on your computer. After setting up
+Python 3.5+ (and, preferably, a virtual environment), you can install all of the required packages by running
+
+```bash
+pip install -r web/requirements.txt
+```
+
+Finally, run the unit tests with the command
+
+```bash
+python manage.py test
+```
+
+### Documentation
+
+The project's documentation is built using [Sphinx](http://www.sphinx-doc.org/) from the source files in the directory `web/doc`.
+
+The documentation can be viewed online [here][docs], or viewed within the application by clicking on the "Help" icon in the top-right corner.
+
+[docs]: http://attpc-daq.readthedocs.io/
