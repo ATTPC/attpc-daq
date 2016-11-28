@@ -88,30 +88,64 @@ class ECCServerModelTestCase(TestCase):
         self.name = 'ECC'
         self.ip_address = '123.45.67.8'
         self.port = '1234'
-        self.selected_config = ConfigId(
+        self.selected_config = ConfigId.objects.create(
             describe='describe',
             prepare='prepare',
             configure='configure'
         )
-        self.ecc_server = ECCServer(
+        self.ecc_server = ECCServer.objects.create(
             name=self.name,
             ip_address=self.ip_address,
             port=self.port,
             selected_config=self.selected_config
         )
-        self.selected_config.save()
-        self.ecc_server.save()
 
     def test_ecc_url(self):
         ecc_url = self.ecc_server.ecc_url
         expected = 'http://{}:{}/'.format(self.ip_address, self.port)
         self.assertEqual(ecc_url, expected)
 
-    def test_get_data_link_xml(self):
+    def data_link_xml_test_impl(self):
         xml_string = self.ecc_server.get_data_link_xml_from_clients()
         root = ET.fromstring(xml_string)
 
         self.assertEqual(root.tag, 'DataLinkSet')
+
+        data_link_nodes = root.findall('DataLink')
+
+        self.assertEqual(len(data_link_nodes), DataSource.objects.count())
+
+        for link in data_link_nodes:
+            ds_name = link.find('DataSender').attrib['id']
+            datasource = DataSource.objects.get(name=ds_name)
+            check_data_link_xml_helper(self, datasource, link)
+
+    def test_get_data_link_xml_one_source(self):
+        data_router = DataRouter.objects.create(
+            name='DataRouter0',
+            ip_address=self.ip_address,
+        )
+        datasource = DataSource.objects.create(
+            name='CoBo[0]',
+            ecc_server=self.ecc_server,
+            data_router=data_router,
+        )
+
+        self.data_link_xml_test_impl()
+
+    def test_get_data_link_xml_many_sources_one_ecc(self):
+        for i in range(10):
+            router = DataRouter.objects.create(
+                name='DataRouter{:d}'.format(i),
+                ip_address='123.456.789.{:d}'.format(i),
+            )
+            DataSource.objects.create(
+                name='CoBo[{:d}]'.format(i),
+                ecc_server=self.ecc_server,
+                data_router=router,
+            )
+
+        self.data_link_xml_test_impl()
 
     @patch('attpcdaq.daq.models.EccClient')
     def test_get_transition_too_many_steps(self, mock_client):
@@ -256,6 +290,28 @@ class ECCServerModelTestCase(TestCase):
             self._transition_test_helper('Describe', ECCServer.IDLE, ECCServer.DESCRIBED)
 
 
+def check_data_link_xml_helper(testcase, datasource, link_xml):
+    data_router = datasource.data_router
+
+    testcase.assertEqual(link_xml.tag, 'DataLink')
+
+    sender_nodes = link_xml.findall('DataSender')
+    testcase.assertEqual(len(sender_nodes), 1, 'Must have only one sender node')
+    testcase.assertEqual(sender_nodes[0].attrib, {'id': datasource.name})
+
+    router_nodes = link_xml.findall('DataRouter')
+    testcase.assertEqual(len(router_nodes), 1, 'Must have only one router node')
+
+    testcase.assertEqual(
+        router_nodes[0].attrib,
+        {'name': data_router.name,
+         'ipAddress': str(data_router.ip_address),
+         'port': str(data_router.port),
+         'type': data_router.connection_type
+         }
+    )
+
+
 class DataSourceModelTestCase(TestCase):
     def setUp(self):
         self.name = 'CoBo[0]'
@@ -277,23 +333,9 @@ class DataSourceModelTestCase(TestCase):
         self.data_router.save()
         self.datasource.save()
 
-
-    def test_get_data_link_xml(self):
-        root = self.datasource.get_data_link_xml()
-
-        self.assertEqual(root.tag, 'DataLink')
-
-        sender_nodes = root.findall('DataSender')
-        self.assertEqual(len(sender_nodes), 1, 'Must have only one sender node')
-        self.assertEqual(sender_nodes[0].attrib, {'id': self.datasource.name})
-
-        router_nodes = root.findall('DataRouter')
-        self.assertEqual(len(router_nodes), 1, 'Must have only one router node')
-
-        self.assertEqual(router_nodes[0].attrib, {'name': self.data_router.name,
-                                                  'ipAddress': str(self.data_router.ip_address),
-                                                  'port': str(self.data_router.port),
-                                                  'type': self.data_router.connection_type})
+    def test_data_link_xml(self):
+        xml = self.datasource.get_data_link_xml()
+        check_data_link_xml_helper(self, self.datasource, xml)
 
 
 class ExperimentModelTestCase(TestCase):

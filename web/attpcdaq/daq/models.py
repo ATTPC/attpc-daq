@@ -547,7 +547,7 @@ class Experiment(models.Model):
         The name of the experiment. This must be unique.
     target_run_duration : models.PositiveIntegerField
         The expected duration of a run, in seconds.
-
+q
     """
     user = models.OneToOneField(User)
     name = models.CharField(max_length=100, unique=True)
