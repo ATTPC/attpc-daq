@@ -15,7 +15,6 @@ Page rendering functions
 Refreshing ECC state
 --------------------
 
-.. autofunction:: source_get_state
 .. autofunction:: refresh_state_all
 
 Changing ECC state
@@ -36,10 +35,3 @@ render via forms, and return a usable view with the method `as_view`.
 .. autoclass:: RemoveDataSourceView
 .. autoclass:: ListRunMetadataView
 
-Mixins
-------
-
-These are used internally to facilitate re-use of code.
-
-.. autoclass:: PanelTitleMixin
-   :members:

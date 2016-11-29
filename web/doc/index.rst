@@ -9,6 +9,6 @@ Contents
 
    overview.rst
    operations.rst
-   code_docs.rst
+   dev/dev_index.rst
 
 

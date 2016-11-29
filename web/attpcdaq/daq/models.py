@@ -99,7 +99,7 @@ class ConfigId(models.Model):
         The names of the files used in each respective step. The actual filenames, as seen by
         the ECC server, will be, for example, ``describe-[name].xcfg``. The prefix and file extension
         are added automatically by the ECC server.
-    data_source : models.ForeignKey
+    ecc_server : models.ForeignKey
         The ECC server which this config set is associated with. This may be null.
     last_fetched : models.DateTimeField
         The date and time when this config was fetched from the ECC server. This is used to remove
@@ -186,31 +186,66 @@ class ConfigId(models.Model):
 
 
 class ECCServer(models.Model):
+    """Represents an individual ECC server which may control one or more data sources.
+
+    This object is responsible for the bulk of the program's work. It is capable of communicating with the ECC
+    server process to change the state of a CoBo or MuTAnT, and it also maintains a record of the ECC server's
+    current state.
+
+    Data sources are associated with an ECC server through a many-to-one relationship, meaning that one ECC server
+    may control many data sources. Alternatively, each data source may have its own ECC server, if that is desired.
+    """
+    #: A unique name for the ECC server
     name = models.CharField(max_length=50, unique=True)
+
+    #: The IP address of the ECC server
     ip_address = models.GenericIPAddressField(verbose_name='IP address')
+
+    #: The TCP port that the ECC server listens on. The default value is 8083.
     port = models.PositiveIntegerField(default=8083)
 
-    # Config file information
+    #: The configuration file set this ECC server will use
     selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
 
+    #: The path to the ECC server process's log file on the computer where the process is running.
     log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
 
-    # Status information
+    #: A constant representing the "idle" state
     IDLE = 1
+
+    #: A constant representing the "described" state
     DESCRIBED = 2
+
+    #: A constant representing the "prepared" state
     PREPARED = 3
+
+    #: A constant representing the "ready" state
     READY = 4
+
+    #: A constant representing the "running" state
     RUNNING = 5
+
+    #: A constant that is used to tell the system to step backwards by one state
+    RESET = -1
+
+    #: A tuple of choices for the ``state`` field
     STATE_CHOICES = ((IDLE, 'Idle'),
                      (DESCRIBED, 'Described'),
                      (PREPARED, 'Prepared'),
                      (READY, 'Ready'),
                      (RUNNING, 'Running'))
+
+    #: A dictionary mapping state constants back to state names
     STATE_DICT = dict(STATE_CHOICES)
-    RESET = -1
+
+    #: The state of the ECC server with respect to the CoBo state machine. This must be one of the choices defined by
+    #: the constants attached to this class.
     state = models.IntegerField(default=IDLE, choices=STATE_CHOICES)
+
+    #: Whether the ECC server is currently changing state
     is_transitioning = models.BooleanField(default=False)
 
+    #: Whether the ECC server process is currently available and responding to requests
     is_online = models.BooleanField(default=False)
 
     class Meta:
@@ -241,7 +276,7 @@ class ECCServer(models.Model):
 
     @classmethod
     def _get_transition(cls, client, current_state, target_state):
-        """Look up the appropriate SOAP request to change the data source from one state to another.
+        """Look up the appropriate SOAP request to change the ECC server from one state to another.
 
         Given the ``current_state`` and the ``target_state``, this will either return the correct callable to
         make the transition, or it will raise an exception.
@@ -265,12 +300,6 @@ class ECCServer(models.Model):
         ------
         ValueError
             If the requested states differ by more than one transition, or if no transition is needed.
-
-        See Also
-        --------
-        DataSource.state
-        DataSource.STATE_DICT
-
         """
         if target_state == current_state:
             raise ValueError('No transition needed.')
@@ -355,7 +384,8 @@ class ECCServer(models.Model):
     def refresh_state(self):
         """Gets the current state of the data source from the ECC server and updates the database.
 
-        This will update the ``state`` and ``is_transitioning`` fields of the ``DataSource``.
+        This will update the :attr:`~ECCServer.state` and :attr:`~ECCServer.is_transitioning` fields of the
+        :class:`ECCServer`.
 
         Raises
         ------
@@ -375,24 +405,19 @@ class ECCServer(models.Model):
     def change_state(self, target_state):
         """Tells the ECC server to transition the data source to a new state.
 
-        If the request is successful, the ``is_transitioning`` field will be set to True, but the ``state`` field will
-        *not* be updated automatically. To update this, `DataSource.refresh_state` should be called to see if the
-        transition has completed.
+        If the request is successful, the :attr:`~ECCServer.is_transitioning` field will be set to True, but the
+        :attr:`~ECCServer.state` field will *not* be updated automatically. To update this,
+        :meth:`~ECCServer.refresh_state` should be called to see if the transition has completed.
 
         Parameters
         ----------
         target_state : int
-            The desired final state. The required transition will be computed using `DataSource._get_transition`.
+            The desired final state. The required transition will be computed using :meth:`~ECCServer._get_transition`.
 
         Raises
         ------
         RuntimeError
             If the data source does not have a config set.
-
-        See Also
-        --------
-        DataSource._get_transition
-
         """
 
         # Get transition arguments
@@ -455,9 +480,10 @@ class DataSource(models.Model):
     Attributes
     ----------
     name : models.CharField
-        A unique name for the data source. For a CoBo, this *must* correspond to an entry in the appropriate
-        config file. For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
-        "CoBo[3]". If this is not correct, the ECC server will return an error during the Configure transition.
+        A unique name for the data source. This *must* correspond to an entry in the appropriate config file.
+        For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
+        "CoBo[3]". If your config file has an entry for a MuTAnT with ID "master", the corresponding name must be
+        "Mutant[master]". If this is not correct, the ECC server will return an error during the Configure transition.
     ecc_ip_address : models.GenericIPAddressField
         The IP address of the ECC server.
     ecc_port : models.PositiveIntegerField
