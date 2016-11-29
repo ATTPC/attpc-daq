@@ -36,3 +36,9 @@ The :class:`DataRouter` model stores information about data routers in the syste
 associated with one data source, and they record the data stream from that source to a GRAW file. This model simply
 stores information about the data router like its IP address, port, and connection type. This information is forwarded
 to the data sources when the ECC server configures them.
+
+The data source (:class:`DataSource`)
+-------------------------------------
+
+This represents a source of data, like a CoBo or a MuTAnT. This is functionally just a link between an ECC server,
+which controls the source, and a data router, which receives data from the source.

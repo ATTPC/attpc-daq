@@ -5,7 +5,7 @@ attpcdaq.daq.models.DataRouter
 
 .. autoclass:: DataRouter
 
-   .. rubric:: Attributes
+   .. rubric:: Fields
 
    .. autosummary::
 
@@ -19,8 +19,9 @@ attpcdaq.daq.models.DataRouter
 
    .. rubric:: Data router type constants
 
+   .. autosummary::
+
       ~DataRouter.FDT
       ~DataRouter.ICE
       ~DataRouter.TCP
       ~DataRouter.ZBUF
-      ~DataRouter.DATA_ROUTER_TYPES

@@ -498,54 +498,24 @@ class DataRouter(models.Model):
 
 
 class DataSource(models.Model):
-    """A source of data, probably a CoBo.
+    """A source of data, probably a CoBo or a MuTAnT.
 
-    This is the main object in the program. It represents a data source (CoBo) by knowing information about its
-    controlling ECC server and corresponding data router and configuration files. It also maintains a record
-    of the current state of the ECC state machine, which tells us what the CoBo is doing.
-
-    Attributes
-    ----------
-    name : models.CharField
-        A unique name for the data source. This *must* correspond to an entry in the appropriate config file.
-        For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
-        "CoBo[3]". If your config file has an entry for a MuTAnT with ID "master", the corresponding name must be
-        "Mutant[master]". If this is not correct, the ECC server will return an error during the Configure transition.
-    ecc_ip_address : models.GenericIPAddressField
-        The IP address of the ECC server.
-    ecc_port : models.PositiveIntegerField
-        The TCP port that the ECC server listens on.
-    data_router_ip_address : models.GenericIPAddressField
-        The IP address of the data router. This is where the data will be recorded.
-    data_router_port : models.PositiveIntegerField
-        The TCP port that the dataRouter process listens on.
-    data_router_type : models.CharField
-        The type of data stream expected by the data router. This is shown in the output of the data router
-        when it first starts, although it is also configurable with a command-line option. The type
-        specified must be one of the choices defined in this class.
-    selected_config : models.ForeignKey
-        The configuration file set this source will use.
-    state : models.IntegerField
-        The state of the data source, as known by the ECC server. This must be one of the choices defined by
-        the constants attached to this class.
-    is_transitioning : models.BooleanField
-        Whether the data source is currently changing state.
-    IDLE, DESCRIBED, PREPARED, READY, RUNNING : int
-        Constants representing valid states.
-    RESET : int
-        A constant to be used in the reset transition. This is not a real state machine state, but is used
-        to compute which state should be requested.
-    STATE_DICT : dict
-        A dictionary for retrieving display names for the above states.
-    ICE, ZBUF, TCP, FDT : str
-        These are the choices for the data router type.
-    daq_state : Models.IntegerField
-        The state of the remote DAQ processes. This can indicate if the ECC server and data router are
-        alive, and whether the data router's working directory is clean.
-
+    This model represents a source of data in the system, like a CoBo or a MuTAnT. A data source is controlled by
+    an ECC server, and it sends its data to a data router. Therefore, this is simply a link between an
+    :class:`ECCServer` instance and a :class:`DataRouter` instance.
     """
+
+    #: A unique name for the data source. This *must* correspond to an entry in the appropriate config file.
+    #: For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
+    #: "CoBo[3]". If your config file has an entry for a MuTAnT with ID "master", the corresponding name must be
+    #: "Mutant[master]". If this is not correct, the ECC server will return an error during the Configure transition.
     name = models.CharField(max_length=50, unique=True)
+
+    #: The :class:`ECCServer` that controls this data source. One :class:`ECCServer` may control many data sources.
     ecc_server = models.ForeignKey(ECCServer, on_delete=models.SET_NULL, null=True)
+
+    #: The :class:`DataRouter` that receives the data stream from this source. Each source must have
+    #: its own unique :class:`DataRouter`.
     data_router = models.OneToOneField(DataRouter, on_delete=models.SET_NULL, null=True)
 
     class Meta:
@@ -557,7 +527,7 @@ class DataSource(models.Model):
     def get_data_link_xml(self):
         """Get an XML representation of the data link for this source.
 
-        This is used by the ECC server to establish a connection between the CoBo and the
+        This is used by the ECC server to establish a connection between the CoBo or MuTAnT and the
         data router. The format is as follows:
 
         .. code-block:: xml
@@ -570,7 +540,7 @@ class DataSource(models.Model):
                             type="[DataSource.data_router_type]">
             </DataLink>
 
-        This must be wrapped in ``<DataLinkSet>'' tags before sending it to the ECC server.
+        This must be wrapped in ``<DataLinkSet>`` tags before sending it to the ECC server.
 
         Returns
         -------
