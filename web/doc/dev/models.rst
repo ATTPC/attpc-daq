@@ -28,3 +28,11 @@ Communication with the ECC server is done using the SOAP protocol. This is perfo
 wrapped by the :class:`EccClient` class in this module. The interface to the ECC server is defined by the file
 ``web/attpcdaq/daq/ecc.wsdl``, which was copied from the source of the GET ECC server into this package. If the
 interface is updated in a future version of the ECC server, this file should be replaced.
+
+The data router (:class:`DataRouter`)
+-------------------------------------
+
+The :class:`DataRouter` model stores information about data routers in the system. The data router processes are each
+associated with one data source, and they record the data stream from that source to a GRAW file. This model simply
+stores information about the data router like its IP address, port, and connection type. This information is forwarded
+to the data sources when the ECC server configures them.

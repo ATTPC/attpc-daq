@@ -444,23 +444,50 @@ class ECCServer(models.Model):
 
 
 class DataRouter(models.Model):
+    """Represents the data router associated with one data source.
+
+    Each source of data (a CoBo or a MuTAnT) must be associated with a data router. The data router receives
+    the data stream from the source and records it. This model stores information like the IP address, port,
+    and type of the data router.
+    """
+    #: A unique name for the data router
     name = models.CharField(max_length=50, unique=True)
+
+    #: The IP address of the data router
     ip_address = models.GenericIPAddressField(verbose_name='IP address')
+
+    #: The TCP port where the data router is listening. The default value is 46005.
     port = models.PositiveIntegerField(default=46005)
 
+    #: A constant for the "ICE" protocol
     ICE = 'ICE'
+
+    #: A constant for the "ZBUF" protocol
     ZBUF = 'ZBUF'
+
+    #: A constant for the "TCP" protocol. This is the default for the CoBo.
     TCP = 'TCP'
+
+    #: A constant for the "FDT" protocol. This is the default for the MuTAnT.
     FDT = 'FDT'
+
+    #: A tuple of data router types for the :attr:`~DataRouter.connection_type` field
     DATA_ROUTER_TYPES = ((ICE, 'ICE'),
                          (TCP, 'TCP'),
                          (FDT, 'FDT'),
                          (ZBUF, 'ZBUF'))
+
+    #: The protocol of the data router. This must be one of the constants defined in this class.
+    #: The default value is :attr:`~DataRouter.TCP`.
     connection_type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
 
+    #: The path to the log file on the computer where the data router is running.
     log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
 
+    #: Whether the data router is online and available
     is_online = models.BooleanField(default=False)
+
+    #: Whether the directory where the data router is running contains any GRAW files.
     staging_directory_is_clean = models.BooleanField(default=True)
 
     class Meta:

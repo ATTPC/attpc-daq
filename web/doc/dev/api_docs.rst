@@ -1,7 +1,13 @@
 API documentation
 =================
 
+Models
+------
+
+..  currentmodule:: attpcdaq.daq.models
+
 ..  autosummary::
     :toctree: generated/
 
-    attpcdaq.daq.models.ECCServer
+    ECCServer
+    DataRouter
