@@ -42,3 +42,10 @@ The data source (:class:`DataSource`)
 
 This represents a source of data, like a CoBo or a MuTAnT. This is functionally just a link between an ECC server,
 which controls the source, and a data router, which receives data from the source.
+
+Config file sets (:class:`ConfigId`)
+------------------------------------
+
+Sets of config files are represented as :class:`ConfigId` objects. These contain fields for each of the three config
+files for the three configuration steps. These sets will generally be created automatically by fetching them from the
+ECC servers using :meth:`ECCServer.refresh_configs`, but they can also be created manually if necessary.

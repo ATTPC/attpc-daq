@@ -93,25 +93,28 @@ class ConfigId(models.Model):
     It is important to note that this is just a representation of the config files which is used
     for communicating with the ECC server. No actual configuration is done by this program.
 
-    Attributes
-    ----------
-    describe, prepare, configure : models.CharField
-        The names of the files used in each respective step. The actual filenames, as seen by
-        the ECC server, will be, for example, ``describe-[name].xcfg``. The prefix and file extension
-        are added automatically by the ECC server.
-    ecc_server : models.ForeignKey
-        The ECC server which this config set is associated with. This may be null.
-    last_fetched : models.DateTimeField
-        The date and time when this config was fetched from the ECC server. This is used to remove
-        outdated configs from the database.
+    ..  note::
+
+        This model stores configuration names using the convention of the ECC server. This means
+        that the actual filenames seen by the ECC server will be, for example, ``describe-[name].xcfg``.
+        The prefix and file extension are added automatically by the ECC server.
 
     """
+
+    #: The name of the configuration for the "describe" step
     describe = models.CharField(max_length=120)
+
+    #: The name of the configuration for the "prepare" step
     prepare = models.CharField(max_length=120)
+
+    #: The name of the configuration for the "configure" step
     configure = models.CharField(max_length=120)
 
+    #: The ECC server that this configuration set is associated with
     ecc_server = models.ForeignKey('ECCServer', on_delete=models.CASCADE, null=True, blank=True)
 
+    #: The date and time when this config was fetched from the ECC server. This is used to remove
+    #: outdated configs from the database and prevent duplication.
     last_fetched = models.DateTimeField(default=datetime.now)
 
     class Meta:

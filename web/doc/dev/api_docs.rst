@@ -12,3 +12,4 @@ Models
     ECCServer
     DataRouter
     DataSource
+    ConfigId
