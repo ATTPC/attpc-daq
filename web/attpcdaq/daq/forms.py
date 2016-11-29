@@ -49,6 +49,7 @@ class DataRouterForm(forms.ModelForm):
 
 
 class ConfigSelectionForm(forms.ModelForm):
+    """A form used to select a config file set for an ECC server."""
     class Meta:
         model = ECCServer
         fields = ['selected_config']

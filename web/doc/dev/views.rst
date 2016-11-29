@@ -1,16 +1,36 @@
-Views
-=====
+Interacting with the system
+===========================
 
-.. py:currentmodule:: attpcdaq.daq.views
+Interaction with the Django web app occurs through *views*, which are just functions and classes that Django calls
+when certain URLs are requested. Views are used to render the pages of the web app, and they are also how the user
+tells the system to "do something" like configure a CoBo or refresh the state of an ECC server.
 
-The `views` module contains code that renders the pages of the web application.
+Views are mapped to URLs automatically by Django. This mapping is set up in the module :mod:`attpcdaq.daq.urls`.
 
-Page rendering functions
-------------------------
+Some views render pages that accept information from the user. These generally use a Django form class to process
+the data.
 
-.. autofunction:: status
-.. autofunction:: choose_config
-.. autofunction:: experiment_settings
+Since the views serve a number of different purposes, they are organized into a few separate modules in the package
+:mod:`attpcdaq.daq.views`.
+
+Page rendering views
+--------------------
+
+..  currentmodule:: attpcdaq.daq.views.pages
+
+These views, located in the module :mod:`attpcdaq.daq.views.pages`, are used to render the pages of the web app.
+This includes functions like :func:`status`, which renders the main status page, and others like :func:`show_log_page`,
+which contacts a remote computer, fetches the end of a log file, and renders a page showing it.
+
+..  autosummary::
+    :toctree: generated/
+
+    status
+    choose_config
+    experiment_settings
+    remote_status
+    show_log_page
+
 
 Refreshing ECC state
 --------------------

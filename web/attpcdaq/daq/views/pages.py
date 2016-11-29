@@ -60,7 +60,7 @@ def status(request):
 def choose_config(request, pk):
     """Renders a page for choosing the config for an ECC server.
 
-    This renders the `attpcdaq.daq.forms.ConfigSelectionForm` to pick the configuration.
+    This renders the :class:`~attpcdaq.daq.forms.ConfigSelectionForm` to pick the configuration.
 
     Parameters
     ----------
@@ -89,19 +89,7 @@ def choose_config(request, pk):
 
 @login_required
 def experiment_settings(request):
-    """Renders the experiment settings page.
-
-    Parameters
-    ----------
-    request : HttpRequest
-        The request.
-
-    Returns
-    -------
-    HttpResponse
-        The rendered page.
-
-    """
+    """Renders the experiment settings page."""
 
     experiment = get_object_or_404(Experiment, user=request.user)
 
@@ -140,7 +128,7 @@ def show_log_page(request, pk, program):
     Returns
     -------
     HttpResponse
-        Renders the log_file.html template with the given log file as content.
+        Renders the ``log_file.html`` template with the given log file as content.
 
     """
     ds = get_object_or_404(DataSource, pk=pk)
