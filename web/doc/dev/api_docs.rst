@@ -13,3 +13,5 @@ Models
     DataRouter
     DataSource
     ConfigId
+    Experiment
+    RunMetadata

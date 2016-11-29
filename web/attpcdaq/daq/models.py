@@ -563,20 +563,20 @@ class DataSource(models.Model):
 class Experiment(models.Model):
     """Represents an experiment and the settings relevant to one.
 
-    This class is also responsible for keeping track of run numbers.
+    This model keeps track of run numbers and knows the name of the experiment. It is queried when
+    rearranging data files at the end of a run, when the experiment name is used as the name of the directory
+    in which to store the files.
 
-    Attributes
-    ----------
-    user : models.OneToOneField
-        The user associated with this experiment.
-    name : models.CharField
-        The name of the experiment. This must be unique.
-    target_run_duration : models.PositiveIntegerField
-        The expected duration of a run, in seconds.
-q
+    The active experiment is selected by a one-to-one mapping from the name of the current user.
     """
+
+    #: The user associated with this experiment
     user = models.OneToOneField(User)
+
+    #: The name of the experiment. This must be unique.
     name = models.CharField(max_length=100, unique=True)
+
+    #: The expected duration of a run, in seconds.
     target_run_duration = models.PositiveIntegerField(default=3600)
 
     def __str__(self):
@@ -619,8 +619,8 @@ q
     def next_run_number(self):
         """Get the number that the next run should have.
 
-        The number returned is the run number from `latest_run` plus 1. Therefore, if a run is currently being
-        recorded, this function will return the current run number plus 1.
+        The number returned is the run number from :attr:`~Experiment.latest_run` plus 1. Therefore, if a run is
+        currently being recorded, this function will return the current run number plus 1.
 
         If there are no runs, this will return 0.
 
@@ -628,11 +628,6 @@ q
         -------
         int
             The next run number.
-
-        See Also
-        --------
-        DataSource.latest_run
-
         """
         latest_run = self.latest_run
         if latest_run is not None:
@@ -641,9 +636,10 @@ q
             return 0
 
     def start_run(self):
-        """Creates and saves a new RunMetadata object with the next run number for the experiment.
+        """Creates and saves a new :class:`RunMetadata` object with the next run number for the experiment.
 
-        The `start_datetime` field of the created RunMetadata instance is set to the current date and time.
+        The :attr:`~RunMetadata.start_datetime` field of the created :class:`RunMetadata` instance is set to the
+        current date and time.
 
         Raises
         ------
@@ -660,7 +656,10 @@ q
         new_run.save()
 
     def stop_run(self):
-        """Sets the `stop_datetime` of the current run to the current date and time, effectively ending the run.
+        """Stops the current run.
+
+        This sets the :attr:`~RunMetadata.stop_datetime` of the current run to the current date and time,
+        effectively ending the run.
 
         Raises
         ------
@@ -679,26 +678,27 @@ q
 class RunMetadata(models.Model):
     """Represents the metadata describing a data run.
 
-    Attributes
-    ----------
-    experiment : models.ForeignKey
-        The experiment this run is for
-    run_number : models.PositiveIntegerField
-        The run number
-    start_datetime : models.DateTimeField
-        The date and time when the run started.
-    stop_datetime : models.DateTimeField
-        The date and time when the run ended.
+    Fields can be added to this model to store any type of data we want to record about each run. For instance,
+    a title can be added so we know what the run was recording.
 
     """
 
     class Meta:
         verbose_name = 'run'
 
+    #: The experiment that this run is a part of
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+
+    #: The run number
     run_number = models.PositiveIntegerField()
+
+    #: The date and time when the run started
     start_datetime = models.DateTimeField(null=True, blank=True)
+
+    #: The date and time when the run ended
     stop_datetime = models.DateTimeField(null=True, blank=True)
+
+    #: A title or comment describing the run
     title = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):

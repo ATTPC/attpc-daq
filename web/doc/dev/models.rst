@@ -49,3 +49,10 @@ Config file sets (:class:`ConfigId`)
 Sets of config files are represented as :class:`ConfigId` objects. These contain fields for each of the three config
 files for the three configuration steps. These sets will generally be created automatically by fetching them from the
 ECC servers using :meth:`ECCServer.refresh_configs`, but they can also be created manually if necessary.
+
+Run and experiment metadata (:class:`Experiment` and :class:`RunMetadata`)
+--------------------------------------------------------------------------
+
+These two models store information about the experiment and the runs it contains. They are used to number the runs and
+to store metadata like the experiment name, the duration of each run, and a comment describing the conditions for
+each run. More fields could be added to the :class:`RunMetadata` model in the future to store more information.
