@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 def eccserver_refresh_state_task(eccserver_pk):
     """Fetch the state of the given ECC server.
 
+    This will contact the ECC server identified by the given primary key, fetch its state, and
+    update the state in the database.
+
     Parameters
     ----------
     eccserver_pk : int
@@ -37,7 +40,7 @@ def eccserver_refresh_state_task(eccserver_pk):
 def eccserver_refresh_all_task():
     """Fetch the state of all ECC servers.
 
-    This calls `eccserver_refresh_state_task` for each ECC server in the database.
+    This calls :func:`eccserver_refresh_state_task` for each ECC server in the database.
 
     """
     try:
@@ -54,12 +57,16 @@ def eccserver_refresh_all_task():
 def eccserver_change_state_task(eccserver_pk, target_state):
     """Change the state of an ECC server (make it perform a transition).
 
+    This will contact the ECC server identified by the given primary key and tell it to transition to the given
+    target state. This is done by calling :meth:`~attpcdaq.daq.models.ECCServer.change_state` on the
+    :class:`~attpcdaq.daq.models.ECCServer` object.
+
     Parameters
     ----------
     eccserver_pk : int
         The ECC server's integer primary key.
     target_state : int
-        The target state. Use one of the constants from the ECCServer class.
+        The target state. Use one of the constants from the :class:`~attpcdaq.daq.models.ECCServer` class.
     """
     try:
         ecc_server = ECCServer.objects.get(pk=eccserver_pk)
@@ -77,6 +84,18 @@ def eccserver_change_state_task(eccserver_pk, target_state):
 
 @shared_task(soft_time_limit=10, time_limit=40)
 def check_ecc_server_online_task(eccserver_pk):
+    """Checks if the ECC server is online.
+
+    This is done by checking if the process is running via SSH. Specifically, the method
+    :meth:`~attpcdaq.daq.workertasks.WorkerInterface.check_ecc_server_status` of the
+    :class:`~attpcdaq.daq.workertasks.WorkerInterface` object is used.
+
+    Parameters
+    ----------
+    eccserver_pk : int
+        The primary key of the ECC server in the database.
+
+    """
     try:
         ecc_server = ECCServer.objects.get(pk=eccserver_pk)
     except ECCServer.DoesNotExist:
@@ -97,7 +116,11 @@ def check_ecc_server_online_task(eccserver_pk):
 
 @shared_task(soft_time_limit=60, time_limit=80)
 def check_ecc_server_online_all_task():
-    """Check and update the state of all known ECC servers"""
+    """Check and update the state of all known ECC servers.
+
+    This calls :func:`check_ecc_server_online_task` for each ECC server.
+
+    """
     try:
         pks = [e.pk for e in ECCServer.objects.all()]
         gp = group([check_ecc_server_online_task.s(i) for i in pks])
@@ -110,7 +133,20 @@ def check_ecc_server_online_all_task():
 
 @shared_task(soft_time_limit=10, time_limit=40)
 def check_data_router_status_task(datarouter_pk):
-    """Checks whether the data router is online and if the staging directory is clean."""
+    """Checks whether the data router is online and if the staging directory is clean.
+
+    This is done by checking if the process is running via SSH. Specifically, the method
+    :meth:`~attpcdaq.daq.workertasks.WorkerInterface.check_data_router_status` of the
+    :class:`~attpcdaq.daq.workertasks.WorkerInterface` object is used. Then, the staging directory
+    is checked for GRAW files using :meth:`~attpcdaq.daq.workertasks.WorkerInterface.working_dir_is_clean`
+    from the same class.
+
+    Parameters
+    ----------
+    eccserver_pk : int
+        The primary key of the ECC server in the database.
+
+    """
     try:
         data_router = DataRouter.objects.get(pk=datarouter_pk)
     except DataRouter.DoesNotExist:
@@ -136,7 +172,11 @@ def check_data_router_status_task(datarouter_pk):
 
 @shared_task(soft_time_limit=60, time_limit=80)
 def check_data_router_status_all_task():
-    """Check and update the state of all known data routers"""
+    """Check and update the state of all known data routers.
+
+    This calls :func:`check_data_router_status_task` for each data router.
+
+    """
     try:
         pks = [dr.pk for dr in DataRouter.objects.all()]
         gp = group([check_data_router_status_task.s(i) for i in pks])
@@ -150,6 +190,10 @@ def check_data_router_status_all_task():
 @shared_task(soft_time_limit=30, time_limit=40)
 def organize_files_task(datarouter_pk, experiment_name, run_number):
     """Connects to the DAQ worker nodes to organize files at the end of a run.
+
+    This is done via SSH using the method
+    :meth:`~attpcdaq.daq.workertasks.WorkerInterface.organize_files` of the
+    :class:`~attpcdaq.daq.workertasks.WorkerInterface` object.
 
     Parameters
     ----------
@@ -182,6 +226,18 @@ def organize_files_task(datarouter_pk, experiment_name, run_number):
 
 @shared_task(soft_time_limit=30, time_limit=40)
 def organize_files_all_task(experiment_name, run_number):
+    """Organize files on all remote nodes.
+
+    This calls :func:`organize_files_task` for all data routers.
+
+    Parameters
+    ----------
+    experiment_name : str
+        The name of the current experiment
+    run_number : int
+        The most recent run number
+
+    """
     try:
         pk_list = [router.pk for router in DataRouter.objects.all()]
         gp = group([organize_files_task.s(i, experiment_name, run_number) for i in pk_list])

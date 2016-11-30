@@ -9,6 +9,7 @@ Developer documentation
     models.rst
     views.rst
     workertasks.rst
+    async_tasks.rst
     api_docs.rst
 
 
