@@ -26,10 +26,15 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def refresh_state_all(request):
-    """Fetch the state of all data sources and return the overall state of the system.
+    """Fetch the state of all data sources from the database and return the overall state of the system.
 
     The value of the data source state that will be returned is whatever the database says. These values will be
     returned along with the overall state of the system and some information about the current experiment and run.
+
+    ..  note::
+
+        This function does *not* communicate with the ECC server in any way. To contact the ECC server and update
+        the state stored in the database, call :meth:`attpcdaq.daq.models.ECCServer.refresh_state` instead.
 
     The JSON array returned will contain the following keys:
 
@@ -260,6 +265,7 @@ class RemoveDataSourceView(LoginRequiredMixin, DeleteView):
 
 
 class AddECCServerView(LoginRequiredMixin, PanelTitleMixin, CreateView):
+    """Add an ECC server."""
     model = ECCServer
     form_class = ECCServerForm
     template_name = 'daq/add_or_edit_item.html'
@@ -268,12 +274,14 @@ class AddECCServerView(LoginRequiredMixin, PanelTitleMixin, CreateView):
 
 
 class ListECCServersView(LoginRequiredMixin, ListView):
+    """List all ECC servers."""
     model = ECCServer
     queryset = ECCServer.objects.order_by('name')
     template_name = 'daq/ecc_server_list.html'
 
 
 class UpdateECCServerView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    """Modify an ECC server."""
     model = ECCServer
     form_class = ECCServerForm
     template_name = 'daq/add_or_edit_item.html'
@@ -282,6 +290,7 @@ class UpdateECCServerView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
 
 
 class RemoveECCServerView(LoginRequiredMixin, DeleteView):
+    """Delete an ECC server."""
     model = ECCServer
     template_name = 'daq/remove_item.html'
     success_url = reverse_lazy('daq/ecc_server_list')
@@ -291,6 +300,7 @@ class RemoveECCServerView(LoginRequiredMixin, DeleteView):
 
 
 class AddDataRouterView(LoginRequiredMixin, PanelTitleMixin, CreateView):
+    """Add a data router."""
     model = DataRouter
     form_class = DataRouterForm
     template_name = 'daq/add_or_edit_item.html'
@@ -299,12 +309,14 @@ class AddDataRouterView(LoginRequiredMixin, PanelTitleMixin, CreateView):
 
 
 class ListDataRoutersView(LoginRequiredMixin, ListView):
+    """List all data routers."""
     model = DataRouter
     queryset = DataRouter.objects.order_by('name')
     template_name = 'daq/data_router_list.html'
 
 
 class UpdateDataRouterView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    """Modify a data router."""
     model = DataRouter
     form_class = DataRouterForm
     template_name = 'daq/add_or_edit_item.html'
@@ -313,6 +325,7 @@ class UpdateDataRouterView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
 
 
 class RemoveDataRouterView(LoginRequiredMixin, DeleteView):
+    """Delete a data router."""
     model = DataRouter
     template_name = 'daq/remove_item.html'
     success_url = reverse_lazy('daq/data_router_list')

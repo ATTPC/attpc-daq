@@ -44,6 +44,29 @@ def calculate_overall_state():
 
 
 def get_ecc_server_statuses():
+    """Gets some information about the ECC servers.
+
+    This produces a dictionary with the following key-value pairs:
+
+    'success'
+        Whether the request succeeded.
+    'error_message'
+        An error message, if applicable.
+    'pk'
+        The integer primary key of the ECC server in the database.
+    'state'
+        The current (integer) state of the ECC server, as enumerated in the constants attached to that class.
+    'state_name'
+        The name of the current state of the ECC server.
+    'transitioning'
+        Whether the ECC server is transitioning between states.
+
+    Returns
+    -------
+    dict
+        A dictionary with the above keys.
+
+    """
     ecc_server_status_list = []
     for ecc_server in ECCServer.objects.all():
         ecc_res = {
@@ -60,6 +83,25 @@ def get_ecc_server_statuses():
 
 
 def get_data_router_statuses():
+    """Gets some information about the data routers.
+
+    This produces a dictionary with the following key-value pairs:
+
+    'success'
+        Whether the request succeeded.
+    'pk'
+        The integer primary key of the data router in the database.
+    'is_online'
+        Whether the router is available.
+    'is_clean'
+        Whether the staging directory is clean.
+
+    Returns
+    -------
+    dict
+        A dictionary of the values above.
+
+    """
     data_router_status_list = []
     for router in DataRouter.objects.all():
         router_res = {
@@ -72,7 +114,44 @@ def get_data_router_statuses():
 
     return data_router_status_list
 
+
 def get_status(request):
+    """Returns some information about the system's status.
+
+    This generates a dictionary containing the following key-value pairs:
+
+    'overall_state'
+        The overall state of the system. If all of the data sources have the same state, this should
+        be the numerical ID of a state. If the sources have different states, it should be -1.
+    'overall_state_name'
+        The name of the overall state of the system. Either a state name or "Mixed" if the state
+        is inconsistent.
+    'run_number'
+        The current run number.
+    'start_time'
+        The date and time when the current run started.
+    'run_duration'
+        The duration of the current run. This is with respect to the current time if the run
+        has not ended.
+    'ecc_server_status_list'
+        Status of each ECC server. See :func:`get_ecc_server_statuses` for details.
+    'data_router_status_list'
+        Status of each data router. See :func:`get_data_router_statuses` for details.
+
+    This is helpful when generating JSON responses to update the main page periodically.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request object. This must be included so we can get the name of the current user when fetching the
+        :class:`~attpcdaq.daq.models.Experiment` object.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the information above.
+
+    """
     ecc_server_status_list = get_ecc_server_statuses()
     data_router_status_list = get_data_router_statuses()
     overall_state, overall_state_name = calculate_overall_state()
