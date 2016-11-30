@@ -7,7 +7,7 @@ This section contains some information about the structure of the DAQ code and s
 design of the system. This will be useful mostly for people who want to modify the code or fix bugs.
 
 ..  toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     structure.rst
     models.rst

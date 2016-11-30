@@ -13,6 +13,9 @@ communications, the view submits a task to the Celery queue and returns immediat
 the task is processing. When the task is completed, some part of the database is generally updated. The GUI is then
 updated to reflect the fact that the task has completed when it periodically refreshes itself.
 
+Tasks
+-----
+
 The Celery tasks in this application are just Python functions with the ``@shared_task`` decorator. This decorator
 registers them with the Celery system as tasks, and it also allows us to set a time limit on them. All of the tasks
 are located in the module :mod:`attpcdaq.daq.tasks`.
@@ -45,3 +48,20 @@ are located in the module :mod:`attpcdaq.daq.tasks`.
 
     organize_files_task
     organize_files_all_task
+
+
+Task scheduling
+---------------
+
+Some of the tasks above are best run automatically according to a schedule. Periodic tasks are supported by the
+Celery system, and are configured using the ``CELERYBEAT_SCHEDULE`` entry in the :mod:`attpcdaq.settings` module.
+This is a dictionary with the format shown in the example below.
+
+..  code-block:: python
+
+    CELERYBEAT_SCHEDULE = {
+        'update-state-every-5-sec': {                                 # A descriptive name for the task
+            'task': 'attpcdaq.daq.tasks.eccserver_refresh_all_task',  # The dotted name of the task, as a string
+            'schedule': timedelta(seconds=5),                         # The interval between runs
+        },
+    }
