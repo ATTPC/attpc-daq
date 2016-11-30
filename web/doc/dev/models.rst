@@ -9,8 +9,14 @@ information about each model, refer to their individual pages.
 
 ..  currentmodule:: attpcdaq.daq.models
 
-The ECC server (:class:`ECCServer`)
------------------------------------
+DAQ system components
+---------------------
+
+The GET DAQ system is modeled using three classes: the :class:`ECCServer`, the :class:`DataRouter`, and the
+:class:`DataSource`.
+
+The ECC server
+~~~~~~~~~~~~~~
 
 The :class:`ECCServer` model is responsible for all communication with the GET ECC server processes. There should
 be one instance of this model for each ECC server in the system. The :class:`ECCServer` has fields that store the
@@ -29,30 +35,57 @@ wrapped by the :class:`EccClient` class in this module. The interface to the ECC
 ``web/attpcdaq/daq/ecc.wsdl``, which was copied from the source of the GET ECC server into this package. If the
 interface is updated in a future version of the ECC server, this file should be replaced.
 
-The data router (:class:`DataRouter`)
--------------------------------------
+The data router
+~~~~~~~~~~~~~~~
 
 The :class:`DataRouter` model stores information about data routers in the system. The data router processes are each
 associated with one data source, and they record the data stream from that source to a GRAW file. This model simply
 stores information about the data router like its IP address, port, and connection type. This information is forwarded
 to the data sources when the ECC server configures them.
 
-The data source (:class:`DataSource`)
--------------------------------------
+The data source
+~~~~~~~~~~~~~~~
 
 This represents a source of data, like a CoBo or a MuTAnT. This is functionally just a link between an ECC server,
 which controls the source, and a data router, which receives data from the source.
 
-Config file sets (:class:`ConfigId`)
-------------------------------------
+.. rubric:: DAQ component models
+
+..  autosummary::
+    :toctree: generated/
+
+    ECCServer
+    DataRouter
+    DataSource
+
+
+Config file sets
+----------------
 
 Sets of config files are represented as :class:`ConfigId` objects. These contain fields for each of the three config
 files for the three configuration steps. These sets will generally be created automatically by fetching them from the
 ECC servers using :meth:`ECCServer.refresh_configs`, but they can also be created manually if necessary.
 
-Run and experiment metadata (:class:`Experiment` and :class:`RunMetadata`)
---------------------------------------------------------------------------
+..  rubric:: Config file models
 
-These two models store information about the experiment and the runs it contains. They are used to number the runs and
-to store metadata like the experiment name, the duration of each run, and a comment describing the conditions for
-each run. More fields could be added to the :class:`RunMetadata` model in the future to store more information.
+..  autosummary::
+    :toctree: generated/
+
+    ConfigId
+
+
+Run and experiment metadata
+---------------------------
+
+The :class:`Experiment` and :class:`RunMetadata` models store information about the experiment and the runs it contains.
+They are used to number the runs and to store metadata like the experiment name, the duration of each run, and a
+comment describing the conditions for each run. More fields could be added to the :class:`RunMetadata` model in
+the future to store more information.
+
+..  rubric:: Metadata models
+
+..  autosummary::
+    :toctree: generated/
+
+    Experiment
+    RunMetadata

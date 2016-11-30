@@ -10,6 +10,3 @@ Developer documentation
     views.rst
     workertasks.rst
     async_tasks.rst
-    api_docs.rst
-
-
