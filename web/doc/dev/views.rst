@@ -109,7 +109,7 @@ These helper functions are called by some of the views to avoid duplicating code
 :mod:`attpcdaq.daq.views.helpers`.
 
 ..  autosummary::
-    :toctree:
+    :toctree: generated/
 
     calculate_overall_state
     get_ecc_server_statuses
