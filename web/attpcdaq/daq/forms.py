@@ -100,3 +100,21 @@ class DataSourceListUploadForm(forms.Form):
         self.helper.form_id = 'datasource-list-upload-form'
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class EasySetupForm(forms.Form):
+    num_cobos = forms.IntegerField()
+    one_ecc_server = forms.BooleanField()
+    first_cobo_ecc_ip = forms.GenericIPAddressField(protocol='IPv4')
+    first_cobo_data_router_ip = forms.GenericIPAddressField(protocol='IPv4')
+
+    mutant_is_present = forms.BooleanField()
+    mutant_ecc_ip = forms.GenericIPAddressField(protocol='IPv4')
+    mutant_data_router_ip = forms.GenericIPAddressField(protocol='IPv4')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'easy-setup-form'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
