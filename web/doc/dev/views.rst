@@ -22,6 +22,8 @@ These views, located in the module :mod:`attpcdaq.daq.views.pages`, are used to 
 This includes functions like :func:`status`, which renders the main status page, and others like :func:`show_log_page`,
 which contacts a remote computer, fetches the end of a log file, and renders a page showing it.
 
+..  rubric:: Views
+
 ..  autosummary::
     :toctree: generated/
 
@@ -30,6 +32,14 @@ which contacts a remote computer, fetches the end of a log file, and renders a p
     experiment_settings
     remote_status
     show_log_page
+    easy_setup_page
+
+..  rubric:: Backend functions
+
+..  autosummary::
+    :toctree: generated/
+
+    easy_setup
 
 
 ECC interaction views

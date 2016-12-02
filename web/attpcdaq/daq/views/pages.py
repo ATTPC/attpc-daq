@@ -148,33 +148,62 @@ def show_log_page(request, pk, program):
     return render(request, 'daq/log_file.html', context={'log_content': log_content})
 
 
-def _ip_address_generator(first, count):
-    components = [int(x) for x in first.split('.')]
+def _make_ip(base, offset):
+    """Generate an IP address with an offset from the given base address.
 
-    for i in range(count):
-        new_ip = '{}.{}.{}.{}'.format(
-            components[0],
-            components[1],
-            components[2],
-            components[3] + i
-        )
-        yield new_ip
+    This will add the given offset to the last part of the base address.
 
+    Parameters
+    ----------
+    base : str
+        The base address, to which the offset will be added.
+    offset : int
+        The offset to add to the last component of the base.
 
-def _make_ip(base, index):
+    Examples
+    --------
+    >>> _make_ip('192.168.1.10', 5)
+    '192.168.1.15'
+    >>> _make_ip('10.0.1.20', 15)
+    '10.0.1.35'
+    """
     components = [int(x) for x in base.split('.')]
     return '{}.{}.{}.{}'.format(
         components[0],
         components[1],
         components[2],
-        components[3] + index
+        components[3] + offset
     )
 
 
 @transaction.atomic
 def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_router_ip,
-               mutant_is_present, mutant_ecc_ip, mutant_data_router_ip):
+               mutant_is_present=False, mutant_ecc_ip=None, mutant_data_router_ip=None):
+    """Create a set of model instances with default values based on the given parameters.
 
+    This will populate the database with all of the required DAQ components. Note that all old instances will
+    be deleted. This is done atomically, so if this function fails, nothing will be changed.
+
+    Parameters
+    ----------
+    num_cobos : int
+        The number of CoBos to add to the system.
+    one_ecc_server : bool
+        If True, all data sources will use the same ECC server. If False, a separate ECC server will be created
+        for each data source.
+    first_cobo_ecc_ip : str
+        The IP address of the ECC server for the first CoBo. Subsequent ECC servers will have IP addresses whose
+        last component is incremented by one.
+    first_cobo_data_router_ip : str
+        The IP address of the data router for the first CoBo. Subsequent data routers will have IP addresses whose
+        last component is incremented by one.
+    mutant_is_present : bool, optional
+        True if the MuTAnT is present in the system and should be set up.
+    mutant_ecc_ip : str, optional
+        The IP address of the ECC server of the MuTAnT. This will be overridden if `one_ecc_server` is True.
+    mutant_data_router_ip : str, optional
+        The IP address of the data router of the MuTAnT.
+    """
     # Clear out old items
     DataSource.objects.all().delete()
     ECCServer.objects.all().delete()
@@ -232,7 +261,20 @@ def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_rou
 
 @login_required
 def easy_setup_page(request):
+    """Renders the easy setup form for one-step system configuration.
 
+    The actual changes to the database are made by :func:`easy_setup`.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request.
+
+    Returns
+    -------
+    HttpResponse
+        Renders the form. Redirects to the status page on success.
+    """
     if request.method == 'POST':
         form = EasySetupForm(request.POST)
         if form.is_valid():
