@@ -104,13 +104,13 @@ class DataSourceListUploadForm(forms.Form):
 
 class EasySetupForm(forms.Form):
     num_cobos = forms.IntegerField()
-    one_ecc_server = forms.BooleanField()
+    one_ecc_server = forms.BooleanField(required=False)
     first_cobo_ecc_ip = forms.GenericIPAddressField(protocol='IPv4')
     first_cobo_data_router_ip = forms.GenericIPAddressField(protocol='IPv4')
 
-    mutant_is_present = forms.BooleanField()
-    mutant_ecc_ip = forms.GenericIPAddressField(protocol='IPv4')
-    mutant_data_router_ip = forms.GenericIPAddressField(protocol='IPv4')
+    mutant_is_present = forms.BooleanField(required=False)
+    mutant_ecc_ip = forms.GenericIPAddressField(protocol='IPv4', required=False)
+    mutant_data_router_ip = forms.GenericIPAddressField(protocol='IPv4', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -118,3 +118,13 @@ class EasySetupForm(forms.Form):
         self.helper.form_id = 'easy-setup-form'
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))
+
+    def clean(self):
+        super().clean()
+
+        mutant_is_present = self.cleaned_data['mutant_is_present']
+        mutant_ecc_ip = self.cleaned_data['mutant_ecc_ip']
+        mutant_data_router_ip = self.cleaned_data['mutant_data_router_ip']
+
+        if mutant_is_present and (mutant_ecc_ip == '' or mutant_data_router_ip == ''):
+            raise forms.ValidationError('Must provide ECC and data router IP for MuTAnT if MuTAnT is present')

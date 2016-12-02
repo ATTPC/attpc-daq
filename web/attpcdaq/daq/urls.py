@@ -37,4 +37,6 @@ urlpatterns = [
 
     url(r'^remote/$', views.remote_status, name='daq/remote_status'),
     url(r'^remote/(?P<program>ecc|data_router)_log/(?P<pk>\d+)/$', views.show_log_page, name='daq/show_log'),
+
+    url(r'^easy_setup/$', views.easy_setup_page, name='daq/easy_setup'),
 ]

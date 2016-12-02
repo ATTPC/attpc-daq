@@ -246,7 +246,9 @@ def easy_setup_page(request):
                 mutant_data_router_ip=form.cleaned_data['mutant_data_router_ip'],
             )
 
+            return redirect(reverse('daq/status'))
+
     else:
         form = EasySetupForm()
 
-    return
+    return render(request, 'daq/generic_crispy_form.html', {'panel_title': 'Easy setup', 'form': form})
