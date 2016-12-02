@@ -68,29 +68,4 @@ utility like this:
 
     docker-compose build
 
-This will create Docker containers for the following processes:
 
-PostgreSQL (container/service ``db``)
-    This is the database used to store the internal configuration of the web app. This stores things like the IP
-    addresses of the Mac Minis, the name of the config file to use for each CoBo, the history of recent runs, and the
-    name of the current experiment.
-
-RabbitMQ (container/service ``rabbitmq``)
-    RabbitMQ is a "message broker" that coordinates communication between the main processes of the Django application
-    and the Celery distributed task queue system (see below). It needs to be running, but otherwise it is not
-    particularly interesting from the perspective of the DAQ system.
-
-Django/Gunicorn (container/service ``web``)
-    This container hosts the Gunicorn web server which serves the dynamically generated portion of the web app. This
-    is the container where the Python code of the Django application is running.
-
-Celery (container/service ``celery``)
-    Celery is a distributed task queue system. It receives messages from Django via the RabbitMQ broker and schedules
-    tasks accordingly. This allows asynchronous execution of portions of the web app's code. For example, when you
-    configure the CoBos, a set of tasks is sent to the Celery server that tell it to perform the configuration. This
-    allows the configuration step to occur in parallel for each CoBo, and it prevents the web interface from blocking
-    while the configuration process is taking place.
-
-Nginx (container/service ``nginx``)
-    Nginx is a commonly used web server. It serves the static content of the web app, like CSS files and this help
-    documentation.
