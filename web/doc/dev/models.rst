@@ -1,3 +1,5 @@
+..  _models:
+
 Modeling the system in code
 ===========================
 

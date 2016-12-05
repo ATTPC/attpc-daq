@@ -149,3 +149,79 @@ Also enter a name for the experiment. Data will be written into a directory with
 Spaces are ok in this name. Finally, click "Save" to create the experiment.
 
 Once you've finished this, click "Log Out" in the upper right to log out of the admin interface.
+
+Starting the remote processes
+-----------------------------
+
+..  note::
+    This section assumes the code is running on macOS. Linux distributions support a similar method of configuring
+    a process to automatically launch using ``systemd`` services or ``init`` scripts, but that will not be covered
+    here.
+
+Under macOS, the remote GET processes are managed by ``launchd``, the operating system's main management process.
+It will automatically re-launch the processes if they fail, and it will coordinate logging of the processes' standard
+outputs to a log file.
+
+The behavior of ``launchd`` with respect to the GET software components is controlled by a Launch Agent plist file.
+Example plist files are included in the Git repository, but here is an annotated example for the ECC server:
+
+..  code-block:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+        <!-- A label to identify the program -->
+        <key>Label</key>
+        <string>attpc.getEccSoapServer</string>
+
+        <!-- Any necessary environment variables. This might include settings for paths
+             needed for libraries installed using MacPorts, for example.-->
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>DYLD_FALLBACK_LIBRARY_PATH</key>
+            <string>/opt/local/lib</string>
+        </dict>
+
+        <!-- The commands needed to start the program. Each element of the command is given in
+             a separate <string> tag. The first element should be the full path to the program,
+             and the remaining elements give the command line arguments. -->
+        <key>ProgramArguments</key>
+        <array>
+            <string>/path/to/getEccSoapServer</string>
+            <string>--config-repo-url</string>
+            <string>/path/to/configs/directory</string>
+        </array>
+
+        <!-- The working directory for the program. This is important for the dataRouter as it's
+             where that program will write the data. -->
+        <key>WorkingDirectory</key>
+        <string>/path/to/working/directory</string>
+
+        <!-- Where to write the standard out and standard error files. These may be the same file.
+             It is probably best to put the logs in ~/Library/Logs since that will allow you to
+             view them with the Console application. -->
+        <key>StandardOutPath</key>
+        <string>/Users/USER/Library/Logs/getEccSoapServer.log</string>
+
+        <key>StandardErrorPath</key>
+        <string>/Users/USER/Library/Logs/getEccSoapServer.log</string>
+
+        <!-- Keep the program running at all times, even if there are no incoming connections. -->
+        <key>KeepAlive</key>
+        <true/>
+    </dict>
+    </plist>
+
+A similar file should be created for the data router with the appropriate arguments.
+
+Once plist files have been created, they are conventionally placed in ``~/Library/LaunchAgents``, and they should be
+launched on startup if they are in that directory. To launch the programs manually, use ``launchctl``:
+
+..  code-block:: shell
+
+    launchctl load ~/Library/LaunchAgents/attpc.getEccSoapServer.plist
+
+Manually stopping the programs is very similar. Just replace ``load`` with ``unload`` in the above command.
+
+This can also be automated for all of the remote computers using, e.g. Apple Remote Desktop.

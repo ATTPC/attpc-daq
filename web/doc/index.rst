@@ -9,6 +9,7 @@ Contents
 
     overview.rst
     installation.rst
+    configuration.rst
     operations.rst
     dev/dev_index.rst
 
