@@ -24,11 +24,13 @@
                     {{ ecc_server.selected_config }}
                     <a href="{% url 'daq/choose_config' ecc_server.pk %}">
                         <span class="icon-btn source-ctrl-btn fa fa-pencil" title="Choose" data-toggle="tooltip"
+                              id="{{ ecc_server.name }}-choose-config-btn"
                               data-placement="bottom"></span>
                     </a>
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-server" title="Describe"
+                                      id="{{ ecc_server.name }}-describe-transition-btn"
                                       data-daq-state-target="{{ ecc_server.DESCRIBED }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -36,6 +38,7 @@
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-link" title="Prepare"
+                                      id="{{ ecc_server.name }}-prepare-transition-btn"
                                       data-daq-state-target="{{ ecc_server.PREPARED }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -43,6 +46,7 @@
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-cog" title="Configure"
+                                      id="{{ ecc_server.name }}-configure-transition-btn"
                                       data-daq-state-target="{{ ecc_server.READY }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -50,6 +54,7 @@
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-play" title="Start"
+                                      id="{{ ecc_server.name }}-start-transition-btn"
                                       data-daq-state-target="{{ ecc_server.RUNNING }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -57,6 +62,7 @@
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-stop" title="Stop"
+                                      id="{{ ecc_server.name }}-stop-transition-btn"
                                       data-daq-state-target="{{ ecc_server.READY }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -64,6 +70,7 @@
                 </td>
                 <td width="35px" class="text-center">
                                 <span class="icon-btn source-ctrl-btn fa fa-repeat" title="Reset"
+                                      id="{{ ecc_server.name }}-reset-transition-btn"
                                       data-daq-state-target="{{ ecc_server.RESET }}"
                                       data-ecc-server-id="{{ ecc_server.pk }}" data-toggle="tooltip"
                                       data-placement="bottom">
@@ -140,7 +147,7 @@
 
     // Add click handlers to the source control buttons
     $(document).ready(function () {
-        $(".source-ctrl-btn").click(function () {
+        $("[id*='transition-btn']").click(function () {
             var pk = $(this).data('ecc-server-id');
             var target = $(this).data('daq-state-target');
             change_state(pk, target).success(function (data) {
