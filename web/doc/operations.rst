@@ -1,23 +1,15 @@
 Operating the DAQ system
 ========================
 
-As said before, the DAQ system consists of two main parts: the web service for controlling the system and the remote
-components from the GET software (see :ref:`get_software`) that run on the Mac Minis. All of these parts need to be
-running before you can record data.
+At this point, we're nearly ready to take data. This page will describe how to choose a configuration file and
+start and stop runs. This is probably the most relevant part of the manual from the point of view of the person
+taking an experimental shift.
 
 Web GUI status page
 -------------------
 
-When you first open the web interface, you will see the login page:
-
-..  image:: images/daq_login.png
-    :width: 600 px
-    :align: center
-
-You should log in using a username and password associated with a particular experiment. Note that this is *not*
-the same as the DAQ web app's administrator username and password.
-
-After logging in, you will arrive at the main status page:
+After logging into the system at http://localhost:8080 or whatever address the system is available at, you will arrive
+at the main status page:
 
 ..  image:: images/daq_main.png
     :width: 600 px
@@ -30,15 +22,15 @@ Run Information
     This panel has details about the current current run, like how long it has been going and
     what run number is currently being recorded.
 
-Data Source Status
-    This panel lists the status of each CoBo the system knows about. The "CoBo Status" indicator
-    shows what state machine state the CoBo is in (i.e. "Idle", "Ready", "Running", etc.). The
-    "DAQ Status" indicator shows the state of the remote GET processes on the Mac Minis. This
-    will let you know if one of the processes has crashed or if you need to wait a moment for
-    a file management task to finish. The "Selected Config" indicator lists the name of the
-    config file that will be used to configure the CoBo. Finally, the "Controls" column contains
-    a set of buttons for changing the state of an individual CoBo. These should only be used
-    for troubleshooting purposes.
+ECC Server Status
+    This panel lists the status of each ECC server the system knows about. The "State" indicator
+    shows what state machine state the ECC server is in (i.e. "Idle", "Ready", "Running", etc.). The
+    "Selected Config" column lists the name of the config file set that will be used to configure the devices.
+    Finally, the "Controls" column contains a set of buttons for changing the state of an individual ECC server.
+    These button should only be used for troubleshooting purposes.
+
+Data Router Status
+    This panel shows the state of all of the data routers the system knows about.
 
 Log Entries
     This panel will show the latest error messages from the web interface. This does not include
