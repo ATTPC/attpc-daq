@@ -212,7 +212,7 @@ def organize_files_task(datarouter_pk, experiment_name, run_number):
         return
 
     try:
-        with WorkerInterface(router.data_router_ip_address) as wint:
+        with WorkerInterface(router.ip_address) as wint:
             wint.organize_files(experiment_name, run_number)
 
         router.staging_directory_is_clean = True
