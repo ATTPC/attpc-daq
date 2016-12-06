@@ -409,3 +409,53 @@ class EasySetupTestCase(TestCase):
         self.one_ecc_server = False
         self.mutant_is_present = True
         self.easy_setup_test_impl()
+
+
+@patch('attpcdaq.daq.views.pages.WorkerInterface')
+class LogViewerTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        self.view_name = 'daq/show_log'
+
+        self.ecc = ECCServer.objects.create(
+            name='ECC',
+            ip_address='123.456.789.1',
+        )
+        self.data_router = DataRouter.objects.create(
+            name='DataRouter',
+            ip_address='123.456.789.0',
+        )
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
+
+    def test_no_login(self, *args, **kwargs):
+        super().test_no_login(rev_args=('ecc', 0))
+
+    def _log_test_impl(self, mock_worker_interface, target):
+        self.client.force_login(self.user)
+        fake_log = "Test data"
+
+        wi = mock_worker_interface.return_value
+        wi_as_context_mgr = wi.__enter__.return_value
+        wi_as_context_mgr.tail_file.return_value = fake_log
+
+        if isinstance(target, ECCServer):
+            url = reverse('daq/show_log', args=('ecc', target.pk))
+        elif isinstance(target, DataRouter):
+            url = reverse('daq/show_log', args=('data_router', target.pk))
+        else:
+            raise ValueError('Invalid target class')
+
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual(resp.context['log_content'], fake_log)
+        mock_worker_interface.assert_called_once_with(target.ip_address)
+        wi_as_context_mgr.tail_file.assert_called_once_with(target.log_path)
+
+    def test_ecc_log(self, mock_worker_interface):
+        self._log_test_impl(mock_worker_interface, self.ecc)
+
+    def test_data_router_log(self, mock_worker_interface):
+        self._log_test_impl(mock_worker_interface, self.data_router)

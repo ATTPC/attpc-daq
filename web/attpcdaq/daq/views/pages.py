@@ -125,17 +125,19 @@ def show_log_page(request, pk, program):
         Renders the ``log_file.html`` template with the given log file as content.
 
     """
-    ds = get_object_or_404(DataSource, pk=pk)
-
     if program == 'ecc':
-        path = ds.ecc_log_path
+        ecc = get_object_or_404(ECCServer, pk=pk)
+        path = ecc.log_path
+        ip_address = ecc.ip_address
     elif program == 'data_router':
-        path = ds.data_router_log_path
+        dr = get_object_or_404(DataRouter, pk=pk)
+        path = dr.log_path
+        ip_address = dr.ip_address
     else:
         logger.error('Cannot show log for program %s', program)
         return HttpResponseBadRequest('Bad program name')
 
-    with WorkerInterface(ds.ecc_ip_address) as wint:
+    with WorkerInterface(ip_address) as wint:
         log_content = wint.tail_file(path)
 
     return render(request, 'daq/log_file.html', context={'log_content': log_content})
