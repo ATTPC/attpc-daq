@@ -7,6 +7,7 @@
             <th>Name</th>
             <th>Online</th>
             <th>Clean</th>
+            <th>Logs</th>
         </tr>
         {% for router in data_routers %}
             <tr>
@@ -24,6 +25,11 @@
                     {% else %}
                         <span class="fa fa-times-circle text-danger"></span>
                     {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'daq/show_log' 'data_router' router.pk %}">
+                        <span class="icon-btn fa fa-search"></span>
+                    </a>
                 </td>
             </tr>
         {% endfor %}

@@ -6,6 +6,7 @@
         <tr>
             <th>Name</th>
             <th>State</th>
+            <th>Logs</th>
             <th>Selected Config</th>
             <th colspan="6">Controls</th>
         </tr>
@@ -19,6 +20,11 @@
                                 </span>
                     <span class="fa fa-pulse fa-spinner" id="{{ ecc_server.name }}-status-spinner"
                           data-ecc-server-id="{{ ecc_server.pk }}"></span>
+                </td>
+                <td>
+                    <a href="{% url 'daq/show_log' 'ecc' ecc_server.pk %}">
+                        <span class="icon-btn fa fa-search"></span>
+                    </a>
                 </td>
                 <td>
                     {{ ecc_server.selected_config }}

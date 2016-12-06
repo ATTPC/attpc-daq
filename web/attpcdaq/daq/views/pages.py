@@ -104,13 +104,6 @@ def experiment_settings(request):
 
 
 @login_required
-def remote_status(request):
-    """Renders a page showing the status of the remote processes (ECC server and data router)."""
-    datasource_list = DataSource.objects.all()
-    return render(request, 'daq/remote_status.html', context={'datasource_list': datasource_list})
-
-
-@login_required
 def show_log_page(request, pk, program):
     """Retrieve and render the log file for the given program.
 
