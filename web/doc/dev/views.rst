@@ -30,7 +30,6 @@ which contacts a remote computer, fetches the end of a log file, and renders a p
     status
     choose_config
     experiment_settings
-    remote_status
     show_log_page
     easy_setup_page
 
