@@ -33,6 +33,10 @@ urlpatterns = [
     url(r'^runs/edit/(?P<pk>\d+)$', views.UpdateRunMetadataView.as_view(), name='daq/update_run_metadata'),
     url(r'^runs/download$', views.download_run_metadata, name='daq/download_run_metadata'),
 
+    url(r'^observables/$', views.ListObservablesView.as_view(), name='daq/observables_list'),
+    url(r'^observables/add/$', views.AddObservableView.as_view(), name='daq/add_observable'),
+    url(r'^observables/remove/(?P<pk>\d+)$', views.RemoveObservableView.as_view(), name='daq/remove_observable'),
+
     url(r'^experiment_settings/$', views.experiment_settings, name='daq/experiment_settings'),
 
     url(r'^status/(?P<program>ecc|data_router)_log/(?P<pk>\d+)/$', views.show_log_page, name='daq/show_log'),

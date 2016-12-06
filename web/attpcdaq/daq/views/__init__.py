@@ -3,6 +3,7 @@ from .api import AddDataSourceView, ListDataSourcesView, UpdateDataSourceView, R
 from .api import AddECCServerView, ListECCServersView, UpdateECCServerView, RemoveECCServerView
 from .api import AddDataRouterView, ListDataRoutersView, UpdateDataRouterView, RemoveDataRouterView
 from .api import ListRunMetadataView, UpdateRunMetadataView
+from .api import ListObservablesView, AddObservableView, RemoveObservableView
 
 from .io import download_run_metadata, download_datasource_list, upload_datasource_list
 

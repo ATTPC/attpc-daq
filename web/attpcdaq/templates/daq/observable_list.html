@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Observables - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <span>
+                <span>Observables</span>
+                <div class="pull-right">
+                    <a class="btn btn-primary btn-xs" href="{% url 'daq/add_observable' %}">
+                        <span class="fa fa-plus"></span> Add
+                    </a>
+                </div>
+            </span>
+        </div>
+        <table class="table table-hover">
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th></th>
+            </tr>
+            {% for observable in observable_list %}
+            <tr>
+                <td>{{ observable.name }}</td>
+                <td>{{ observable.get_value_type_display }}</td>
+                <td class="text-right">
+                    <a role="button" class="btn btn-xs btn-danger"
+                       href="{% url 'daq/remove_observable' observable.pk %}">
+                        <span class="glyphicon glyphicon-trash"></span> Remove
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endblock %}

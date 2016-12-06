@@ -3,7 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
 
-from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata
+from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable
 
 
 class DataSourceForm(forms.ModelForm):
@@ -87,6 +87,19 @@ class RunMetadataForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'runmetadata-form'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class ObservableForm(forms.ModelForm):
+    class Meta:
+        model = Observable
+        fields = ['name', 'value_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'observable-form'
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))
 

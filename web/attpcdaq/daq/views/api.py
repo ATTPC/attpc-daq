@@ -14,9 +14,9 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.core.urlresolvers import reverse_lazy
 
-from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment
+from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ..models import ECCError
-from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm
+from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm
 from ..tasks import eccserver_change_state_task, organize_files_all_task
 from .helpers import get_status, calculate_overall_state
 
@@ -352,3 +352,40 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     template_name = 'daq/add_or_edit_item.html'
     panel_title = 'Edit run metadata'
     success_url = reverse_lazy('daq/run_list')
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+class ListObservablesView(LoginRequiredMixin, ListView):
+    """List the observables registered for this experiment."""
+    model = Observable
+    template_name = 'daq/observable_list.html'
+
+    def get_queryset(self):
+        """Filter the queryset based on the experiment."""
+        expt = get_object_or_404(Experiment, user=self.request.user)
+        return Observable.objects.filter(experiment=expt)
+
+
+class AddObservableView(LoginRequiredMixin, CreateView):
+    """Add a new observable to the experiment."""
+    model = Observable
+    form_class = ObservableForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Add an observable'
+    success_url = reverse_lazy('daq/observables_list')
+
+    def form_valid(self, form):
+        observable = form.save(commit=False)
+
+        experiment = get_object_or_404(Experiment, user=self.request.user)
+        observable.experiment = experiment
+        return super().form_valid(form)
+
+
+class RemoveObservableView(LoginRequiredMixin, DeleteView):
+    """Remove an observable from this experiment."""
+    model = Observable
+    template_name = 'daq/remove_item.html'
+    success_url = reverse_lazy('daq/observables_list')

@@ -734,3 +734,51 @@ class RunMetadata(models.Model):
         h, rem = divmod(dur.seconds, 3600)
         m, s = divmod(rem, 60)
         return '{:02d}:{:02d}:{:02d}'.format(h, m, s)
+
+
+class Observable(models.Model):
+    """Something that can be measured."""
+
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    name = models.CharField(max_length=80)
+
+    INTEGER = 'I'
+    FLOAT = 'F'
+    STRING = 'S'
+    value_type_choices = (
+        (INTEGER, 'Integer'),
+        (FLOAT, 'Float'),
+        (STRING, 'String'),
+    )
+
+    value_type = models.CharField(max_length=1, choices=value_type_choices)
+
+
+class Measurement(models.Model):
+    """A measurement of an Observable."""
+
+    run_metadata = models.ForeignKey(RunMetadata, on_delete=models.CASCADE)
+    observable = models.ForeignKey(Observable, on_delete=models.CASCADE)
+    serialized_value = models.CharField(max_length=100, null=True, blank=True)
+
+    _type_map = {
+        Observable.INTEGER: int,
+        Observable.FLOAT: float,
+        Observable.STRING: str,
+    }
+
+    @property
+    def python_type(self):
+        return self._type_map[self.observable.value_type]
+
+    @property
+    def value(self):
+        return self.python_type(self.serialized_value)
+
+    @value.setter
+    def value(self, new_value):
+        if isinstance(new_value, self.python_type):
+            self.serialized_value = str(new_value)
+        else:
+            received_type = type(new_value)
+            raise ValueError('New value was of type{:s}. Expected {:s}.'.format(received_type, self.python_type))

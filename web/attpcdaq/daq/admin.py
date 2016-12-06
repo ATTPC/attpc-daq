@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DataSource, DataRouter, ECCServer, ConfigId, RunMetadata, Experiment
+from .models import DataSource, DataRouter, ECCServer, ConfigId, RunMetadata, Experiment, Observable, Measurement
 
 
 @admin.register(ECCServer)
@@ -37,3 +37,13 @@ class RunMetadataAdmin(admin.ModelAdmin):
 class ExperimentAdmin(admin.ModelAdmin):
     model = Experiment
     list_display = ['name', 'user']
+
+
+@admin.register(Observable)
+class ObservableAdmin(admin.ModelAdmin):
+    model = Observable
+
+
+@admin.register(Measurement)
+class MeasurementAdmin(admin.ModelAdmin):
+    model = Measurement
