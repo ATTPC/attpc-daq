@@ -650,10 +650,15 @@ class Experiment(models.Model):
         if self.is_running:
             raise RuntimeError('Stop the current run before starting a new one')
 
-        new_run = RunMetadata(experiment=self,
-                              run_number=self.next_run_number,
-                              start_datetime=datetime.now())
-        new_run.save()
+        config_names = {ecc.selected_config.configure for ecc in ECCServer.objects.all()}
+        config_names_str = ', '.join(config_names)
+
+        RunMetadata.objects.create(
+            experiment=self,
+            run_number=self.next_run_number,
+            start_datetime=datetime.now(),
+            config_name=config_names_str,
+        )
 
     def stop_run(self):
         """Stops the current run.
@@ -690,7 +695,7 @@ class RunMetadata(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
 
     #: The run number
-    run_number = models.PositiveIntegerField()
+    run_number = models.PositiveIntegerField(unique=True)
 
     #: The date and time when the run started
     start_datetime = models.DateTimeField(null=True, blank=True)

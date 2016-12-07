@@ -1,6 +1,6 @@
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, HTML
+from crispy_forms.layout import Submit, Layout, Fieldset, HTML, Button
 from crispy_forms.bootstrap import FormActions, AppendedText
 
 from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable, Measurement
@@ -75,6 +75,7 @@ class RunMetadataForm(CrispyModelFormBase):
             self.fields[obs.name] = field_type(initial=measurement.value, required=False, help_text=obs.comment)
 
         # Build form layout
+        self.helper.inputs = None  # Override default input provided by base class
         run_fieldset = Fieldset(
             'Run information',
             *self.Meta.fields
@@ -83,9 +84,20 @@ class RunMetadataForm(CrispyModelFormBase):
             'Measurements',
             *(AppendedText(obs.name, obs.units) if obs.units else obs.name for obs in observables)
         )
+        prepop_btn_html = """
+            <a href="{{% url 'daq/update_run_metadata' {:d} %}}?prepopulate=True"
+               class='btn btn-default'>
+                Fill from last run
+            </a>
+        """.format(self.instance.pk)
+        buttons = FormActions(
+            Submit('submit', 'Submit'),
+            HTML(prepop_btn_html),
+        )
         self.helper.layout = Layout(
             run_fieldset,
             measurement_fieldset,
+            buttons,
         )
 
     def save(self, commit=True):

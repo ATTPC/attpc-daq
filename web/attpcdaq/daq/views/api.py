@@ -207,6 +207,12 @@ def source_change_state_all(request):
     return JsonResponse(output)
 
 
+@login_required
+def autofill_run_metadata_from_previous(request):
+    experiment = get_object_or_404(Experiment, user=request.user)
+    current_run = experiment.latest_run
+
+
 class PanelTitleMixin(object):
     """A mixin that provides a panel title to be used in a template.
 
@@ -353,6 +359,29 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     template_name = 'daq/add_or_edit_item.html'
     panel_title = 'Edit run metadata'
     success_url = reverse_lazy('daq/run_list')
+    automatic_fields = ['run_number', 'config_name', 'start_datetime', 'stop_datetime']  # Don't prepopulate these
+
+    def get_initial(self):
+        initial = super().get_initial()
+        should_prepopulate = self.request.GET.get('prepopulate', False)
+        if should_prepopulate:
+            try:
+                this_run = self.get_object()
+                prev_run = RunMetadata.objects                          \
+                    .filter(start_datetime__lt=this_run.start_datetime) \
+                    .latest('start_datetime')
+
+                for field in filter(lambda x: x not in self.automatic_fields, self.form_class.Meta.fields):
+                    initial[field] = getattr(prev_run, field)
+
+                prev_measurements = prev_run.measurement_set.all().select_related('observable')
+                for measurement in prev_measurements:
+                    initial[measurement.observable.name] = measurement.value
+
+            except RunMetadata.DoesNotExist:
+                logger.error('No previous run to get values from.')
+
+        return initial
 
 
 # ----------------------------------------------------------------------------------------------------------------------
