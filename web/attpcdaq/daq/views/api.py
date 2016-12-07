@@ -13,8 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.views.generic import RedirectView
-from django.core.urlresolvers import reverse, reverse_lazy
-from django.forms import modelformset_factory
+from django.core.urlresolvers import reverse_lazy
 
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ..models import ECCError
@@ -206,12 +205,6 @@ def source_change_state_all(request):
     output = get_status(request)
 
     return JsonResponse(output)
-
-
-@login_required
-def autofill_run_metadata_from_previous(request):
-    experiment = get_object_or_404(Experiment, user=request.user)
-    current_run = experiment.latest_run
 
 
 class PanelTitleMixin(object):

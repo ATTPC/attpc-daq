@@ -6,14 +6,14 @@ create entries in the database from it.
 
 """
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core import serializers
 from django.db import transaction
 
-from ..models import DataSource, RunMetadata
+from ..models import DataSource, RunMetadata, Experiment, Observable, Measurement
 from ..forms import DataSourceListUploadForm
 
 import csv
@@ -22,16 +22,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@login_required
 def download_run_metadata(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="run_metadata.csv"'
+    experiment = get_object_or_404(Experiment, user=request.user)
+    observables = Observable.objects.filter(experiment=experiment)
 
-    data = RunMetadata.objects.order_by('run_number')
+    run_fields = ['run_number', 'run_class', 'title', 'start_datetime', 'stop_datetime', 'config_name']
+    measurement_fields = [obs.name for obs in observables]
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="{:s} run metadata.csv"'.format(experiment.name)
 
     writer = csv.writer(response)
-    writer.writerow(['Run number', 'Run title', 'Start time', 'Stop time'])
-    for item in data:
-        writer.writerow([item.run_number, item.title, item.start_datetime, item.stop_datetime])
+    writer.writerow([RunMetadata._meta.get_field(f).verbose_name for f in run_fields] + measurement_fields)
+
+    for run in RunMetadata.objects.order_by('run_number'):
+        measurement_qset = Measurement.objects.filter(run_metadata=run).select_related('observable')
+        measurement_dict = {m.observable.name: m.value for m in measurement_qset}
+
+        row_items = [getattr(run, field) for field in run_fields]
+        row_items += [measurement_dict[field] for field in measurement_fields]
+
+        writer.writerow(row_items)
 
     return response
 

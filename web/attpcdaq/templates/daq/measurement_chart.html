@@ -9,6 +9,11 @@
         <div class="panel-heading">
             <span>
                 <span>Measurements</span>
+                <div class="pull-right">
+                <a class="btn btn-default btn-xs" href="{% url 'daq/download_run_metadata' %}">
+                    <span class="fa fa-download"></span> Download as CSV
+                </a>
+            </div>
             </span>
         </div>
         <table class="table table-bordered">

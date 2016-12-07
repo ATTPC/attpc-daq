@@ -698,10 +698,10 @@ class RunMetadata(models.Model):
     run_number = models.PositiveIntegerField(unique=True)
 
     #: The date and time when the run started
-    start_datetime = models.DateTimeField(null=True, blank=True)
+    start_datetime = models.DateTimeField(null=True, blank=True, verbose_name='start date/time')
 
     #: The date and time when the run ended
-    stop_datetime = models.DateTimeField(null=True, blank=True)
+    stop_datetime = models.DateTimeField(null=True, blank=True, verbose_name='stop date/time')
 
     #: A title or comment describing the run
     title = models.CharField(max_length=200, null=True, blank=True)
