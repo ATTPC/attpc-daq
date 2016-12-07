@@ -1,6 +1,15 @@
 <div class="panel panel-default" id="run-info-panel">
     <div class="panel-heading">
-        Run Information
+        <span>Run Information</span>
+        <div class="pull-right">
+            <a class="btn btn-primary btn-xs" href="{% url 'daq/update_latest_run' %}" id="update-values-btn">
+                Update values
+            </a>
+            <a class="btn btn-default btn-xs" href="{% url 'daq/update_latest_run' %}?prepopulate=True"
+               id="same-values-btn">
+                Same as previous
+            </a>
+        </div>
     </div>
     <table class="table">
         <tr>
@@ -13,15 +22,11 @@
         </tr>
         <tr>
             <th>Run title:</th>
-            <td id="run-title">
-                {{ latest_run.title }}
-                {% if latest_run %}
-{#                <a href="{% url 'daq/update_run_metadata' latest_run.pk %}">#}
-{#                    <span class="icon-btn fa fa-pencil" title="Edit" data-toggle="tooltip"#}
-{#                          data-placement="bottom"></span>#}
-{#                </a>#}
-                {% endif %}
-            </td>
+            <td id="run-title">{{ latest_run.title }}</td>
+        </tr>
+        <tr>
+            <th>Run type:</th>
+            <td id="run-class">{{ latest_run.get_run_class_display|default:'Unknown' }}</td>
         </tr>
         <tr>
             <th>Start time:</th>
@@ -40,6 +45,8 @@
         $("#run-number").text(data.run_number);
         $("#start-time").text(data.start_time);
         $("#run-duration").text(data.run_duration);
+        $("#run-title").text(data.run_title);
+        $("#run-class").text(data.run_class);
     }
 
     // Register this function to be called when 'daq:refreshState' is triggered

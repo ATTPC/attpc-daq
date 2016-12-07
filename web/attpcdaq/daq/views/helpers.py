@@ -128,6 +128,10 @@ def get_status(request):
         is inconsistent.
     'run_number'
         The current run number.
+    'run_title'
+        The title of the current run.
+    'run_class'
+        The type of the current run.
     'start_time'
         The date and time when the current run started.
     'run_duration'
@@ -162,10 +166,14 @@ def get_status(request):
         run_number = current_run.run_number
         start_time = current_run.start_datetime.strftime('%b %d %Y, %H:%M:%S')
         duration_str = current_run.duration_string
+        run_title = current_run.title
+        run_class = current_run.get_run_class_display()
     else:
         run_number = None
         start_time = None
         duration_str = None
+        run_title = None
+        run_class = None
 
     output = {
         'overall_state': overall_state,
@@ -175,6 +183,8 @@ def get_status(request):
         'run_number': run_number,
         'start_time': start_time,
         'run_duration': duration_str,
+        'run_title': run_title,
+        'run_class': run_class,
     }
 
     return output

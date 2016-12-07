@@ -31,6 +31,7 @@ urlpatterns = [
 
     url(r'^runs/$', views.ListRunMetadataView.as_view(), name='daq/run_list'),
     url(r'^runs/edit/(?P<pk>\d+)$', views.UpdateRunMetadataView.as_view(), name='daq/update_run_metadata'),
+    url(r'^runs/edit/latest$', views.UpdateLatestRunMetadataView.as_view(), name='daq/update_latest_run'),
     url(r'^runs/download$', views.download_run_metadata, name='daq/download_run_metadata'),
 
     url(r'^observables/$', views.ListObservablesView.as_view(), name='daq/observables_list'),

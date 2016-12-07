@@ -12,7 +12,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
-from django.core.urlresolvers import reverse_lazy
+from django.views.generic import RedirectView
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.forms import modelformset_factory
 
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
@@ -382,6 +383,15 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
                 logger.error('No previous run to get values from.')
 
         return initial
+
+
+class UpdateLatestRunMetadataView(RedirectView):
+    pattern_name = 'daq/update_run_metadata'
+    query_string = True
+
+    def get_redirect_url(self, *args, **kwargs):
+        latest_run_pk = RunMetadata.objects.latest('start_datetime').pk
+        return super().get_redirect_url(pk=latest_run_pk)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
