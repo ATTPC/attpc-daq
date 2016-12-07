@@ -695,7 +695,7 @@ class RunMetadata(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
 
     #: The run number
-    run_number = models.PositiveIntegerField(unique=True)
+    run_number = models.PositiveIntegerField()
 
     #: The date and time when the run started
     start_datetime = models.DateTimeField(null=True, blank=True, verbose_name='start date/time')
