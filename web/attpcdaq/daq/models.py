@@ -773,12 +773,17 @@ class Measurement(models.Model):
 
     @property
     def value(self):
-        return self.python_type(self.serialized_value)
+        if self.serialized_value is not None:
+            return self.python_type(self.serialized_value)
+        else:
+            return None
 
     @value.setter
     def value(self, new_value):
         if isinstance(new_value, self.python_type):
             self.serialized_value = str(new_value)
+        elif new_value is None:
+            self.serialized_value = None
         else:
             received_type = type(new_value)
             raise ValueError('New value was of type{:s}. Expected {:s}.'.format(received_type, self.python_type))

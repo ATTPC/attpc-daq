@@ -3,7 +3,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions
 
-from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable
+from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable, Measurement
 
 
 class DataSourceForm(forms.ModelForm):
@@ -81,14 +81,54 @@ class ExperimentSettingsForm(forms.ModelForm):
 class RunMetadataForm(forms.ModelForm):
     class Meta:
         model = RunMetadata
-        fields = ['title']
+        fields = ['run_number', 'title', 'start_datetime', 'stop_datetime']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        observables = Observable.objects.filter(experiment=self.instance.experiment)
+
+        field_type_map = {
+            Observable.INTEGER: forms.IntegerField,
+            Observable.FLOAT: forms.FloatField,
+            Observable.STRING: forms.CharField,
+        }
+
+        for obs in observables:
+            measurement, created = Measurement.objects.get_or_create(run_metadata=self.instance, observable=obs)
+            field_type = field_type_map[obs.value_type]
+            self.fields[obs.name] = field_type(initial=measurement.value, required=False)
+
         self.helper = FormHelper()
         self.helper.form_id = 'runmetadata-form'
         self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Submit'))
+
+        # Build form layout
+        run_fieldset = Fieldset(
+            'Run information',
+            *self.Meta.fields
+        )
+        measurement_fieldset = Fieldset(
+            'Measurements',
+            *filter(lambda x: x not in self.Meta.fields, self.fields.keys())
+        )
+        self.helper.layout = Layout(
+            run_fieldset,
+            measurement_fieldset,
+            FormActions(Submit('submit', 'Submit')),
+        )
+
+    def save(self, commit=True):
+        for name, value in self.cleaned_data.items():
+            if name in self.Meta.fields:
+                continue
+
+            observable = Observable.objects.get(name=name)
+            measurement = Measurement.objects.get(run_metadata=self.instance, observable=observable)
+            measurement.value = value
+            measurement.save()
+
+        return super().save(commit=commit)
 
 
 class ObservableForm(forms.ModelForm):
