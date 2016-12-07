@@ -1,54 +1,42 @@
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Fieldset, HTML
-from crispy_forms.bootstrap import FormActions
+from crispy_forms.bootstrap import FormActions, AppendedText
 
 from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable, Measurement
 
 
-class DataSourceForm(forms.ModelForm):
+class CrispyModelFormBase(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-8'
+
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class DataSourceForm(CrispyModelFormBase):
     class Meta:
         model = DataSource
         fields = ['name', 'ecc_server', 'data_router']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'add-source-form'
-        self.helper.form_method = 'post'
 
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-class ECCServerForm(forms.ModelForm):
+class ECCServerForm(CrispyModelFormBase):
     class Meta:
         model = ECCServer
         fields = ['name', 'ip_address', 'port', 'log_path']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'add-ecc-server-form'
-        self.helper.form_method = 'post'
 
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-class DataRouterForm(forms.ModelForm):
+class DataRouterForm(CrispyModelFormBase):
     class Meta:
         model = DataRouter
         fields = ['name', 'ip_address', 'port', 'connection_type', 'log_path']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'add-data-router-form'
-        self.helper.form_method = 'post'
 
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-class ConfigSelectionForm(forms.ModelForm):
+class ConfigSelectionForm(CrispyModelFormBase):
     """A form used to select a config file set for an ECC server."""
     class Meta:
         model = ECCServer
@@ -56,29 +44,16 @@ class ConfigSelectionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'config-selection-form'
-        self.helper.form_method = 'post'
-
-        self.helper.add_input(Submit('submit', 'Submit'))
-
         self.fields['selected_config'].queryset = ConfigId.objects.filter(ecc_server=self.instance)
 
 
-class ExperimentSettingsForm(forms.ModelForm):
+class ExperimentSettingsForm(CrispyModelFormBase):
     class Meta:
         model = Experiment
         fields = ['name', 'target_run_duration']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'experiment-settings-form'
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Submit'))
 
-
-class RunMetadataForm(forms.ModelForm):
+class RunMetadataForm(CrispyModelFormBase):
     class Meta:
         model = RunMetadata
         fields = ['run_number', 'title', 'start_datetime', 'stop_datetime']
@@ -97,11 +72,7 @@ class RunMetadataForm(forms.ModelForm):
         for obs in observables:
             measurement, created = Measurement.objects.get_or_create(run_metadata=self.instance, observable=obs)
             field_type = field_type_map[obs.value_type]
-            self.fields[obs.name] = field_type(initial=measurement.value, required=False)
-
-        self.helper = FormHelper()
-        self.helper.form_id = 'runmetadata-form'
-        self.helper.form_method = 'post'
+            self.fields[obs.name] = field_type(initial=measurement.value, required=False, help_text=obs.comment)
 
         # Build form layout
         run_fieldset = Fieldset(
@@ -110,12 +81,11 @@ class RunMetadataForm(forms.ModelForm):
         )
         measurement_fieldset = Fieldset(
             'Measurements',
-            *filter(lambda x: x not in self.Meta.fields, self.fields.keys())
+            *(AppendedText(obs.name, obs.units) if obs.units else obs.name for obs in observables)
         )
         self.helper.layout = Layout(
             run_fieldset,
             measurement_fieldset,
-            FormActions(Submit('submit', 'Submit')),
         )
 
     def save(self, commit=True):
@@ -131,17 +101,13 @@ class RunMetadataForm(forms.ModelForm):
         return super().save(commit=commit)
 
 
-class ObservableForm(forms.ModelForm):
+class ObservableForm(CrispyModelFormBase):
     class Meta:
         model = Observable
-        fields = ['name', 'value_type']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = 'observable-form'
-        self.helper.form_method = 'post'
-        self.helper.add_input(Submit('submit', 'Submit'))
+        fields = ['name', 'value_type', 'units', 'comment']
+        help_texts = {
+            'comment': 'This comment will be shown on the run sheet next to the field for this measurement.',
+        }
 
 
 class DataSourceListUploadForm(forms.Form):

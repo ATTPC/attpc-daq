@@ -19,12 +19,14 @@
             <tr>
                 <th>Name</th>
                 <th>Type</th>
+                <th>Units</th>
                 <th></th>
             </tr>
             {% for observable in observable_list %}
             <tr>
                 <td>{{ observable.name }}</td>
                 <td>{{ observable.get_value_type_display }}</td>
+                <td>{{ observable.units|default:None }}</td>
                 <td class="text-right">
                     <a role="button" class="btn btn-xs btn-danger"
                        href="{% url 'daq/remove_observable' observable.pk %}">

@@ -741,6 +741,8 @@ class Observable(models.Model):
 
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     name = models.CharField(max_length=80)
+    units = models.CharField(max_length=40, null=True, blank=True)
+    comment = models.CharField(max_length=200, null=True, blank=True)
 
     INTEGER = 'I'
     FLOAT = 'F'
@@ -752,6 +754,9 @@ class Observable(models.Model):
     )
 
     value_type = models.CharField(max_length=1, choices=value_type_choices)
+
+    def __str__(self):
+        return self.name
 
 
 class Measurement(models.Model):

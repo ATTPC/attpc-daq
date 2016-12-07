@@ -369,7 +369,7 @@ class ListObservablesView(LoginRequiredMixin, ListView):
         return Observable.objects.filter(experiment=expt)
 
 
-class AddObservableView(LoginRequiredMixin, CreateView):
+class AddObservableView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a new observable to the experiment."""
     model = Observable
     form_class = ObservableForm
