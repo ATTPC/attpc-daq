@@ -81,8 +81,14 @@ Run and experiment metadata
 
 The :class:`Experiment` and :class:`RunMetadata` models store information about the experiment and the runs it contains.
 They are used to number the runs and to store metadata like the experiment name, the duration of each run, and a
-comment describing the conditions for each run. More fields could be added to the :class:`RunMetadata` model in
-the future to store more information.
+comment describing the conditions for each run.
+
+The :class:`Observable` and :class:`Measurement` classes are used to store measurements of experimental parameters
+like voltages, pressures, and scalers. An :class:`Observable` defines a quantity that can be measured, and each one
+adds a new field that can be filled in on the Run Info sheet. When a user fills in values for an :class:`Observable`,
+a corresponding :class:`Measurement` object is created to store that value. This design was chosen so that the user
+can add new observables at any time without reloading the code or altering the database structure. This would not
+be possible if we just defined a new field on the :class:`RunMetadata` object for each observable.
 
 ..  rubric:: Metadata models
 
@@ -91,3 +97,5 @@ the future to store more information.
 
     Experiment
     RunMetadata
+    Observable
+    Measurement

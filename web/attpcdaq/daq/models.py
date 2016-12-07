@@ -771,22 +771,40 @@ class RunMetadata(models.Model):
 
 
 class Observable(models.Model):
-    """Something that can be measured."""
+    """Something that can be measured.
 
+    Observables correspond to columns in a run sheet. Add a new one to add a new field to the run sheet.
+
+    """
+    #: The experiment that this observable is associated with.
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+
+    #: The name of the observable
     name = models.CharField(max_length=80)
+
+    #: The units that measurements will be recorded in. This will be displayed next to the
+    #: input field on the measurement entry form. No unit conversions will be performed.
     units = models.CharField(max_length=40, null=True, blank=True)
+
+    #: A comment to describe how to take a measurement, for example.
     comment = models.CharField(max_length=200, null=True, blank=True)
 
+    #: Constant for an integer measurement
     INTEGER = 'I'
+
+    #: Constant for a floating-point measurement
     FLOAT = 'F'
+
+    #: Constant for a string measurement
     STRING = 'S'
+
     value_type_choices = (
         (INTEGER, 'Integer'),
         (FLOAT, 'Float'),
         (STRING, 'String'),
     )
 
+    #: The data type of the measurement. Use one of the constants attached to this class.
     value_type = models.CharField(max_length=1, choices=value_type_choices)
 
     def __str__(self):
@@ -794,10 +812,20 @@ class Observable(models.Model):
 
 
 class Measurement(models.Model):
-    """A measurement of an Observable."""
+    """A measurement of an Observable.
 
+    Measurements are like instances of Observables. When you fill in the run sheet, a Measurement is created for
+    each Observable-related field on the sheet.
+
+    """
+
+    #: The run that this measurement is for
     run_metadata = models.ForeignKey(RunMetadata, on_delete=models.CASCADE)
+
+    #: The Observable that this is a measurement of
     observable = models.ForeignKey(Observable, on_delete=models.CASCADE)
+
+    #: The value as a string
     serialized_value = models.CharField(max_length=100, null=True, blank=True)
 
     _type_map = {
@@ -808,10 +836,12 @@ class Measurement(models.Model):
 
     @property
     def python_type(self):
+        """The Python data type we expect for this measurement."""
         return self._type_map[self.observable.value_type]
 
     @property
     def value(self):
+        """The value, converted to the expected data type."""
         if self.serialized_value is not None:
             return self.python_type(self.serialized_value)
         else:
