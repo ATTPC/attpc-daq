@@ -109,6 +109,16 @@ class ObservableForm(CrispyModelFormBase):
             'comment': 'This comment will be shown on the run sheet next to the field for this measurement.',
         }
 
+    def __init__(self, *args, **kwargs):
+        self.disabled_fields = kwargs.pop('disabled_fields', None)
+        super().__init__(*args, **kwargs)
+
+        for field_name in self.disabled_fields:
+            try:
+                self.fields[field_name].disabled = True
+            except KeyError:
+                raise ValueError('Cannot disable field {:s} which does not exist.'.format(field_name)) from None
+
 
 class DataSourceListUploadForm(forms.Form):
     data_source_list = forms.FileField()

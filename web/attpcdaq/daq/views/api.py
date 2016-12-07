@@ -385,6 +385,20 @@ class AddObservableView(LoginRequiredMixin, PanelTitleMixin, CreateView):
         return super().form_valid(form)
 
 
+class UpdateObservableView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
+    """Change properties of an Observable."""
+    model = Observable
+    form_class = ObservableForm
+    template_name = 'daq/add_or_edit_item.html'
+    panel_title = 'Edit an observable'
+    success_url = reverse_lazy('daq/observables_list')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['disabled_fields'] = ['value_type']
+        return kwargs
+
+
 class RemoveObservableView(LoginRequiredMixin, DeleteView):
     """Remove an observable from this experiment."""
     model = Observable

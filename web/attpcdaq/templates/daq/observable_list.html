@@ -28,6 +28,10 @@
                 <td>{{ observable.get_value_type_display }}</td>
                 <td>{{ observable.units|default:None }}</td>
                 <td class="text-right">
+                    <a role="button" class="btn btn-xs btn-default"
+                       href="{% url 'daq/update_observable' observable.pk %}">
+                        <span class="glyphicon glyphicon-wrench"></span> Edit
+                    </a>
                     <a role="button" class="btn btn-xs btn-danger"
                        href="{% url 'daq/remove_observable' observable.pk %}">
                         <span class="glyphicon glyphicon-trash"></span> Remove
