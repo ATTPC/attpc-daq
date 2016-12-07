@@ -30,7 +30,12 @@
                     </li>
                     <li class="{% active request 'run' %}">
                         <a href="{% url 'daq/run_list' %}">
-                            <span class="fa fa-table"></span> Run metadata
+                            <span class="fa fa-list-alt"></span> Run metadata
+                        </a>
+                    </li>
+                    <li class="{% active request 'measurements' %}">
+                        <a href="{% url 'daq/measurement_chart' %}">
+                            <span class="fa fa-table"></span> Measurements
                         </a>
                     </li>
                     <li class="{% active request 'logs' %}">

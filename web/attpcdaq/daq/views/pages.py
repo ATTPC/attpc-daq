@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Min
 from django.db import transaction
 
-from ..models import DataSource, ECCServer, DataRouter, Experiment
+from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
 from ..forms import ExperimentSettingsForm, ConfigSelectionForm, EasySetupForm
 from ..workertasks import WorkerInterface
 
@@ -289,3 +289,25 @@ def easy_setup_page(request):
         form = EasySetupForm()
 
     return render(request, 'daq/generic_crispy_form.html', {'panel_title': 'Easy setup', 'form': form})
+
+
+@login_required
+def measurement_chart(request):
+    experiment = get_object_or_404(Experiment, user=request.user)
+    observables = Observable.objects.filter(experiment=experiment)
+    runs = RunMetadata.objects.filter(experiment=experiment)
+
+    all_measurements = {}
+    for run in runs:
+        measurement_qset = Measurement.objects.filter(run_metadata=run).select_related('observable')
+        measurement_dict = {m.observable.name: m.value for m in measurement_qset}
+        all_measurements[run.run_number] = measurement_dict
+
+    return render(request, 'daq/measurement_chart.html', context={
+        'observables': observables,
+        'runs': runs,
+        'measurements': all_measurements,
+    })
+
+
+

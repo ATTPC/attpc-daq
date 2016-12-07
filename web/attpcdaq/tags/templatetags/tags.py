@@ -11,3 +11,9 @@ def active(request, pattern):
         return 'active'
     else:
         return ''
+
+
+@register.filter
+def get_item(dictionary, key):
+    # http://stackoverflow.com/a/8000091/3820658
+    return dictionary.get(key)
