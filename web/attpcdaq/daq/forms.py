@@ -56,7 +56,7 @@ class ExperimentSettingsForm(CrispyModelFormBase):
 class RunMetadataForm(CrispyModelFormBase):
     class Meta:
         model = RunMetadata
-        fields = ['run_number', 'title', 'start_datetime', 'stop_datetime']
+        fields = ['run_number', 'run_class', 'title', 'start_datetime', 'stop_datetime', 'config_name']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

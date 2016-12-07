@@ -701,6 +701,35 @@ class RunMetadata(models.Model):
     #: A title or comment describing the run
     title = models.CharField(max_length=200, null=True, blank=True)
 
+    #: The name of the config file set used for this run
+    config_name = models.CharField(max_length=100, null=True, blank=True)
+
+    #: Constant for a testing run
+    TESTING = 'TEST'
+
+    #: Constant for a production run
+    PRODUCTION = 'PROD'
+
+    #: Constant for a beam trigger run
+    BEAM = 'BEAM'
+
+    #: Constant for a junk run
+    JUNK = 'JUNK'
+
+    #: Constant for a pulser run
+    PULSER = 'PULS'
+
+    run_class_choices = (
+        (TESTING, 'Testing'),
+        (PRODUCTION, 'Production'),
+        (BEAM, 'Beam'),
+        (JUNK, 'Junk'),
+        (PULSER, 'Pulser'),
+    )
+
+    #: The type of run this represents. Use one of the constants attached to this class.
+    run_class = models.CharField(max_length=4, choices=run_class_choices)
+
     def __str__(self):
         return "{} run {}".format(self.experiment.name, self.run_number)
 
