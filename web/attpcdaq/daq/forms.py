@@ -110,7 +110,7 @@ class ObservableForm(CrispyModelFormBase):
         }
 
     def __init__(self, *args, **kwargs):
-        self.disabled_fields = kwargs.pop('disabled_fields', None)
+        self.disabled_fields = kwargs.pop('disabled_fields', [])
         super().__init__(*args, **kwargs)
 
         for field_name in self.disabled_fields:
