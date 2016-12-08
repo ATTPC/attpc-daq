@@ -855,4 +855,5 @@ class Measurement(models.Model):
             self.serialized_value = None
         else:
             received_type = type(new_value)
-            raise ValueError('New value was of type{:s}. Expected {:s}.'.format(received_type, self.python_type))
+            raise ValueError('New value was of type{:s}. Expected {:s}.'.format(
+                str(received_type), str(self.python_type)))

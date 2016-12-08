@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from unittest.mock import patch
 from .utilities import FakeResponseState, FakeResponseText
-from ..models import DataSource, ECCServer, DataRouter, ConfigId, Experiment, RunMetadata
+from ..models import DataSource, ECCServer, DataRouter, ConfigId, Experiment, RunMetadata, Observable, Measurement
 from ..models import ECCError
 import xml.etree.ElementTree as ET
 import os
@@ -452,3 +452,68 @@ class RunMetadataModelTestCase(TestCase):
         after = datetime.now() - self.run0.start_datetime
         self.assertGreater(dur, before)
         self.assertLess(dur, after)
+
+
+class MeasurementModelTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
+        self.experiment = Experiment.objects.create(
+            name='Test experiment',
+            user=self.user,
+        )
+        self.run = RunMetadata.objects.create(
+            run_number=0,
+            experiment=self.experiment,
+            start_datetime=datetime(2016, 1, 1, 0, 0, 0),
+            stop_datetime=datetime(2016, 1, 1, 1, 0, 0),
+        )
+
+    def _serialization_test_impl(self, obs_type, value):
+        observable = Observable.objects.create(
+            name='Test observable',
+            value_type=obs_type,
+            experiment=self.experiment,
+        )
+        measurement = Measurement(
+            run_metadata=self.run,
+            observable=observable,
+        )
+
+        if value is not None and not isinstance(value, measurement.python_type):
+            with self.assertRaisesRegex(ValueError, r'Expected {}'.format(measurement.python_type)):
+                measurement.value = value
+            return
+        else:
+            measurement.value = value
+
+        if value is None:
+            self.assertIsNone(measurement.serialized_value)
+        else:
+            self.assertEqual(measurement.serialized_value, str(value))
+
+        unpacked_value = measurement.value
+        if value is None:
+            self.assertIsNone(unpacked_value)
+        else:
+            self.assertEqual(unpacked_value, value)
+
+    def test_serialization_with_integer(self):
+        self._serialization_test_impl(Observable.INTEGER, 5)
+
+    def test_serialization_with_float(self):
+        self._serialization_test_impl(Observable.FLOAT, 4.5)
+
+    def test_serialization_with_string(self):
+        self._serialization_test_impl(Observable.STRING, 'test value')
+
+    def test_stores_none(self):
+        for value_type in (x[0] for x in Observable.value_type_choices):
+            self._serialization_test_impl(value_type, None)
+
+    def test_fails_when_type_mismatch(self):
+        self._serialization_test_impl(Observable.FLOAT, 'string')
+        self._serialization_test_impl(Observable.STRING, 4)
+        self._serialization_test_impl(Observable.INTEGER, 4.5)
