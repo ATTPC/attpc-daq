@@ -5,10 +5,13 @@ from unittest.mock import patch
 from datetime import datetime
 import json
 import tempfile
+import logging
 
 from .helpers import RequiresLoginTestMixin, ManySourcesTestCaseBase
-from ...models import ECCServer, DataRouter, RunMetadata, Experiment
+from ...models import ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ... import views
+from ...views import UpdateRunMetadataView
+from ...forms import RunMetadataForm
 
 
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
@@ -187,3 +190,75 @@ class UploadDataSourceListTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBa
 
         data_new = self._get_data()
         self.assertEqual(data, data_new)
+
+
+class UpdateRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        self.view_name = 'daq/update_run_metadata'
+
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
+        self.experiment = Experiment.objects.create(
+            name='Test experiment',
+            user=self.user,
+        )
+        self.observable = Observable.objects.create(
+            name='Observable quantity',
+            value_type=Observable.INTEGER,
+            experiment=self.experiment,
+        )
+
+    def test_no_login(self, *args, **kwargs):
+        super().test_no_login(rev_args=(1,))
+
+    def make_run(self):
+        return RunMetadata.objects.create(
+            experiment=self.experiment,
+            run_number=self.experiment.next_run_number,
+            start_datetime=datetime(2016, 1, 1, self.experiment.next_run_number, 0, 0),
+            stop_datetime=datetime(2016, 1, 1, self.experiment.next_run_number + 1, 0, 0),
+        )
+
+    def test_prepopulate(self):
+        self.client.force_login(self.user)
+
+        run0 = self.make_run()
+
+        measurement0 = Measurement(
+            observable=self.observable,
+            run_metadata=run0,
+        )
+        measurement0.value = 5
+        measurement0.save()
+
+        run1 = self.make_run()
+
+        resp = self.client.get(reverse(self.view_name, args=(run1.pk,)), data={'prepopulate': True})
+        self.assertEqual(resp.status_code, 200)
+
+        # Build expected `initial` dictionary.
+        # Using values from run0, fill fields that *should* be prepopulated.
+        expected_initial = {f: getattr(run0, f)
+                            for f in RunMetadataForm.Meta.fields
+                            if f not in UpdateRunMetadataView.automatic_fields}
+
+        # Using values from run1, fill fields that *should not* be prepopulated.
+        expected_initial.update({f: getattr(run1, f) for f in UpdateRunMetadataView.automatic_fields})
+
+        # Fill in measurement-related fields using run0, as these should be prepopulated
+        expected_initial[measurement0.observable.name] = measurement0.value
+
+        form = resp.context['form']
+        self.assertEqual(form.initial, expected_initial)
+
+    def test_prepopulate_fails_without_previous_run(self):
+        self.client.force_login(self.user)
+
+        run0 = self.make_run()
+
+        with self.assertLogs(level=logging.ERROR):
+            resp = self.client.get(reverse(self.view_name, args=(run0.pk,)), data={'prepopulate': True})
+
+        self.assertEqual(resp.status_code, 200)  # Even though it won't prepopulate, it should still work
