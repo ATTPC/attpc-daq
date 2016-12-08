@@ -1,7 +1,7 @@
 """Unit tests for Celery tasks"""
 
 from django.test import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import logging
 from celery.exceptions import SoftTimeLimitExceeded
 
@@ -10,38 +10,70 @@ from ..tasks import check_ecc_server_online_task
 from ..models import ECCServer, DataRouter, DataSource, Experiment
 
 
-@patch('attpcdaq.daq.tasks.ECCServer.refresh_state')
-class EccServerRefreshStateTaskTestCase(TestCase):
+class TaskTestCaseBase(TestCase):
     def setUp(self):
+        self.mock = MagicMock()
+        self.patcher = patch(self.patch_target, new=self.mock)
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def get_callable(self):
+        return self.mock
+
+    def set_mock_effect(self, effect, side_effect=False):
+        mock_callable = self.get_callable()
+        if side_effect:
+            mock_callable.side_effect = effect
+        else:
+            mock_callable.return_value = effect
+
+    def call_task(self, *args, **kwargs):
+        raise NotImplementedError()
+
+
+class ExceptionHandlingTestMixin(object):
+    def test_raised_exception(self):
+        self.set_mock_effect(ValueError, side_effect=True)
+        with self.assertLogs(level=logging.ERROR):
+            self.call_task()
+
+    def test_soft_time_limit_exceeded(self):
+        self.set_mock_effect(SoftTimeLimitExceeded, side_effect=True)
+        with self.assertLogs(level=logging.ERROR) as cm:
+            self.call_task()
+        self.assertEqual(len(cm.output), 1)
+        self.assertRegex(cm.output[0], r'Time limit')
+
+
+class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
+    def setUp(self):
+        self.patch_target = 'attpcdaq.daq.tasks.ECCServer.refresh_state'
+        super().setUp()
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
         )
 
-    def test_refresh_state(self, mock_method):
-        eccserver_refresh_state_task(self.ecc.pk)
-        mock_method.assert_called_once_with()
+    def call_task(self, pk=None):
+        if pk is None:
+            pk = self.ecc.pk
+        eccserver_refresh_state_task(pk)
 
-    def test_with_invalid_ecc_pk(self, _):
+    def test_refresh_state(self):
+        self.call_task()
+        self.get_callable().assert_called_once_with()
+
+    def test_with_invalid_ecc_pk(self):
         with self.assertLogs(level=logging.ERROR):
-            eccserver_refresh_state_task(self.ecc.pk + 10)
-
-    def test_raised_exception(self, mock_method):
-        mock_method.side_effect = ValueError
-        with self.assertLogs(level=logging.ERROR):
-            eccserver_refresh_state_task(self.ecc.pk)
-
-    def test_soft_time_limit_exceeded(self, mock_method):
-        mock_method.side_effect = SoftTimeLimitExceeded
-        with self.assertLogs(level=logging.ERROR) as cm:
-            eccserver_refresh_state_task(self.ecc.pk)
-        self.assertEqual(len(cm.output), 1)
-        self.assertRegex(cm.output[0], r'Time limit')
+            self.call_task(self.ecc.pk + 10)
 
 
-@patch('attpcdaq.daq.tasks.ECCServer.change_state')
-class EccServerChangeStateTaskTestCase(TestCase):
+class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
+        self.patch_target = 'attpcdaq.daq.tasks.ECCServer.change_state'
+        super().setUp()
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
@@ -49,30 +81,25 @@ class EccServerChangeStateTaskTestCase(TestCase):
         )
         self.target_state = ECCServer.DESCRIBED
 
-    def test_change_state(self, mock_method):
-        eccserver_change_state_task(self.ecc.pk, self.target_state)
-        mock_method.assert_called_once_with(self.target_state)
+    def call_task(self, pk=None):
+        if pk is None:
+            pk = self.ecc.pk
+        eccserver_change_state_task(pk, self.target_state)
 
-    def test_with_invalid_ecc_pk(self, _):
+    def test_change_state(self):
+        self.call_task()
+        self.get_callable().assert_called_once_with(self.target_state)
+
+    def test_with_invalid_ecc_pk(self):
         with self.assertLogs(level=logging.ERROR):
-            eccserver_change_state_task(self.ecc.pk + 10, self.target_state)
-
-    def test_raised_exception(self, mock_method):
-        mock_method.side_effect = ValueError
-        with self.assertLogs(level=logging.ERROR):
-            eccserver_change_state_task(self.ecc.pk, self.target_state)
-
-    def test_soft_time_limit_exceeded(self, mock_method):
-        mock_method.side_effect = SoftTimeLimitExceeded
-        with self.assertLogs(level=logging.ERROR) as cm:
-            eccserver_change_state_task(self.ecc.pk, self.target_state)
-        self.assertEqual(len(cm.output), 1)
-        self.assertRegex(cm.output[0], r'Time limit')
+            self.call_task(self.ecc.pk + 10)
 
 
-@patch('attpcdaq.daq.tasks.WorkerInterface')
-class CheckEccServerOnlineTaskTestCase(TestCase):
+class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
+        self.patch_target = 'attpcdaq.daq.tasks.WorkerInterface'
+        super().setUp()
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
@@ -80,44 +107,33 @@ class CheckEccServerOnlineTaskTestCase(TestCase):
             is_online=False
         )
 
-    def test_check_ecc_server_online(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_mgr = wi.__enter__.return_value
-        wi_context_mgr.check_ecc_server_status.return_value = True
+    def get_callable(self):
+        return self.mock.return_value.__enter__.return_value.check_ecc_server_status
 
-        check_ecc_server_online_task(self.ecc.pk)
+    def call_task(self, pk=None):
+        if pk is None:
+            pk = self.ecc.pk
+        check_ecc_server_online_task(pk)
 
-        wi_context_mgr.check_ecc_server_status.assert_called_once_with()
+    def test_check_ecc_server_online(self):
+        self.set_mock_effect(True)
+
+        self.call_task()
+        self.get_callable().assert_called_once_with()
 
         self.ecc.refresh_from_db()
         self.assertTrue(self.ecc.is_online)
 
-    def test_with_invalid_ecc_pk(self, _):
+    def test_with_invalid_ecc_pk(self):
         with self.assertLogs(level=logging.ERROR):
-            check_ecc_server_online_task(self.ecc.pk + 10)
-
-    def test_raised_exception(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_mgr = wi.__enter__.return_value
-        wi_context_mgr.check_ecc_server_status.side_effect = ValueError
-
-        with self.assertLogs(level=logging.ERROR):
-            check_ecc_server_online_task(self.ecc.pk)
-
-    def test_soft_time_limit_exceeded(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_mgr = wi.__enter__.return_value
-        wi_context_mgr.check_ecc_server_status.side_effect = SoftTimeLimitExceeded
-
-        with self.assertLogs(level=logging.ERROR) as cm:
-            check_ecc_server_online_task(self.ecc.pk)
-        self.assertEqual(len(cm.output), 1)
-        self.assertRegex(cm.output[0], r'Time limit')
+            self.call_task(self.ecc.pk + 10)
 
 
-@patch('attpcdaq.daq.tasks.WorkerInterface')
-class OrganizeFilesTaskTestCase(TestCase):
+class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
+        self.patch_target = 'attpcdaq.daq.tasks.WorkerInterface'
+        super().setUp()
+
         self.data_router = DataRouter.objects.create(
             name='DataRouter',
             ip_address='123.456.789.0',
@@ -125,41 +141,26 @@ class OrganizeFilesTaskTestCase(TestCase):
         self.experiment_name = 'Test experiment'
         self.run_num = 10
 
-    def test_organize_files(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_manager = wi.__enter__.return_value
+    def get_callable(self):
+        return self.mock.return_value.__enter__.return_value.organize_files
 
+    def call_task(self, pk=None):
+        if pk is None:
+            pk = self.data_router.pk
+        organize_files_task(pk, self.experiment_name, self.run_num)
+
+    def test_organize_files(self):
         self.data_router.staging_directory_is_clean = False
         self.data_router.save()
 
-        organize_files_task(self.data_router.pk, self.experiment_name, self.run_num)
+        self.call_task()
 
-        mock_worker_interface.assert_called_once_with(self.data_router.ip_address)
-        wi_context_manager.organize_files.assert_called_once_with(self.experiment_name, self.run_num)
+        self.mock.assert_called_once_with(self.data_router.ip_address)
+        self.get_callable().assert_called_once_with(self.experiment_name, self.run_num)
 
         self.data_router.refresh_from_db()
-
         self.assertTrue(self.data_router.staging_directory_is_clean)
 
-    def test_with_invalid_data_router_pk(self, _):
+    def test_with_invalid_data_router_pk(self):
         with self.assertLogs(level=logging.ERROR):
-            organize_files_task(self.data_router.pk + 10, self.experiment_name, self.run_num)
-
-    def test_raised_exception(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_manager = wi.__enter__.return_value
-        wi_context_manager.organize_files.side_effect = ValueError
-
-        with self.assertLogs(level=logging.ERROR):
-            organize_files_task(self.data_router.pk, self.experiment_name, self.run_num)
-
-    def test_soft_time_limit_exceeded(self, mock_worker_interface):
-        wi = mock_worker_interface.return_value
-        wi_context_manager = wi.__enter__.return_value
-        wi_context_manager.organize_files.side_effect = SoftTimeLimitExceeded
-
-        with self.assertLogs(level=logging.ERROR) as cm:
-            organize_files_task(self.data_router.pk, self.experiment_name, self.run_num)
-        self.assertEqual(len(cm.output), 1)
-        self.assertRegex(cm.output[0], r'Time limit')
-
+            self.call_task(self.data_router.pk + 10)
