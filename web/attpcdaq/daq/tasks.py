@@ -79,7 +79,7 @@ def eccserver_change_state_task(eccserver_pk, target_state):
     except SoftTimeLimitExceeded:
         logger.error('Time limit exceeded while changing state of %s', ecc_server.name)
     except Exception:
-        logger.exception('Failed to change state of %d', ecc_server.name)
+        logger.exception('Failed to change state of %s', ecc_server.name)
 
 
 @shared_task(soft_time_limit=10, time_limit=40)
