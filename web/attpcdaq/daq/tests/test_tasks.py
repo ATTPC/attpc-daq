@@ -12,6 +12,16 @@ from ..models import ECCServer, DataRouter
 
 
 class TaskTestCaseBase(TestCase):
+    """An abstract base for testing the Celery tasks.
+
+    This implements an abstract interface that makes it easier to test certain aspects of the
+    tasks that are present in each one. This allows the testing code to be re-used for each
+    task without repeating it over and over.
+
+    This is an abstract class. Subclasses must override the methods :meth:`get_patch_target` and :meth:`call_task`
+    for this to work. You will also likely want to override :meth:`get_callable`.
+
+    """
     def setUp(self):
         self.mock = MagicMock()
         self.patcher = patch(self.get_patch_target(), new=self.mock)
@@ -19,12 +29,31 @@ class TaskTestCaseBase(TestCase):
         self.addCleanup(self.patcher.stop)
 
     def get_callable(self, *args, **kwargs):
+        """Return the mock object that will be called when the task executes.
+
+        This should return the mock that you would want to check the calls on.
+
+        """
         return self.mock
 
     def get_patch_target(self):
+        """Should return the dotted path to the object to be patched in the main code."""
         raise NotImplementedError()
 
     def set_mock_effect(self, effect, side_effect=False, *args, **kwargs):
+        """Set a return value or side effect for the mock object.
+
+        The mock to set up is found using :meth:`get_callable`. Any extra arguments are passed on to this method.
+
+        Parameters
+        ----------
+        effect : object
+            The effect to be assigned. This could be anything that the :mod:`unittest.mock` library supports.
+        side_effect : bool
+            If true, the ``effect`` will be assigned to the ``side_effect`` attribute of the mock. If False,
+            it will be assigned to the ``return_value`` instead.
+
+        """
         mock_callable = self.get_callable(*args, **kwargs)
         if side_effect:
             mock_callable.side_effect = effect
@@ -32,10 +61,20 @@ class TaskTestCaseBase(TestCase):
             mock_callable.return_value = effect
 
     def call_task(self, *args, **kwargs):
+        """Should call the task to be tested.
+
+        Arguments can be passed on to the task, if desired.
+
+        """
         raise NotImplementedError()
 
 
 class AllTaskTestCaseBase(TaskTestCaseBase):
+    """An abstract base for the tasks that do something for all of the instances of an object.
+
+    This is like :class:`TaskTestCaseBase`, but it also mocks out the Celery ``group`` function.
+
+    """
     def setUp(self):
         self.subtask_mock = MagicMock()
         self.subtask_patcher = patch(self.get_patch_target(), new=self.subtask_mock)
@@ -48,6 +87,20 @@ class AllTaskTestCaseBase(TaskTestCaseBase):
         self.addCleanup(self.group_patcher.stop)
 
     def get_callable(self, which='group'):
+        """Get the mock object.
+
+        Parameters
+        ----------
+        which : str
+            If 'group', return the mock Celery ``group`` function. If 'subtask', return the mock
+            version of the subtask under test.
+
+        Returns
+        -------
+        MagicMock
+            The mock object.
+
+        """
         if which == 'group':
             return self.group_mock
         elif which == 'subtask':
@@ -63,7 +116,10 @@ class AllTaskTestCaseBase(TaskTestCaseBase):
 
 
 class TestCalledForAllMixin(object):
+    """A mixin with tests for the 'all' tasks."""
+
     def test_called_for_all(self: AllTaskTestCaseBase):
+        """Test that the task is called for all instances of the relevant model."""
         self.call_task()
         task_calls = self.get_expected_subtask_calls()
 
@@ -75,12 +131,16 @@ class TestCalledForAllMixin(object):
 
 
 class ExceptionHandlingTestMixin(object):
+    """A mixin with tests for task exception handling."""
+
     def test_raised_exception(self: TaskTestCaseBase):
+        """Test that a raised exception is caught and logged."""
         self.set_mock_effect(ValueError, side_effect=True)
         with self.assertLogs(level=logging.ERROR):
             self.call_task()
 
     def test_soft_time_limit_exceeded(self: TaskTestCaseBase):
+        """Test that a message is logged and the task returns if the time limit is exceeded."""
         self.set_mock_effect(SoftTimeLimitExceeded, side_effect=True)
         with self.assertLogs(level=logging.ERROR) as cm:
             self.call_task()
@@ -106,10 +166,12 @@ class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
         eccserver_refresh_state_task(pk)
 
     def test_refresh_state(self):
+        """Test that the task works."""
         self.call_task()
         self.get_callable().assert_called_once_with()
 
     def test_with_invalid_ecc_pk(self):
+        """Test that the task logs an error if the pk is invalid."""
         with self.assertLogs(level=logging.ERROR):
             self.call_task(self.ecc.pk + 10)
 
@@ -154,10 +216,12 @@ class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
         eccserver_change_state_task(pk, self.target_state)
 
     def test_change_state(self):
+        """Test that the task works."""
         self.call_task()
         self.get_callable().assert_called_once_with(self.target_state)
 
     def test_with_invalid_ecc_pk(self):
+        """Test that the task logs an error if the pk is invalid."""
         with self.assertLogs(level=logging.ERROR):
             self.call_task(self.ecc.pk + 10)
 
@@ -185,6 +249,7 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
         check_ecc_server_online_task(pk)
 
     def test_check_ecc_server_online(self):
+        """Test that the task works."""
         self.set_mock_effect(True)
 
         self.call_task()
@@ -194,6 +259,7 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
         self.assertTrue(self.ecc.is_online)
 
     def test_with_invalid_ecc_pk(self):
+        """Test that the task logs an error if the pk is invalid."""
         with self.assertLogs(level=logging.ERROR):
             self.call_task(self.ecc.pk + 10)
 
@@ -245,6 +311,7 @@ class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
         check_data_router_status_task(pk)
 
     def test_check_data_router_status(self):
+        """Test that the task works."""
         self.data_router.is_online = False
         self.data_router.staging_directory_is_clean = False
         self.data_router.save()
@@ -263,10 +330,12 @@ class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
         self.assertTrue(self.data_router.staging_directory_is_clean)
 
     def test_with_invalid_data_router_pk(self):
-        with self.assertLogs(level=logging.ERROR) as cm:
+        """Test that the task logs an error if the pk is invalid."""
+        with self.assertLogs(level=logging.ERROR):
             self.call_task(self.data_router.pk + 10)
 
     def test_does_not_check_if_clean_if_not_online(self):
+        """Test that the staging directory status is not checked if the server is not online."""
         self.set_mock_effect(False, which='status')
         self.call_task()
 
@@ -318,6 +387,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
         organize_files_task(pk, self.experiment_name, self.run_num)
 
     def test_organize_files(self):
+        """Test that the task works."""
         self.data_router.staging_directory_is_clean = False
         self.data_router.save()
 
@@ -330,6 +400,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
         self.assertTrue(self.data_router.staging_directory_is_clean)
 
     def test_with_invalid_data_router_pk(self):
+        """Test that the task logs an error if the pk is invalid."""
         with self.assertLogs(level=logging.ERROR):
             self.call_task(self.data_router.pk + 10)
 
