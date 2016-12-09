@@ -14,12 +14,15 @@ from ..models import ECCServer, DataRouter
 class TaskTestCaseBase(TestCase):
     def setUp(self):
         self.mock = MagicMock()
-        self.patcher = patch(self.patch_target, new=self.mock)
+        self.patcher = patch(self.get_patch_target(), new=self.mock)
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
     def get_callable(self, *args, **kwargs):
         return self.mock
+
+    def get_patch_target(self):
+        raise NotImplementedError()
 
     def set_mock_effect(self, effect, side_effect=False, *args, **kwargs):
         mock_callable = self.get_callable(*args, **kwargs)
@@ -35,7 +38,7 @@ class TaskTestCaseBase(TestCase):
 class AllTaskTestCaseBase(TaskTestCaseBase):
     def setUp(self):
         self.subtask_mock = MagicMock()
-        self.subtask_patcher = patch(self.subtask_patch_target, new=self.subtask_mock)
+        self.subtask_patcher = patch(self.get_patch_target(), new=self.subtask_mock)
         self.subtask_patcher.start()
         self.addCleanup(self.subtask_patcher.stop)
 
@@ -87,13 +90,15 @@ class ExceptionHandlingTestMixin(object):
 
 class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
-        self.patch_target = 'attpcdaq.daq.tasks.ECCServer.refresh_state'
         super().setUp()
 
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
         )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.ECCServer.refresh_state'
 
     def call_task(self, pk=None):
         if pk is None:
@@ -111,7 +116,6 @@ class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
 
 class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
     def setUp(self):
-        self.subtask_patch_target = 'attpcdaq.daq.tasks.eccserver_refresh_state_task'
         super().setUp()
 
         for i in range(10):
@@ -119,6 +123,9 @@ class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForA
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
             )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.eccserver_refresh_state_task'
 
     def call_task(self):
         return eccserver_refresh_all_task()
@@ -129,7 +136,6 @@ class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForA
 
 class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
-        self.patch_target = 'attpcdaq.daq.tasks.ECCServer.change_state'
         super().setUp()
 
         self.ecc = ECCServer.objects.create(
@@ -138,6 +144,9 @@ class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
             state=ECCServer.IDLE,
         )
         self.target_state = ECCServer.DESCRIBED
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.ECCServer.change_state'
 
     def call_task(self, pk=None):
         if pk is None:
@@ -155,7 +164,6 @@ class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
 
 class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
-        self.patch_target = 'attpcdaq.daq.tasks.WorkerInterface'
         super().setUp()
 
         self.ecc = ECCServer.objects.create(
@@ -164,6 +172,9 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
             state=ECCServer.IDLE,
             is_online=False
         )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.WorkerInterface'
 
     def get_callable(self):
         return self.mock.return_value.__enter__.return_value.check_ecc_server_status
@@ -189,7 +200,6 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
 
 class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
     def setUp(self):
-        self.subtask_patch_target = 'attpcdaq.daq.tasks.check_ecc_server_online_task'
         super().setUp()
 
         for i in range(10):
@@ -197,6 +207,9 @@ class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalled
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
             )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.check_ecc_server_online_task'
 
     def call_task(self):
         return check_ecc_server_online_all_task()
@@ -207,13 +220,15 @@ class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalled
 
 class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
-        self.patch_target = 'attpcdaq.daq.tasks.WorkerInterface'
         super().setUp()
 
         self.data_router = DataRouter.objects.create(
             name='DataRouter',
             ip_address='123.123.123.123',
         )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.WorkerInterface'
 
     def get_callable(self, which='status'):
         cm = self.mock.return_value.__enter__.return_value
@@ -262,7 +277,6 @@ class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
 
 class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
     def setUp(self):
-        self.subtask_patch_target = 'attpcdaq.daq.tasks.check_data_router_status_task'
         super().setUp()
 
         for i in range(10):
@@ -270,6 +284,9 @@ class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalle
                 name='DataRouter{}'.format(i),
                 ip_address='123.123.123.123',
             )
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.check_data_router_status_task'
 
     def get_queryset(self):
         return DataRouter.objects.all()
@@ -280,7 +297,6 @@ class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalle
 
 class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
-        self.patch_target = 'attpcdaq.daq.tasks.WorkerInterface'
         super().setUp()
 
         self.data_router = DataRouter.objects.create(
@@ -289,6 +305,9 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
         )
         self.experiment_name = 'Test experiment'
         self.run_num = 10
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.WorkerInterface'
 
     def get_callable(self):
         return self.mock.return_value.__enter__.return_value.organize_files
@@ -317,7 +336,6 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
 
 class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
     def setUp(self):
-        self.subtask_patch_target = 'attpcdaq.daq.tasks.organize_files_task'
         super().setUp()
 
         for i in range(10):
@@ -328,6 +346,9 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
 
         self.experiment_name = 'Test experiment'
         self.run_number = 1
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.organize_files_task'
 
     def get_queryset(self):
         return DataRouter.objects.all()
