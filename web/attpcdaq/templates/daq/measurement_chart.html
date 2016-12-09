@@ -16,26 +16,28 @@
             </div>
             </span>
         </div>
-        <table class="table table-bordered">
-            <tr>
-                <th>Run</th>
-                {% for observable in observables %}
-                    <th>
-                        {{ observable.name }}{% if observable.units %} [{{ observable.units }}]{% endif %}
-                    </th>
-                {% endfor %}
-            </tr>
-            {% for run in runs %}
+        <div id="measurement-chart">
+            <table class="table table-bordered">
                 <tr>
-                    <td>{{ run.run_number }}</td>
+                    <th>Run</th>
                     {% for observable in observables %}
-                        {% with run_measurements=measurements|get_item:run.run_number %}
-                            <td>{{ run_measurements|get_item:observable.name }}</td>
-                        {% endwith %}
+                        <th>
+                            {{ observable.name }}{% if observable.units %} [{{ observable.units }}]{% endif %}
+                        </th>
                     {% endfor %}
                 </tr>
-            {% endfor %}
-        </table>
+                {% for run in runs %}
+                    <tr>
+                        <td>{{ run.run_number }}</td>
+                        {% for observable in observables %}
+                            {% with run_measurements=measurements|get_item:run.run_number %}
+                                <td>{{ run_measurements|get_item:observable.name }}</td>
+                            {% endwith %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 
 {% endblock %}

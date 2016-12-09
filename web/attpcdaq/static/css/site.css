@@ -519,3 +519,6 @@ fieldset[disabled] .btn-reset.focus {
   right: 0;
   margin: auto;
 }
+#measurement-chart {
+  overflow: scroll;
+}
