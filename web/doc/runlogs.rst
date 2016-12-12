@@ -1,3 +1,5 @@
+..  _runlogs:
+
 Logging information about runs
 ==============================
 

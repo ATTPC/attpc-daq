@@ -1,3 +1,5 @@
+.. _operations:
+
 Operating the DAQ system
 ========================
 
