@@ -428,6 +428,7 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
 
 
 class UpdateLatestRunMetadataView(RedirectView):
+    """Redirects to :class:`UpdateRunMetadataView` for the latest run."""
     pattern_name = 'daq/update_run_metadata'
     query_string = True
 

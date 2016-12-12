@@ -108,6 +108,24 @@ a look at Django's documentation for class-based views.
 
     ListRunMetadataView
     UpdateRunMetadataView
+    UpdateLatestRunMetadataView
+
+..  rubric:: Working with Observables
+
+..  autosummary::
+
+    AddObservableView
+    ListObservablesView
+    UpdateObservableView
+    RemoveObservableView
+
+..  rubric:: Setting the ordering of observables
+
+..  autosummary::
+    :toctree: generated/
+
+    set_observable_ordering
+
 
 Helper functions
 ----------------
