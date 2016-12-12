@@ -85,7 +85,10 @@ def choose_config(request, pk):
     else:
         source.refresh_configs()
         form = ConfigSelectionForm(instance=source)
-        return render(request, 'daq/add_or_edit_item.html', {'form': form})
+        return render(request, 'daq/generic_crispy_form.html', context={
+            'form': form,
+            'panel_title': 'Choose configuration file set'
+        })
 
 
 @login_required

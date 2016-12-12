@@ -41,6 +41,9 @@ class ConfigSelectionForm(CrispyModelFormBase):
     class Meta:
         model = ECCServer
         fields = ['selected_config']
+        help_texts = {
+            'selected_config': 'Name is given as "describe/prepare/configure" triple.'
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

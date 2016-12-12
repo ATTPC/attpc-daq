@@ -283,7 +283,7 @@ class AddDataSourceView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a data source."""
     model = DataSource
     form_class = DataSourceForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'New data source'
     success_url = reverse_lazy('daq/data_source_list')
 
@@ -299,7 +299,7 @@ class UpdateDataSourceView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Change parameters on a data source."""
     model = DataSource
     form_class = DataSourceForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Edit data source'
     success_url = reverse_lazy('daq/data_source_list')
 
@@ -318,7 +318,7 @@ class AddECCServerView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add an ECC server."""
     model = ECCServer
     form_class = ECCServerForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'New ECC server'
     success_url = reverse_lazy('daq/ecc_server_list')
 
@@ -334,7 +334,7 @@ class UpdateECCServerView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Modify an ECC server."""
     model = ECCServer
     form_class = ECCServerForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Edit ECC server'
     success_url = reverse_lazy('daq/ecc_server_list')
 
@@ -353,7 +353,7 @@ class AddDataRouterView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a data router."""
     model = DataRouter
     form_class = DataRouterForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'New data router'
     success_url = reverse_lazy('daq/data_router_list')
 
@@ -369,7 +369,7 @@ class UpdateDataRouterView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Modify a data router."""
     model = DataRouter
     form_class = DataRouterForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Edit data router'
     success_url = reverse_lazy('daq/data_router_list')
 
@@ -399,7 +399,7 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Change run metadata"""
     model = RunMetadata
     form_class = RunMetadataForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Edit run metadata'
     success_url = reverse_lazy('daq/run_list')
     automatic_fields = ['run_number', 'config_name', 'start_datetime', 'stop_datetime']  # Don't prepopulate these
@@ -455,7 +455,7 @@ class AddObservableView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     """Add a new observable to the experiment."""
     model = Observable
     form_class = ObservableForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Add an observable'
     success_url = reverse_lazy('daq/observables_list')
 
@@ -471,7 +471,7 @@ class UpdateObservableView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
     """Change properties of an Observable."""
     model = Observable
     form_class = ObservableForm
-    template_name = 'daq/add_or_edit_item.html'
+    template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Edit an observable'
     success_url = reverse_lazy('daq/observables_list')
 
