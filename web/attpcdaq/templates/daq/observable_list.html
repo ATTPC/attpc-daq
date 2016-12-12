@@ -69,7 +69,7 @@
                 $helper.find('a').hide();
 
                 // Make the background opaque
-                $helper.css('background-color', 'white');
+                $helper.addClass('dragging');
 
                 return $helper;
             };
@@ -92,6 +92,8 @@
             $('#observables-table tbody').sortable({
                 helper: dragHelper,
                 stop: updateDatabase,
+                axis: "y",
+                opacity: 0.6,
                 handle: '.drag-handle',
                 cursor: 'move'
             });

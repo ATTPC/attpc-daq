@@ -526,3 +526,13 @@ fieldset[disabled] .btn-reset.focus {
 .drag-handle:hover {
   cursor: move;
 }
+.table > tbody > tr.dragging {
+  background-color: white;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.table > tbody > tr.dragging td,
+.table > tbody > tr.dragging th {
+  border: none;
+}
