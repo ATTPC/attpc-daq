@@ -10,6 +10,7 @@ Contents
     overview.rst
     installation.rst
     configuration.rst
+    runlogs.rst
     operations.rst
     dev/dev_index.rst
 

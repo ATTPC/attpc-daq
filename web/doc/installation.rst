@@ -7,7 +7,7 @@ Requirements
 GET software
 ~~~~~~~~~~~~
 
-As mentioned :ref:`previously <_get_software>`, this DAQ software depends on two of the programs from the GET software
+As mentioned :ref:`previously <get_software>`, this DAQ software depends on two of the programs from the GET software
 suite: the ``getEccSoapServer`` and the ``dataRouter``. These programs are not provided with this package, so they
 must be compiled and installed separately before this package can be installed.
 
@@ -28,7 +28,9 @@ computers, you will likely want to share a folder on your local network to keep 
 Source code
 ~~~~~~~~~~~
 
-Finally, get the latest version of the DAQ software from GitHub::
+Finally, get the latest version of the DAQ software from GitHub:
+
+..  code-block:: shell
 
     git clone https://github.com/attpc/attpc-daq.git
 
@@ -85,7 +87,9 @@ Building the containers
 -----------------------
 
 Once you've installed Docker and ``docker-compose``, open a terminal in the root of the repository. This is the
-directory with the ``docker-compose.yml`` file. The Docker images can then be built with the command::
+directory with the ``docker-compose.yml`` file. The Docker images can then be built with the command:
+
+..  code-block:: shell
 
     docker-compose build
 
@@ -95,7 +99,9 @@ an internet connection.
 Starting the app
 ----------------
 
-Start all of the containers and the virtual network connecting them by running::
+Start all of the containers and the virtual network connecting them by running:
+
+..  code-block:: shell
 
     docker-compose up
 
@@ -110,7 +116,9 @@ First-run setup
 ---------------
 
 When the code is freshly installed, the database that backs the web app will be empty. We need to create a user in
-the web app so that we can log in and set up an experiment. To do this, open a new terminal and run this command::
+the web app so that we can log in and set up an experiment. To do this, open a new terminal and run this command:
+
+..  code-block:: shell
 
     docker exec -it attpcdaq_web_1 python manage.py createsuperuser
 
@@ -120,13 +128,7 @@ If we break this command down into parts, it opens a TTY inside the container ru
 and remember for later.
 
 Once you've made a superuser account, open a browser to http://localhost:8080/admin to access the Django
-admin interface.
-
-..  image:: images/admin_login.png
-    :width: 600px
-    :align: center
-
-Log in with the username and password you just set up. This will put you on the Admin page.
+admin interface. Log in with the username and password you just set up. This will put you on the Admin page.
 
 ..  image:: images/admin_page.png
     :width: 600px
