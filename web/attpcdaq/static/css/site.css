@@ -522,3 +522,7 @@ fieldset[disabled] .btn-reset.focus {
 #measurement-chart {
   overflow: scroll;
 }
+.drag-handle,
+.drag-handle:hover {
+  cursor: move;
+}

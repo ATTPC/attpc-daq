@@ -139,4 +139,4 @@ class ObservableFormTestCase(TestModelFormFieldsMixin, TestCase):
         self.form = ObservableForm
 
     def get_excluded_fields(self):
-        return {'experiment'}
+        return {'experiment', 'order'}

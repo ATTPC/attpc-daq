@@ -15,31 +15,86 @@
                 </div>
             </span>
         </div>
-        <table class="table table-hover">
-            <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Units</th>
-                <th></th>
-            </tr>
-            {% for observable in observable_list %}
-            <tr>
-                <td>{{ observable.name }}</td>
-                <td>{{ observable.get_value_type_display }}</td>
-                <td>{{ observable.units|default:None }}</td>
-                <td class="text-right">
-                    <a role="button" class="btn btn-xs btn-default"
-                       href="{% url 'daq/update_observable' observable.pk %}">
-                        <span class="glyphicon glyphicon-wrench"></span> Edit
-                    </a>
-                    <a role="button" class="btn btn-xs btn-danger"
-                       href="{% url 'daq/remove_observable' observable.pk %}">
-                        <span class="glyphicon glyphicon-trash"></span> Remove
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
+        <table class="table table-hover" id="observables-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Units</th>
+                    <th></th>
+                </tr>
+            </thead>
+           <tbody>
+               {% for observable in observable_list %}
+                <tr data-observable-id="{{ observable.pk }}">
+                    <td><span class="fa fa-bars drag-handle"></span></td>
+                    <td>{{ observable.name }}</td>
+                    <td>{{ observable.get_value_type_display }}</td>
+                    <td>{{ observable.units|default:None }}</td>
+                    <td class="text-right">
+                        <a role="button" class="btn btn-xs btn-default"
+                           href="{% url 'daq/update_observable' observable.pk %}">
+                            <span class="fa fa-wrench"></span> Edit
+                        </a>
+                        <a role="button" class="btn btn-xs btn-danger"
+                           href="{% url 'daq/remove_observable' observable.pk %}">
+                            <span class="fa fa-trash"></span> Remove
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+           </tbody>
         </table>
     </div>
+{% endblock %}
 
+
+{% block scripts %}
+    <script src="{% static 'js/jquery-ui.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Style the object while it's being dragged.
+            var dragHelper = function(e, tr) {
+                var $originals = tr.children();
+                var $helper = tr.clone();
+
+                // Prevent the table row from collapsing in width
+                $helper.children().each(function(index) {
+                    $(this).width($originals.eq(index).width());
+                });
+
+                // Hide the buttons
+                $helper.find('a').hide();
+
+                // Make the background opaque
+                $helper.css('background-color', 'white');
+
+                return $helper;
+            };
+
+            var updateDatabase = function(e, ui) {
+                var order = [];
+                $('#observables-table').find('tr[data-observable-id]').each(function () {
+                    order.push($(this).data('observable-id'));
+                });
+
+                var payload = {new_order: order};
+
+                return $.post({
+                    url: "{% url 'daq/set_observable_ordering' %}",
+                    data: JSON.stringify(payload),
+                    headers: {"X-CSRFToken": "{{ csrf_token }}"}
+                });
+            };
+
+            $('#observables-table tbody').sortable({
+                helper: dragHelper,
+                stop: updateDatabase,
+                handle: '.drag-handle',
+                cursor: 'move'
+            });
+        });
+    </script>
 {% endblock %}

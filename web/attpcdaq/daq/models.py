@@ -807,6 +807,12 @@ class Observable(models.Model):
     #: The data type of the measurement. Use one of the constants attached to this class.
     value_type = models.CharField(max_length=1, choices=value_type_choices)
 
+    #: The order in which we should display the observables
+    order = models.IntegerField(default=1000)  # HACK: use a large default to put new ones on the bottom
+
+    class Meta:
+        ordering = ('order', 'pk')
+
     def __str__(self):
         return self.name
 

@@ -4,6 +4,7 @@ from .api import AddECCServerView, ListECCServersView, UpdateECCServerView, Remo
 from .api import AddDataRouterView, ListDataRoutersView, UpdateDataRouterView, RemoveDataRouterView
 from .api import ListRunMetadataView, UpdateRunMetadataView, UpdateLatestRunMetadataView
 from .api import ListObservablesView, AddObservableView, UpdateObservableView, RemoveObservableView
+from .api import set_observable_ordering
 
 from .io import download_run_metadata, download_datasource_list, upload_datasource_list
 

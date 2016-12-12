@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^observables/add/$', views.AddObservableView.as_view(), name='daq/add_observable'),
     url(r'^observables/edit/(?P<pk>\d+)$', views.UpdateObservableView.as_view(), name='daq/update_observable'),
     url(r'^observables/remove/(?P<pk>\d+)$', views.RemoveObservableView.as_view(), name='daq/remove_observable'),
+    url(r'^observables/set_ordering$', views.set_observable_ordering, name='daq/set_observable_ordering'),
 
     url(r'^measurements/$', views.measurement_chart, name='daq/measurement_chart'),
 

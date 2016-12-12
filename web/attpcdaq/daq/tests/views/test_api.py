@@ -262,3 +262,34 @@ class UpdateRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
             resp = self.client.get(reverse(self.view_name, args=(run0.pk,)), data={'prepopulate': True})
 
         self.assertEqual(resp.status_code, 200)  # Even though it won't prepopulate, it should still work
+
+
+class SetObservableOrderingTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        self.view_name = 'daq/set_observable_ordering'
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
+        self.experiment = Experiment.objects.create(
+            name='Test experiment',
+            user=self.user,
+        )
+        for i in range(20):
+            Observable.objects.create(
+                name='Observable{}'.format(i),
+                value_type=Observable.FLOAT,
+                experiment=self.experiment,
+            )
+
+    def test_set_ordering(self):
+        self.client.force_login(self.user)
+
+        new_order = [o.pk for o in Observable.objects.filter(experiment=self.experiment).order_by('-pk')]
+        resp = self.client.post(reverse(self.view_name), data=json.dumps({'new_order': new_order}),
+                                content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {'success': True})
+
+        order_after = [o.pk for o in Observable.objects.filter(experiment=self.experiment).order_by('order')]
+        self.assertEqual(order_after, new_order)

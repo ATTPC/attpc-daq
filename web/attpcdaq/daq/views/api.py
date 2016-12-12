@@ -21,6 +21,8 @@ from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterFo
 from ..tasks import eccserver_change_state_task, organize_files_all_task
 from .helpers import get_status, calculate_overall_state
 
+import json
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -205,6 +207,53 @@ def source_change_state_all(request):
     output = get_status(request)
 
     return JsonResponse(output)
+
+
+@login_required
+def set_observable_ordering(request):
+    """An AJAX request that sets the order in which observables are displayed.
+
+    The request should be submitted via POST, and the request body should be JSON encoded. The content should be
+    be dictionary with the key "new_order" mapped to a list of Observable primary keys in the desired order.
+
+    Parameters
+    ----------
+    request : HttpRequest
+        The request with the information given above. Must be POST.
+
+    Returns
+    -------
+    JsonResponse
+        If successful, the JSON data ``{'success': True}`` is returned.
+
+    """
+    if request.method != 'POST':
+        logger.error('Received non-POST request %s', request.method)
+        return HttpResponseNotAllowed(['POST'])
+
+    try:
+        encoding = request.encoding or 'utf-8'
+        json_data = json.loads(request.body.decode(encoding))
+        new_order = json_data['new_order']
+    except KeyError:
+        logger.error('Must include new ordering as key "new_order".')
+        return HttpResponseBadRequest('Must include new ordering as key "new_order".')
+
+    try:
+        new_order = [int(i) for i in new_order]
+    except (TypeError, ValueError):
+        logger.exception('Provided ordering was invalid')
+        return HttpResponseBadRequest('Provided ordering was invalid')
+
+    experiment = get_object_or_404(Experiment, user=request.user)
+    observables = Observable.objects.filter(experiment=experiment)
+
+    for i, pk in enumerate(new_order):
+        obs = observables.get(pk=pk)
+        obs.order = i
+        obs.save()
+
+    return JsonResponse({'success': True})
 
 
 class PanelTitleMixin(object):
