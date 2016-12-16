@@ -138,6 +138,7 @@ a > .icon-btn {
 .icon-btn:hover,
 a > .icon-btn:hover {
   color: #808080;
+  cursor: pointer;
 }
 .label-idle,
 .bg-color-idle {

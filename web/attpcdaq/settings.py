@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'attpcdaq.tags',
     'attpcdaq.accounts',
     'attpcdaq.logs',
+    'rest_framework',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -165,7 +166,7 @@ LOGGING = {
         'django.server': {
             'handlers': ['console'],
             'propagate': False,
-            'level': 'INFO',
+            'level': 'WARNING',
         },
         'attpcdaq': {
             'handlers': ['console', 'database'],
@@ -203,4 +204,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'attpcdaq.daq.tasks.check_data_router_status_all_task',
         'schedule': timedelta(seconds=15),
     },
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }

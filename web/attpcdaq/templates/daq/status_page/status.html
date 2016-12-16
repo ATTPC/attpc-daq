@@ -21,6 +21,8 @@
 {% endblock %}
 
 {% block scripts %}
+    <script src="{% static 'js/react.js' %}"></script>
+    <script src="{% static 'js/react-dom.js' %}"></script>
     <script>
         // Makes an AJAX call to get the current state of the system.
         function refresh_state_all() {

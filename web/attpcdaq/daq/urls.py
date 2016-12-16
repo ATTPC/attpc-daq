@@ -1,7 +1,13 @@
 from django.conf.urls import include, url
 from django.views.generic import RedirectView
+from rest_framework import routers
 
 from . import views
+
+router = routers.DefaultRouter()
+router.register(r'data_routers', views.DataRouterViewSet)
+router.register(r'ecc_servers', views.ECCServerViewSet)
+router.register(r'configids', views.ConfigIdViewSet)
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='daq/status')),
@@ -47,4 +53,7 @@ urlpatterns = [
     url(r'^status/(?P<program>ecc|data_router)_log/(?P<pk>\d+)/$', views.show_log_page, name='daq/show_log'),
 
     url(r'^easy_setup/$', views.easy_setup_page, name='daq/easy_setup'),
+
+    url(r'api/', include(router.urls)),
+    url(r'api/api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
