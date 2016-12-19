@@ -1,6 +1,7 @@
 "use strict";
 import React from 'react';
 import {Modal} from "./components.jsx";
+import Cookies from "js-cookie";
 
 
 function get_label_class(state_name) {
@@ -61,7 +62,7 @@ function EccControlButton(props) {
             icon_class = 'fa-cog';
             break;
         case 'start':
-            icon_class = 'fa-start';
+            icon_class = 'fa-play';
             break;
         case 'stop':
             icon_class = 'fa-stop';
@@ -74,16 +75,8 @@ function EccControlButton(props) {
     }
 
     return (
-        <span className={`icon-btn source-ctrl-btn fa ${icon_class}`}></span>
+        <span className={`icon-btn source-ctrl-btn fa ${icon_class}`} onClick={() => props.onClick()}></span>
     );
-}
-
-function ButtonBar(props) {
-    const actions = ['describe', 'prepare', 'configure', 'start', 'stop', 'reset'];
-    const buttons = actions.map((action) => {
-        return (<EccControlButton action={action}/>)
-    });
-    return (<span>{buttons}</span>);
 }
 
 export class ECCServerPanel extends React.Component {
@@ -114,6 +107,15 @@ export class ECCServerPanel extends React.Component {
         });
     }
 
+    doStateTransition(serverIndex, transitionName) {
+        const csrf_token = Cookies.get('csrftoken');
+        const server = this.state.servers[serverIndex];
+        $.post({
+            url: server.url + transitionName + '/',
+            headers: {'X-CSRFToken': csrf_token}
+        }).done(() => this.updateFromServer());
+    }
+
     componentDidMount() {
         this.updateFromServer();
         this.timerID = setInterval(() => this.updateFromServer(), 5000);
@@ -140,9 +142,21 @@ export class ECCServerPanel extends React.Component {
     }
 
     render() {
-        const rows = this.state.servers.map((server, index) => {
-            const config = this.state.configs[index];
+        const rows = this.state.servers.map((server, serverIndex) => {
+            const config = this.state.configs[serverIndex];
             const config_text = get_config_text(config);
+
+            const ecc_actions = ['describe', 'prepare', 'configure', 'start', 'stop', 'reset'];
+            const buttons = ecc_actions.map((action, actionIndex) => {
+                return (
+                    <td width="35px">
+                        <EccControlButton
+                            action={action}
+                            onClick={() => this.doStateTransition(serverIndex, action)}
+                        />
+                    </td>
+                )
+            });
 
             return (
                 <tr key={server.name}>
@@ -157,7 +171,7 @@ export class ECCServerPanel extends React.Component {
                         <span className="icon-btn fa fa-search" onClick={() => this.showLogFileModal(server.url)}></span>
                     </td>
                     <td>{config_text}</td>
-                    <td><ButtonBar /></td>
+                    {buttons}
                 </tr>
             )
         });
@@ -184,7 +198,7 @@ export class ECCServerPanel extends React.Component {
                             <th>State</th>
                             <th>Logs</th>
                             <th>Selected Config</th>
-                            <th>Controls</th>
+                            <th colSpan="6">Controls</th>
                         </tr>
                     </thead>
                     <tbody>
