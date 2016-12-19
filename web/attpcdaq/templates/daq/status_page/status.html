@@ -18,11 +18,13 @@
             {% include 'daq/status_page/control_panel.html' %}
         </div>
     </div>
+    <script src="{% static 'js/build/status_page.js' %}"></script>
 {% endblock %}
 
 {% block scripts %}
-    <script src="{% static 'js/react.js' %}"></script>
-    <script src="{% static 'js/react-dom.js' %}"></script>
+{#    <script src="{% static 'js/require.js' %}"></script>#}
+{#    <script src="{% static 'js/react.js' %}"></script>#}
+{#    <script src="{% static 'js/react-dom.js' %}"></script>#}
     <script>
         // Makes an AJAX call to get the current state of the system.
         function refresh_state_all() {

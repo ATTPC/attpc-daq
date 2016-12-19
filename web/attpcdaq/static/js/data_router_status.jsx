@@ -1,3 +1,6 @@
+import React from "react";
+import {Modal} from "./components.jsx";
+
 
 function StatusIndicator(props) {
     let iconClass;
@@ -15,12 +18,14 @@ function StatusIndicator(props) {
     );
 }
 
-class DataRouterPanel extends React.Component
+export class DataRouterPanel extends React.Component
 {
     constructor() {
         super();
         this.state = {
             routers: [],
+            logFileModalVisible: false,
+            logFileModalContent: '',
         };
     }
 
@@ -29,6 +34,22 @@ class DataRouterPanel extends React.Component
             this.setState({
                 routers: data,
             });
+        });
+    }
+
+    showLogFileModal(url) {
+        $.get(url + 'log_file').done(response => {
+            this.setState({
+                logFileModalVisible: true,
+                logFileModalContent: response.content,
+            });
+        });
+    }
+
+    hideLogFileModal() {
+        this.setState({
+            logFileModalContent: '',
+            logFileModalVisible: false,
         });
     }
 
@@ -48,10 +69,23 @@ class DataRouterPanel extends React.Component
                     <td>{router.name}</td>
                     <td><StatusIndicator isGood={router.is_online}/></td>
                     <td><StatusIndicator isGood={router.staging_directory_is_clean}/></td>
-                    <td>Link</td>
+                    <td><span className="icon-btn fa fa-search" onClick={() => this.showLogFileModal(router.url)}></span></td>
                 </tr>
             )
         });
+
+        let modal;
+        if (this.state.logFileModalVisible) {
+            modal = <Modal
+                handleHideModal={() => this.hideLogFileModal()}
+                title="Log file"
+                content={this.state.logFileModalContent}
+            />;
+        }
+        else {
+            modal = null;
+        }
+
         return (
             <div className="panel panel-default">
                 <div className="panel-heading">Data Router Status</div>
@@ -68,12 +102,8 @@ class DataRouterPanel extends React.Component
                         {rows}
                     </tbody>
                 </table>
+                {modal}
             </div>
         )
     }
 }
-
-ReactDOM.render(
-    <DataRouterPanel />,
-    document.getElementById('data-router-status-panel')
-);
