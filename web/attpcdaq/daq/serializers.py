@@ -25,7 +25,7 @@ class ConfigIdSerializer(serializers.HyperlinkedModelSerializer):
 class RunMetadataSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = RunMetadata
-        fields = '__all__'
+        fields = ['run_number', 'title', 'get_run_class_display', 'start_datetime', 'duration_string']
 
 
 class ExperimentSerializer(serializers.HyperlinkedModelSerializer):

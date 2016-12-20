@@ -23254,8 +23254,9 @@
 	                        experimentName: exp.name,
 	                        runNumber: run.run_number,
 	                        runTitle: run.title,
-	                        runType: run.run_class,
-	                        startTime: run.start_datetime
+	                        runType: run.get_run_class_display,
+	                        startTime: run.start_datetime,
+	                        runDuration: run.duration_string
 	                    });
 	                } else {
 	                    _this2.setState({
