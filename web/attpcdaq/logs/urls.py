@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register('recent_logs', views.RecentLogEntryViewSet)
+router.register('log_entries', views.LogEntryViewSet)
 
 urlpatterns = [
     url(r'^$', views.LogEntryListView.as_view(), name='logs/list'),

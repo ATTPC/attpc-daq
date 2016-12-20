@@ -11,6 +11,7 @@ class RunInfoPanel extends React.Component {
             startTime: '',
             runDuration: '',
         };
+        this.updateFormUrl = '/daq/runs/edit/latest';
     }
 
     updateFromServer() {
@@ -50,15 +51,15 @@ class RunInfoPanel extends React.Component {
             <div className="panel panel-default">
                 <div className="panel-heading">
                     <span>Run Information</span>
-                    {/*<div className="pull-right">*/}
-                        {/*<a className="btn btn-primary btn-xs" href="{% url 'daq/update_latest_run' %}" id="update-values-btn">*/}
-                            {/*Update values*/}
-                        {/*</a>*/}
-                        {/*<a className="btn btn-default btn-xs" href="{% url 'daq/update_latest_run' %}?prepopulate=True"*/}
-                           {/*id="same-values-btn">*/}
-                            {/*Same as previous*/}
-                        {/*</a>*/}
-                    {/*</div>*/}
+                    <div className="btn-toolbar pull-right">
+                        <a className="btn btn-primary btn-xs" href={this.updateFormUrl} id="update-values-btn">
+                            Update values
+                        </a>
+                        <a className="btn btn-default btn-xs" href={`${this.updateFormUrl}\?prepopulate=True`}
+                           id="same-values-btn">
+                            Same as previous
+                        </a>
+                    </div>
                 </div>
                 <table className="table">
                     <tbody>

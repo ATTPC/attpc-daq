@@ -6,7 +6,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseNotAllowed, HttpResponseBadRequest
 
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import list_route
+from rest_framework.response import Response
+from rest_framework import status
 
 from .models import LogEntry
 from .serializers import LogEntrySerializer
@@ -15,10 +18,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class RecentLogEntryViewSet(ReadOnlyModelViewSet):
+class LogEntryViewSet(ModelViewSet):
     serializer_class = LogEntrySerializer
-    queryset = LogEntry.objects.order_by('-create_time')[:10]
+    queryset = LogEntry.objects.order_by('-create_time')
 
+    @list_route(['delete'])
+    def all(self, request):
+        logs = self.get_queryset()
+        logs.delete()
+        return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
 
 class LogEntryListView(LoginRequiredMixin, ListView):
     model = LogEntry

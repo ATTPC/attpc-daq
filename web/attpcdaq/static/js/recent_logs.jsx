@@ -1,4 +1,5 @@
 import React from 'react';
+import Cookies from 'js-cookie';
 
 function getClassName(level) {
     if (level == 'Warning') {
@@ -24,7 +25,16 @@ class RecentLogsPanel extends React.Component {
     }
 
     updateFromServer() {
-        $.get('/logs/api/recent_logs/').done(response => this.setState({logs: response}));
+        $.get('/logs/api/log_entries/').done(response => this.setState({logs: response}));
+    }
+
+    clearAllLogs() {
+        let csrf_token = Cookies.get('csrftoken');
+        $.ajax({
+            url: '/logs/api/log_entries/all/',
+            method: 'delete',
+            headers: {'X-CSRFToken': csrf_token},
+        }).done(() => this.setState({logs: []}));
     }
 
     componentDidMount() {
@@ -74,6 +84,12 @@ class RecentLogsPanel extends React.Component {
             <div className="panel panel-default">
                 <div className="panel-heading">
                     <span>Log entries</span>
+                    <div className="pull-right btn-toolbar">
+                        <button className="btn btn-danger btn-xs"
+                                onClick={() => this.clearAllLogs()}>
+                            Clear all
+                        </button>
+                    </div>
                 </div>
                 {panelBody}
             </div>

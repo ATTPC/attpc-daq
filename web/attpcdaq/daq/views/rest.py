@@ -150,10 +150,6 @@ class RunMetadataViewSet(viewsets.ModelViewSet):
         experiment = Experiment.objects.get(user=self.request.user)
         return RunMetadata.objects.filter(experiment=experiment)
 
-    @list_route(methods=['get'])
-    def latest(self, request):
-        pass
-
 
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer

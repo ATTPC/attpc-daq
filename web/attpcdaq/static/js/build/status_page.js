@@ -23237,6 +23237,7 @@
 	            startTime: '',
 	            runDuration: ''
 	        };
+	        _this.updateFormUrl = '/daq/runs/edit/latest';
 	        return _this;
 	    }
 	
@@ -23293,6 +23294,21 @@
 	                        'span',
 	                        null,
 	                        'Run Information'
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'btn-toolbar pull-right' },
+	                        _react2.default.createElement(
+	                            'a',
+	                            { className: 'btn btn-primary btn-xs', href: this.updateFormUrl, id: 'update-values-btn' },
+	                            'Update values'
+	                        ),
+	                        _react2.default.createElement(
+	                            'a',
+	                            { className: 'btn btn-default btn-xs', href: this.updateFormUrl + '?prepopulate=True',
+	                                id: 'same-values-btn' },
+	                            'Same as previous'
+	                        )
 	                    )
 	                ),
 	                _react2.default.createElement(
@@ -23654,6 +23670,10 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
+	var _jsCookie = __webpack_require__(/*! js-cookie */ 185);
+	
+	var _jsCookie2 = _interopRequireDefault(_jsCookie);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -23693,18 +23713,32 @@
 	        value: function updateFromServer() {
 	            var _this2 = this;
 	
-	            $.get('/logs/api/recent_logs/').done(function (response) {
+	            $.get('/logs/api/log_entries/').done(function (response) {
 	                return _this2.setState({ logs: response });
+	            });
+	        }
+	    }, {
+	        key: 'clearAllLogs',
+	        value: function clearAllLogs() {
+	            var _this3 = this;
+	
+	            var csrf_token = _jsCookie2.default.get('csrftoken');
+	            $.ajax({
+	                url: '/logs/api/log_entries/all/',
+	                method: 'delete',
+	                headers: { 'X-CSRFToken': csrf_token }
+	            }).done(function () {
+	                return _this3.setState({ logs: [] });
 	            });
 	        }
 	    }, {
 	        key: 'componentDidMount',
 	        value: function componentDidMount() {
-	            var _this3 = this;
+	            var _this4 = this;
 	
 	            this.updateFromServer();
 	            this.timerID = setInterval(function () {
-	                return _this3.updateFromServer();
+	                return _this4.updateFromServer();
 	            }, 5000);
 	        }
 	    }, {
@@ -23715,6 +23749,8 @@
 	    }, {
 	        key: 'render',
 	        value: function render() {
+	            var _this5 = this;
+	
 	            var panelBody = void 0;
 	            if (this.state.logs.length == 0) {
 	                panelBody = _react2.default.createElement(
@@ -23799,6 +23835,18 @@
 	                        'span',
 	                        null,
 	                        'Log entries'
+	                    ),
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'pull-right btn-toolbar' },
+	                        _react2.default.createElement(
+	                            'button',
+	                            { className: 'btn btn-danger btn-xs',
+	                                onClick: function onClick() {
+	                                    return _this5.clearAllLogs();
+	                                } },
+	                            'Clear all'
+	                        )
 	                    )
 	                ),
 	                panelBody
