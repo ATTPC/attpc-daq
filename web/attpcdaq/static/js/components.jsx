@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 export class Modal extends React.Component {
     componentDidMount(){

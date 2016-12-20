@@ -8,6 +8,8 @@ router = routers.DefaultRouter()
 router.register(r'data_routers', views.DataRouterViewSet)
 router.register(r'ecc_servers', views.ECCServerViewSet)
 router.register(r'configids', views.ConfigIdViewSet)
+router.register(r'runmetadata', views.RunMetadataViewSet, base_name='runmetadata')
+router.register(r'experiment', views.ExperimentViewSet, base_name='experiment')
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='daq/status')),

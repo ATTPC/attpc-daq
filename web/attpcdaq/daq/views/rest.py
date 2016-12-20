@@ -1,11 +1,11 @@
-from ..models import DataRouter, ECCServer, ConfigId
-from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer
+from ..models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment
+from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer, ExperimentSerializer
 from ..workertasks import WorkerInterface
 from ..tasks import eccserver_change_state_task
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import detail_route, list_route
 
 import logging
 logger = logging.getLogger(__name__)
@@ -79,3 +79,22 @@ class ECCServerViewSet(viewsets.ModelViewSet):
 class ConfigIdViewSet(viewsets.ModelViewSet):
     queryset = ConfigId.objects.all()
     serializer_class = ConfigIdSerializer
+
+
+class RunMetadataViewSet(viewsets.ModelViewSet):
+    serializer_class = RunMetadataSerializer
+
+    def get_queryset(self):
+        experiment = Experiment.objects.get(user=self.request.user)
+        return RunMetadata.objects.filter(experiment=experiment)
+
+    @list_route(methods=['get'])
+    def latest(self, request):
+        pass
+
+
+class ExperimentViewSet(viewsets.ModelViewSet):
+    serializer_class = ExperimentSerializer
+
+    def get_queryset(self):
+        return Experiment.objects.filter(user=self.request.user)
