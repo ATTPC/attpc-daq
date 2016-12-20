@@ -52,7 +52,7 @@ class SystemControlButton extends React.Component {
     }
 }
 
-export class SystemControlPanel extends React.Component {
+class SystemControlPanel extends React.Component {
     render() {
         return (
             <div className="panel panel-default">
@@ -73,3 +73,5 @@ export class SystemControlPanel extends React.Component {
         )
     }
 }
+
+export default SystemControlPanel;

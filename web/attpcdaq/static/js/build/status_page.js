@@ -49,6 +49,8 @@
 
 	'use strict';
 	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
 	var _react = __webpack_require__(/*! react */ 1);
 	
 	var _react2 = _interopRequireDefault(_react);
@@ -59,25 +61,68 @@
 	
 	var _ecc_status = __webpack_require__(/*! ./ecc_status.jsx */ 183);
 	
+	var _ecc_status2 = _interopRequireDefault(_ecc_status);
+	
 	var _data_router_status = __webpack_require__(/*! ./data_router_status.jsx */ 186);
+	
+	var _data_router_status2 = _interopRequireDefault(_data_router_status);
 	
 	var _run_info = __webpack_require__(/*! ./run_info.jsx */ 187);
 	
+	var _run_info2 = _interopRequireDefault(_run_info);
+	
 	var _system_controls = __webpack_require__(/*! ./system_controls.jsx */ 188);
+	
+	var _system_controls2 = _interopRequireDefault(_system_controls);
 	
 	var _system_status = __webpack_require__(/*! ./system_status.jsx */ 189);
 	
+	var _system_status2 = _interopRequireDefault(_system_status);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	_reactDom2.default.render(_react2.default.createElement(_ecc_status.ECCServerPanel, null), document.getElementById('ecc-server-status-panel'));
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	_reactDom2.default.render(_react2.default.createElement(_data_router_status.DataRouterPanel, null), document.getElementById('data-router-status-panel'));
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 	
-	_reactDom2.default.render(_react2.default.createElement(_run_info.RunInfoPanel, null), document.getElementById('run-info-panel'));
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	_reactDom2.default.render(_react2.default.createElement(_system_controls.SystemControlPanel, null), document.getElementById('system-control-panel'));
+	var StatusPageApp = function (_React$Component) {
+	    _inherits(StatusPageApp, _React$Component);
 	
-	_reactDom2.default.render(_react2.default.createElement(_system_status.SystemStatusPanel, null), document.getElementById('system-status-panel'));
+	    function StatusPageApp() {
+	        _classCallCheck(this, StatusPageApp);
+	
+	        return _possibleConstructorReturn(this, (StatusPageApp.__proto__ || Object.getPrototypeOf(StatusPageApp)).apply(this, arguments));
+	    }
+	
+	    _createClass(StatusPageApp, [{
+	        key: 'render',
+	        value: function render() {
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'row' },
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'col-md-9' },
+	                    _react2.default.createElement(_run_info2.default, null),
+	                    _react2.default.createElement(_ecc_status2.default, null),
+	                    _react2.default.createElement(_data_router_status2.default, null)
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'col-md-3' },
+	                    _react2.default.createElement(_system_status2.default, null),
+	                    _react2.default.createElement(_system_controls2.default, null)
+	                )
+	            );
+	        }
+	    }]);
+	
+	    return StatusPageApp;
+	}(_react2.default.Component);
+	
+	_reactDom2.default.render(_react2.default.createElement(StatusPageApp, null), document.getElementById('status-page-app'));
 
 /***/ },
 /* 1 */
@@ -22328,7 +22373,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.ECCServerPanel = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
@@ -22350,22 +22394,6 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	function get_label_class(state_name) {
-	    if (state_name == 'Idle') {
-	        return 'label-idle';
-	    } else if (state_name == 'Described') {
-	        return 'label-described';
-	    } else if (state_name == 'Prepared') {
-	        return 'label-prepared';
-	    } else if (state_name == 'Ready') {
-	        return 'label-ready';
-	    } else if (state_name == 'Running') {
-	        return 'label-running';
-	    } else {
-	        return 'label-error';
-	    }
-	}
-	
 	function ECCStatusLabel(props) {
 	    var state_name = props.state_name;
 	    var is_transitioning = props.is_transitioning;
@@ -22373,7 +22401,7 @@
 	    if (is_transitioning) {
 	        return _react2.default.createElement("span", { className: "fa fa-pulse fa-spinner" });
 	    } else {
-	        var label_class = get_label_class(state_name);
+	        var label_class = (0, _components.getStateLabelClass)(state_name);
 	        return _react2.default.createElement(
 	            "span",
 	            { className: "label " + label_class },
@@ -22391,36 +22419,13 @@
 	}
 	
 	function EccControlButton(props) {
-	    var icon_class = void 0;
-	    switch (props.action) {
-	        case 'describe':
-	            icon_class = 'fa-server';
-	            break;
-	        case 'prepare':
-	            icon_class = 'fa-link';
-	            break;
-	        case 'configure':
-	            icon_class = 'fa-cog';
-	            break;
-	        case 'start':
-	            icon_class = 'fa-play';
-	            break;
-	        case 'stop':
-	            icon_class = 'fa-stop';
-	            break;
-	        case 'reset':
-	            icon_class = 'fa-repeat';
-	            break;
-	        default:
-	            icon_class = '';
-	    }
-	
+	    var icon_class = (0, _components.getActionIcon)(props.action);
 	    return _react2.default.createElement("span", { className: "icon-btn source-ctrl-btn fa " + icon_class, onClick: function onClick() {
 	            return props.onClick();
 	        } });
 	}
 	
-	var ECCServerPanel = exports.ECCServerPanel = function (_React$Component) {
+	var ECCServerPanel = function (_React$Component) {
 	    _inherits(ECCServerPanel, _React$Component);
 	
 	    function ECCServerPanel(props) {
@@ -22633,6 +22638,8 @@
 	
 	    return ECCServerPanel;
 	}(_react2.default.Component);
+	
+	exports.default = ECCServerPanel;
 
 /***/ },
 /* 184 */
@@ -22653,6 +22660,7 @@
 	exports.getActionIcon = getActionIcon;
 	exports.getStateIcon = getStateIcon;
 	exports.getStateBgColor = getStateBgColor;
+	exports.getStateLabelClass = getStateLabelClass;
 	
 	var _react = __webpack_require__(/*! react */ 1);
 	
@@ -22791,6 +22799,22 @@
 	        return 'bg-color-running';
 	    } else {
 	        return 'bg-color-error';
+	    }
+	}
+	
+	function getStateLabelClass(state) {
+	    if (state == 'Idle') {
+	        return 'label-idle';
+	    } else if (state == 'Described') {
+	        return 'label-described';
+	    } else if (state == 'Prepared') {
+	        return 'label-prepared';
+	    } else if (state == 'Ready') {
+	        return 'label-ready';
+	    } else if (state == 'Running') {
+	        return 'label-running';
+	    } else {
+	        return 'label-error';
 	    }
 	}
 
@@ -22971,7 +22995,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.DataRouterPanel = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
@@ -23002,7 +23025,7 @@
 	    return _react2.default.createElement("span", { className: "fa " + iconClass + " " + colorClass });
 	}
 	
-	var DataRouterPanel = exports.DataRouterPanel = function (_React$Component) {
+	var DataRouterPanel = function (_React$Component) {
 	    _inherits(DataRouterPanel, _React$Component);
 	
 	    function DataRouterPanel() {
@@ -23163,6 +23186,8 @@
 	
 	    return DataRouterPanel;
 	}(_react2.default.Component);
+	
+	exports.default = DataRouterPanel;
 
 /***/ },
 /* 187 */
@@ -23176,7 +23201,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.RunInfoPanel = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
@@ -23192,7 +23216,7 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var RunInfoPanel = exports.RunInfoPanel = function (_React$Component) {
+	var RunInfoPanel = function (_React$Component) {
 	    _inherits(RunInfoPanel, _React$Component);
 	
 	    function RunInfoPanel(props) {
@@ -23363,6 +23387,8 @@
 	
 	    return RunInfoPanel;
 	}(_react2.default.Component);
+	
+	exports.default = RunInfoPanel;
 
 /***/ },
 /* 188 */
@@ -23376,7 +23402,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.SystemControlPanel = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
@@ -23462,7 +23487,7 @@
 	    return SystemControlButton;
 	}(_react2.default.Component);
 	
-	var SystemControlPanel = exports.SystemControlPanel = function (_React$Component2) {
+	var SystemControlPanel = function (_React$Component2) {
 	    _inherits(SystemControlPanel, _React$Component2);
 	
 	    function SystemControlPanel() {
@@ -23502,6 +23527,8 @@
 	
 	    return SystemControlPanel;
 	}(_react2.default.Component);
+	
+	exports.default = SystemControlPanel;
 
 /***/ },
 /* 189 */
@@ -23515,7 +23542,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.SystemStatusPanel = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
@@ -23533,7 +23559,7 @@
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var SystemStatusPanel = exports.SystemStatusPanel = function (_React$Component) {
+	var SystemStatusPanel = function (_React$Component) {
 	    _inherits(SystemStatusPanel, _React$Component);
 	
 	    function SystemStatusPanel(props) {
@@ -23600,6 +23626,8 @@
 	
 	    return SystemStatusPanel;
 	}(_react2.default.Component);
+	
+	exports.default = SystemStatusPanel;
 
 /***/ }
 /******/ ]);

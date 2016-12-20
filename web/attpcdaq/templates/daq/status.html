@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block title %}Status - AT-TPC DAQ{% endblock %}
+
+{% block body %}
+    <div id="status-page-app">Loading...</div>
+    <script src="{% static 'js/build/status_page.js' %}"></script>
+{% endblock %}

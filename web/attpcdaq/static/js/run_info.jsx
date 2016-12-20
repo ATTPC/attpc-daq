@@ -1,6 +1,6 @@
 import React from 'react';
 
-export class RunInfoPanel extends React.Component {
+class RunInfoPanel extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -91,3 +91,5 @@ export class RunInfoPanel extends React.Component {
         )
     }
 }
+
+export default RunInfoPanel;

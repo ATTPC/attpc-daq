@@ -18,7 +18,7 @@ function StatusIndicator(props) {
     );
 }
 
-export class DataRouterPanel extends React.Component
+class DataRouterPanel extends React.Component
 {
     constructor() {
         super();
@@ -107,3 +107,5 @@ export class DataRouterPanel extends React.Component
         )
     }
 }
+
+export default DataRouterPanel;

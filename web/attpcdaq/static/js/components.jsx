@@ -96,3 +96,24 @@ export function getStateBgColor(state) {
         return 'bg-color-error';
     }
 }
+
+export function getStateLabelClass(state) {
+    if (state == 'Idle') {
+        return 'label-idle';
+    }
+    else if (state == 'Described') {
+        return 'label-described';
+    }
+    else if (state == 'Prepared') {
+        return 'label-prepared';
+    }
+    else if (state == 'Ready') {
+        return 'label-ready';
+    }
+    else if (state == 'Running') {
+        return 'label-running';
+    }
+    else {
+        return 'label-error';
+    }
+}

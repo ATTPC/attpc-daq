@@ -1,29 +1,8 @@
 "use strict";
 import React from 'react';
-import {Modal} from "./components.jsx";
+import {Modal, getStateLabelClass, getActionIcon} from "./components.jsx";
 import Cookies from "js-cookie";
 
-
-function get_label_class(state_name) {
-    if (state_name == 'Idle') {
-        return 'label-idle';
-    }
-    else if (state_name == 'Described') {
-        return 'label-described';
-    }
-    else if (state_name == 'Prepared') {
-        return 'label-prepared';
-    }
-    else if (state_name == 'Ready') {
-        return 'label-ready';
-    }
-    else if (state_name == 'Running') {
-        return 'label-running';
-    }
-    else {
-        return 'label-error';
-    }
-}
 
 function ECCStatusLabel(props) {
     const state_name = props.state_name;
@@ -33,7 +12,7 @@ function ECCStatusLabel(props) {
         return (<span className="fa fa-pulse fa-spinner"></span>);
     }
     else {
-        const label_class = get_label_class(state_name);
+        const label_class = getStateLabelClass(state_name);
         return (
             <span className={`label ${label_class}`}>{state_name}</span>
         );
@@ -50,36 +29,13 @@ function get_config_text(config) {
 }
 
 function EccControlButton(props) {
-    let icon_class;
-    switch (props.action) {
-        case 'describe':
-            icon_class = 'fa-server';
-            break;
-        case 'prepare':
-            icon_class = 'fa-link';
-            break;
-        case 'configure':
-            icon_class = 'fa-cog';
-            break;
-        case 'start':
-            icon_class = 'fa-play';
-            break;
-        case 'stop':
-            icon_class = 'fa-stop';
-            break;
-        case 'reset':
-            icon_class = 'fa-repeat';
-            break;
-        default:
-            icon_class = '';
-    }
-
+    const icon_class = getActionIcon(props.action);
     return (
         <span className={`icon-btn source-ctrl-btn fa ${icon_class}`} onClick={() => props.onClick()}></span>
     );
 }
 
-export class ECCServerPanel extends React.Component {
+class ECCServerPanel extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -211,3 +167,4 @@ export class ECCServerPanel extends React.Component {
     }
 }
 
+export default ECCServerPanel;

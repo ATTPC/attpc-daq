@@ -1,7 +1,7 @@
 import React from 'react';
 import {getStateBgColor, getStateIcon} from './components.jsx';
 
-export class SystemStatusPanel extends React.Component {
+class SystemStatusPanel extends React.Component {
     constructor(props) {
         super(props);
         this.state = ({
@@ -42,3 +42,5 @@ export class SystemStatusPanel extends React.Component {
         )
     }
 }
+
+export default SystemStatusPanel;

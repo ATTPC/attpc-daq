@@ -36,25 +36,8 @@ def status(request):
         The rendered page.
 
     """
-    sources = DataSource.objects.order_by('name')
-    ecc_servers = ECCServer.objects.order_by('name')
-    data_routers = DataRouter.objects.order_by('name')
-    system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
 
-    experiment = get_object_or_404(Experiment, user=request.user)
-    latest_run = experiment.latest_run
-
-    logs = LogEntry.objects.order_by('-create_time')[:10]
-
-    return render(request, 'daq/status_page/status.html', {
-        'data_sources': sources,
-        'ecc_servers': ecc_servers,
-        'data_routers': data_routers,
-        'latest_run': latest_run,
-        'experiment': experiment,
-        'logentry_list': logs,
-        'system_state': system_state
-    })
+    return render(request, 'daq/status.html')
 
 
 @login_required
