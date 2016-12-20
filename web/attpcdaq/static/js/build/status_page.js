@@ -63,6 +63,8 @@
 	
 	var _run_info = __webpack_require__(/*! ./run_info.jsx */ 187);
 	
+	var _system_controls = __webpack_require__(/*! ./system_controls.jsx */ 188);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	_reactDom2.default.render(_react2.default.createElement(_ecc_status.ECCServerPanel, null), document.getElementById('ecc-server-status-panel'));
@@ -70,6 +72,8 @@
 	_reactDom2.default.render(_react2.default.createElement(_data_router_status.DataRouterPanel, null), document.getElementById('data-router-status-panel'));
 	
 	_reactDom2.default.render(_react2.default.createElement(_run_info.RunInfoPanel, null), document.getElementById('run-info-panel'));
+	
+	_reactDom2.default.render(_react2.default.createElement(_system_controls.SystemControlPanel, null), document.getElementById('system-control-panel'));
 
 /***/ },
 /* 1 */
@@ -23299,6 +23303,162 @@
 	    }]);
 	
 	    return RunInfoPanel;
+	}(_react2.default.Component);
+
+/***/ },
+/* 188 */
+/*!************************************************!*\
+  !*** ./attpcdaq/static/js/system_controls.jsx ***!
+  \************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.SystemControlPanel = undefined;
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _jsCookie = __webpack_require__(/*! js-cookie */ 185);
+	
+	var _jsCookie2 = _interopRequireDefault(_jsCookie);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	function getActionIcon(action) {
+	    if (action == 'describe') {
+	        return 'fa-server';
+	    } else if (action == 'prepare') {
+	        return 'fa-link';
+	    } else if (action == 'configure') {
+	        return 'fa-cog';
+	    } else if (action == 'start') {
+	        return 'fa-play';
+	    } else if (action == 'stop') {
+	        return 'fa-stop';
+	    } else if (action == 'reset') {
+	        return 'fa-repeat';
+	    } else {
+	        console.error('Unknown action: ' + action);
+	        return 'fa-question';
+	    }
+	}
+	
+	function getButtonClass(action) {
+	    if (action == 'describe') {
+	        return 'btn-describe';
+	    } else if (action == 'prepare') {
+	        return 'btn-prepare';
+	    } else if (action == 'configure') {
+	        return 'btn-configure';
+	    } else if (action == 'start') {
+	        return 'btn-start';
+	    } else if (action == 'stop') {
+	        return 'btn-stop';
+	    } else if (action == 'reset') {
+	        return 'btn-reset';
+	    } else {
+	        console.error('Unknown action: ' + action);
+	        return 'btn-default';
+	    }
+	}
+	
+	var SystemControlButton = function (_React$Component) {
+	    _inherits(SystemControlButton, _React$Component);
+	
+	    function SystemControlButton() {
+	        _classCallCheck(this, SystemControlButton);
+	
+	        return _possibleConstructorReturn(this, (SystemControlButton.__proto__ || Object.getPrototypeOf(SystemControlButton)).apply(this, arguments));
+	    }
+	
+	    _createClass(SystemControlButton, [{
+	        key: 'doStateTransition',
+	        value: function doStateTransition() {
+	            var csrf_token = _jsCookie2.default.get('csrftoken');
+	            $.post({
+	                url: '/daq/api/ecc_servers/' + this.props.action + '/',
+	                headers: { 'X-CSRFToken': csrf_token }
+	            });
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var _this2 = this;
+	
+	            var icon_class = getActionIcon(this.props.action);
+	            var btn_class = getButtonClass(this.props.action);
+	            var text = this.props.action.charAt(0).toUpperCase() + this.props.action.slice(1) + " all";
+	
+	            var icon = _react2.default.createElement('span', { className: 'fa ' + icon_class });
+	
+	            return _react2.default.createElement(
+	                'button',
+	                { className: 'btn btn-block ' + btn_class,
+	                    onClick: function onClick() {
+	                        return _this2.doStateTransition();
+	                    } },
+	                icon,
+	                ' ',
+	                text
+	            );
+	        }
+	    }]);
+	
+	    return SystemControlButton;
+	}(_react2.default.Component);
+	
+	var SystemControlPanel = exports.SystemControlPanel = function (_React$Component2) {
+	    _inherits(SystemControlPanel, _React$Component2);
+	
+	    function SystemControlPanel() {
+	        _classCallCheck(this, SystemControlPanel);
+	
+	        return _possibleConstructorReturn(this, (SystemControlPanel.__proto__ || Object.getPrototypeOf(SystemControlPanel)).apply(this, arguments));
+	    }
+	
+	    _createClass(SystemControlPanel, [{
+	        key: 'render',
+	        value: function render() {
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'panel panel-default' },
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'panel-heading' },
+	                    'Controls'
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'panel-body' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'btn-toolbar' },
+	                        _react2.default.createElement(SystemControlButton, { action: 'describe' }),
+	                        _react2.default.createElement(SystemControlButton, { action: 'prepare' }),
+	                        _react2.default.createElement(SystemControlButton, { action: 'configure' }),
+	                        _react2.default.createElement(SystemControlButton, { action: 'start' }),
+	                        _react2.default.createElement(SystemControlButton, { action: 'stop' }),
+	                        _react2.default.createElement(SystemControlButton, { action: 'reset' })
+	                    )
+	                )
+	            );
+	        }
+	    }]);
+	
+	    return SystemControlPanel;
 	}(_react2.default.Component);
 
 /***/ }
