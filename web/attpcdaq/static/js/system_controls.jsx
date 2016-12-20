@@ -1,30 +1,6 @@
 import React from 'react';
 import Cookies from 'js-cookie';
-
-function getActionIcon(action) {
-    if (action == 'describe') {
-        return 'fa-server';
-    }
-    else if (action == 'prepare') {
-        return 'fa-link';
-    }
-    else if (action == 'configure') {
-        return 'fa-cog';
-    }
-    else if (action == 'start') {
-        return 'fa-play';
-    }
-    else if (action == 'stop') {
-        return 'fa-stop';
-    }
-    else if (action == 'reset') {
-        return 'fa-repeat';
-    }
-    else {
-        console.error('Unknown action: ' + action);
-        return 'fa-question';
-    }
-}
+import {getActionIcon} from './components.jsx';
 
 function getButtonClass(action) {
     if (action == 'describe') {

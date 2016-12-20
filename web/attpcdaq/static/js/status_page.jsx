@@ -4,6 +4,7 @@ import {ECCServerPanel} from './ecc_status.jsx'
 import {DataRouterPanel} from './data_router_status.jsx'
 import {RunInfoPanel} from './run_info.jsx'
 import {SystemControlPanel} from './system_controls.jsx'
+import {SystemStatusPanel} from './system_status.jsx'
 
 ReactDOM.render(
     <ECCServerPanel/>,
@@ -23,4 +24,9 @@ ReactDOM.render(
 ReactDOM.render(
     <SystemControlPanel/>,
     document.getElementById('system-control-panel')
+);
+
+ReactDOM.render(
+    <SystemStatusPanel/>,
+    document.getElementById('system-status-panel')
 );

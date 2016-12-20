@@ -29,3 +29,70 @@ export class Modal extends React.Component {
         )
     }
 }
+
+export function getActionIcon(action) {
+    if (action == 'describe') {
+        return 'fa-server';
+    }
+    else if (action == 'prepare') {
+        return 'fa-link';
+    }
+    else if (action == 'configure') {
+        return 'fa-cog';
+    }
+    else if (action == 'start') {
+        return 'fa-play';
+    }
+    else if (action == 'stop') {
+        return 'fa-stop';
+    }
+    else if (action == 'reset') {
+        return 'fa-repeat';
+    }
+    else {
+        console.error('Unknown action: ' + action);
+        return 'fa-question';
+    }
+}
+
+export function getStateIcon(state) {
+    if (state == 'Idle') {
+        return 'fa-power-off';
+    }
+    else if (state == 'Described') {
+        return 'fa-server';
+    }
+    else if (state == 'Prepared') {
+        return 'fa-link';
+    }
+    else if (state == 'Ready') {
+        return 'fa-check-circle';
+    }
+    else if (state == 'Running') {
+        return 'fa-play';
+    }
+    else {
+        return 'fa-warning';
+    }
+}
+
+export function getStateBgColor(state) {
+    if (state == 'Idle') {
+        return 'bg-color-idle';
+    }
+    else if (state == 'Described') {
+        return 'bg-color-described';
+    }
+    else if (state == 'Prepared') {
+        return 'bg-color-prepared';
+    }
+    else if (state == 'Ready') {
+        return 'bg-color-ready';
+    }
+    else if (state == 'Running') {
+        return 'bg-color-running';
+    }
+    else {
+        return 'bg-color-error';
+    }
+}

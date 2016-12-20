@@ -65,6 +65,8 @@
 	
 	var _system_controls = __webpack_require__(/*! ./system_controls.jsx */ 188);
 	
+	var _system_status = __webpack_require__(/*! ./system_status.jsx */ 189);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	_reactDom2.default.render(_react2.default.createElement(_ecc_status.ECCServerPanel, null), document.getElementById('ecc-server-status-panel'));
@@ -74,6 +76,8 @@
 	_reactDom2.default.render(_react2.default.createElement(_run_info.RunInfoPanel, null), document.getElementById('run-info-panel'));
 	
 	_reactDom2.default.render(_react2.default.createElement(_system_controls.SystemControlPanel, null), document.getElementById('system-control-panel'));
+	
+	_reactDom2.default.render(_react2.default.createElement(_system_status.SystemStatusPanel, null), document.getElementById('system-status-panel'));
 
 /***/ },
 /* 1 */
@@ -22640,11 +22644,15 @@
 	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+	    value: true
 	});
 	exports.Modal = undefined;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	exports.getActionIcon = getActionIcon;
+	exports.getStateIcon = getStateIcon;
+	exports.getStateBgColor = getStateBgColor;
 	
 	var _react = __webpack_require__(/*! react */ 1);
 	
@@ -22663,77 +22671,128 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
 	var Modal = exports.Modal = function (_React$Component) {
-	  _inherits(Modal, _React$Component);
+	    _inherits(Modal, _React$Component);
 	
-	  function Modal() {
-	    _classCallCheck(this, Modal);
+	    function Modal() {
+	        _classCallCheck(this, Modal);
 	
-	    return _possibleConstructorReturn(this, (Modal.__proto__ || Object.getPrototypeOf(Modal)).apply(this, arguments));
-	  }
-	
-	  _createClass(Modal, [{
-	    key: 'componentDidMount',
-	    value: function componentDidMount() {
-	      var $node = $(_reactDom2.default.findDOMNode(this));
-	      $node.modal('show');
-	      $node.on('hidden.bs.modal', this.props.handleHideModal);
+	        return _possibleConstructorReturn(this, (Modal.__proto__ || Object.getPrototypeOf(Modal)).apply(this, arguments));
 	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      return _react2.default.createElement(
-	        'div',
-	        { className: 'modal fade' },
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'modal-dialog modal-lg' },
-	          _react2.default.createElement(
-	            'div',
-	            { className: 'modal-content' },
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'modal-header' },
-	              _react2.default.createElement(
-	                'button',
-	                { type: 'button', className: 'close', 'data-dismiss': 'modal', 'aria-label': 'Close' },
+	
+	    _createClass(Modal, [{
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            var $node = $(_reactDom2.default.findDOMNode(this));
+	            $node.modal('show');
+	            $node.on('hidden.bs.modal', this.props.handleHideModal);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'modal fade' },
 	                _react2.default.createElement(
-	                  'span',
-	                  { 'aria-hidden': 'true' },
-	                  '\xD7'
+	                    'div',
+	                    { className: 'modal-dialog modal-lg' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'modal-content' },
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'modal-header' },
+	                            _react2.default.createElement(
+	                                'button',
+	                                { type: 'button', className: 'close', 'data-dismiss': 'modal', 'aria-label': 'Close' },
+	                                _react2.default.createElement(
+	                                    'span',
+	                                    { 'aria-hidden': 'true' },
+	                                    '\xD7'
+	                                )
+	                            ),
+	                            _react2.default.createElement(
+	                                'h4',
+	                                { className: 'modal-title' },
+	                                this.props.title
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'modal-body' },
+	                            _react2.default.createElement(
+	                                'pre',
+	                                null,
+	                                this.props.content
+	                            )
+	                        ),
+	                        _react2.default.createElement(
+	                            'div',
+	                            { className: 'modal-footer' },
+	                            _react2.default.createElement(
+	                                'button',
+	                                { type: 'button', className: 'btn btn-default', 'data-dismiss': 'modal' },
+	                                'Close'
+	                            )
+	                        )
+	                    )
 	                )
-	              ),
-	              _react2.default.createElement(
-	                'h4',
-	                { className: 'modal-title' },
-	                this.props.title
-	              )
-	            ),
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'modal-body' },
-	              _react2.default.createElement(
-	                'pre',
-	                null,
-	                this.props.content
-	              )
-	            ),
-	            _react2.default.createElement(
-	              'div',
-	              { className: 'modal-footer' },
-	              _react2.default.createElement(
-	                'button',
-	                { type: 'button', className: 'btn btn-default', 'data-dismiss': 'modal' },
-	                'Close'
-	              )
-	            )
-	          )
-	        )
-	      );
-	    }
-	  }]);
+	            );
+	        }
+	    }]);
 	
-	  return Modal;
+	    return Modal;
 	}(_react2.default.Component);
+	
+	function getActionIcon(action) {
+	    if (action == 'describe') {
+	        return 'fa-server';
+	    } else if (action == 'prepare') {
+	        return 'fa-link';
+	    } else if (action == 'configure') {
+	        return 'fa-cog';
+	    } else if (action == 'start') {
+	        return 'fa-play';
+	    } else if (action == 'stop') {
+	        return 'fa-stop';
+	    } else if (action == 'reset') {
+	        return 'fa-repeat';
+	    } else {
+	        console.error('Unknown action: ' + action);
+	        return 'fa-question';
+	    }
+	}
+	
+	function getStateIcon(state) {
+	    if (state == 'Idle') {
+	        return 'fa-power-off';
+	    } else if (state == 'Described') {
+	        return 'fa-server';
+	    } else if (state == 'Prepared') {
+	        return 'fa-link';
+	    } else if (state == 'Ready') {
+	        return 'fa-check-circle';
+	    } else if (state == 'Running') {
+	        return 'fa-play';
+	    } else {
+	        return 'fa-warning';
+	    }
+	}
+	
+	function getStateBgColor(state) {
+	    if (state == 'Idle') {
+	        return 'bg-color-idle';
+	    } else if (state == 'Described') {
+	        return 'bg-color-described';
+	    } else if (state == 'Prepared') {
+	        return 'bg-color-prepared';
+	    } else if (state == 'Ready') {
+	        return 'bg-color-ready';
+	    } else if (state == 'Running') {
+	        return 'bg-color-running';
+	    } else {
+	        return 'bg-color-error';
+	    }
+	}
 
 /***/ },
 /* 185 */
@@ -23329,6 +23388,8 @@
 	
 	var _jsCookie2 = _interopRequireDefault(_jsCookie);
 	
+	var _components = __webpack_require__(/*! ./components.jsx */ 184);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -23336,25 +23397,6 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	function getActionIcon(action) {
-	    if (action == 'describe') {
-	        return 'fa-server';
-	    } else if (action == 'prepare') {
-	        return 'fa-link';
-	    } else if (action == 'configure') {
-	        return 'fa-cog';
-	    } else if (action == 'start') {
-	        return 'fa-play';
-	    } else if (action == 'stop') {
-	        return 'fa-stop';
-	    } else if (action == 'reset') {
-	        return 'fa-repeat';
-	    } else {
-	        console.error('Unknown action: ' + action);
-	        return 'fa-question';
-	    }
-	}
 	
 	function getButtonClass(action) {
 	    if (action == 'describe') {
@@ -23398,7 +23440,7 @@
 	        value: function render() {
 	            var _this2 = this;
 	
-	            var icon_class = getActionIcon(this.props.action);
+	            var icon_class = (0, _components.getActionIcon)(this.props.action);
 	            var btn_class = getButtonClass(this.props.action);
 	            var text = this.props.action.charAt(0).toUpperCase() + this.props.action.slice(1) + " all";
 	
@@ -23459,6 +23501,104 @@
 	    }]);
 	
 	    return SystemControlPanel;
+	}(_react2.default.Component);
+
+/***/ },
+/* 189 */
+/*!**********************************************!*\
+  !*** ./attpcdaq/static/js/system_status.jsx ***!
+  \**********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.SystemStatusPanel = undefined;
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _components = __webpack_require__(/*! ./components.jsx */ 184);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var SystemStatusPanel = exports.SystemStatusPanel = function (_React$Component) {
+	    _inherits(SystemStatusPanel, _React$Component);
+	
+	    function SystemStatusPanel(props) {
+	        _classCallCheck(this, SystemStatusPanel);
+	
+	        var _this = _possibleConstructorReturn(this, (SystemStatusPanel.__proto__ || Object.getPrototypeOf(SystemStatusPanel)).call(this, props));
+	
+	        _this.state = {
+	            overallState: 'Idle'
+	        };
+	        return _this;
+	    }
+	
+	    _createClass(SystemStatusPanel, [{
+	        key: 'updateFromServer',
+	        value: function updateFromServer() {
+	            var _this2 = this;
+	
+	            $.get('/daq/api/ecc_servers/overall_state/').done(function (response) {
+	                if (response.success) {
+	                    _this2.setState({
+	                        overallState: response.overall_state_name
+	                    });
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            var _this3 = this;
+	
+	            this.updateFromServer();
+	            this.timerID = setInterval(function () {
+	                return _this3.updateFromServer();
+	            }, 5000);
+	        }
+	    }, {
+	        key: 'componentWillUnmount',
+	        value: function componentWillUnmount() {
+	            clearInterval(this.timerID);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var iconClass = (0, _components.getStateIcon)(this.state.overallState);
+	            var bgColorClass = (0, _components.getStateBgColor)(this.state.overallState);
+	
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'panel panel-status ' + bgColorClass },
+	                _react2.default.createElement(
+	                    'span',
+	                    { className: 'status-icon' },
+	                    _react2.default.createElement('span', { className: 'fa ' + iconClass })
+	                ),
+	                _react2.default.createElement(
+	                    'span',
+	                    { className: 'status-text' },
+	                    this.state.overallState
+	                )
+	            );
+	        }
+	    }]);
+	
+	    return SystemStatusPanel;
 	}(_react2.default.Component);
 
 /***/ }

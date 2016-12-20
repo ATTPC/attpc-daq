@@ -128,6 +128,15 @@ class ECCServerViewSet(viewsets.ModelViewSet):
 
         return Response({'success': True})
 
+    @list_route(methods=['get'])
+    def overall_state(self, request):
+        overall_state, overall_state_name = calculate_overall_state()
+        return Response({
+            'success': True,
+            'overall_state': overall_state,
+            'overall_state_name': overall_state_name,
+        })
+
 
 class ConfigIdViewSet(viewsets.ModelViewSet):
     queryset = ConfigId.objects.all()
