@@ -79,6 +79,10 @@
 	
 	var _system_status2 = _interopRequireDefault(_system_status);
 	
+	var _recent_logs = __webpack_require__(/*! ./recent_logs.jsx */ 190);
+	
+	var _recent_logs2 = _interopRequireDefault(_recent_logs);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -107,7 +111,8 @@
 	                    { className: 'col-md-9' },
 	                    _react2.default.createElement(_run_info2.default, null),
 	                    _react2.default.createElement(_ecc_status2.default, null),
-	                    _react2.default.createElement(_data_router_status2.default, null)
+	                    _react2.default.createElement(_data_router_status2.default, null),
+	                    _react2.default.createElement(_recent_logs2.default, null)
 	                ),
 	                _react2.default.createElement(
 	                    'div',
@@ -22526,7 +22531,7 @@
 	                var buttons = ecc_actions.map(function (action, actionIndex) {
 	                    return _react2.default.createElement(
 	                        "td",
-	                        { width: "35px" },
+	                        { key: action, width: "35px" },
 	                        _react2.default.createElement(EccControlButton, {
 	                            action: action,
 	                            onClick: function onClick() {
@@ -23628,6 +23633,182 @@
 	}(_react2.default.Component);
 	
 	exports.default = SystemStatusPanel;
+
+/***/ },
+/* 190 */
+/*!********************************************!*\
+  !*** ./attpcdaq/static/js/recent_logs.jsx ***!
+  \********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	function getClassName(level) {
+	    if (level == 'Warning') {
+	        return 'warning';
+	    } else if (level == 'Error') {
+	        return 'danger';
+	    } else if (level == 'Critical') {
+	        return 'danger';
+	    } else {
+	        return null;
+	    }
+	}
+	
+	var RecentLogsPanel = function (_React$Component) {
+	    _inherits(RecentLogsPanel, _React$Component);
+	
+	    function RecentLogsPanel(props) {
+	        _classCallCheck(this, RecentLogsPanel);
+	
+	        var _this = _possibleConstructorReturn(this, (RecentLogsPanel.__proto__ || Object.getPrototypeOf(RecentLogsPanel)).call(this, props));
+	
+	        _this.state = {
+	            logs: []
+	        };
+	        return _this;
+	    }
+	
+	    _createClass(RecentLogsPanel, [{
+	        key: 'updateFromServer',
+	        value: function updateFromServer() {
+	            var _this2 = this;
+	
+	            $.get('/logs/api/recent_logs/').done(function (response) {
+	                return _this2.setState({ logs: response });
+	            });
+	        }
+	    }, {
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            var _this3 = this;
+	
+	            this.updateFromServer();
+	            this.timerID = setInterval(function () {
+	                return _this3.updateFromServer();
+	            }, 5000);
+	        }
+	    }, {
+	        key: 'componentWillUnmount',
+	        value: function componentWillUnmount() {
+	            clearInterval(this.timerID);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var panelBody = void 0;
+	            if (this.state.logs.length == 0) {
+	                panelBody = _react2.default.createElement(
+	                    'div',
+	                    { className: 'panel-body' },
+	                    'No log entries'
+	                );
+	            } else {
+	                var rows = this.state.logs.map(function (log, logIndex) {
+	                    return _react2.default.createElement(
+	                        'tr',
+	                        { key: log.pk, className: getClassName(log.get_level_display) },
+	                        _react2.default.createElement(
+	                            'td',
+	                            null,
+	                            log.create_time
+	                        ),
+	                        _react2.default.createElement(
+	                            'td',
+	                            null,
+	                            log.get_level_display
+	                        ),
+	                        _react2.default.createElement(
+	                            'td',
+	                            null,
+	                            log.logger_name
+	                        ),
+	                        _react2.default.createElement(
+	                            'td',
+	                            null,
+	                            log.message
+	                        )
+	                    );
+	                });
+	
+	                panelBody = _react2.default.createElement(
+	                    'table',
+	                    { className: 'table table-hover' },
+	                    _react2.default.createElement(
+	                        'thead',
+	                        null,
+	                        _react2.default.createElement(
+	                            'tr',
+	                            null,
+	                            _react2.default.createElement(
+	                                'th',
+	                                null,
+	                                'Time'
+	                            ),
+	                            _react2.default.createElement(
+	                                'th',
+	                                null,
+	                                'Level'
+	                            ),
+	                            _react2.default.createElement(
+	                                'th',
+	                                null,
+	                                'Logger'
+	                            ),
+	                            _react2.default.createElement(
+	                                'th',
+	                                null,
+	                                'Message'
+	                            )
+	                        )
+	                    ),
+	                    _react2.default.createElement(
+	                        'tbody',
+	                        null,
+	                        rows
+	                    )
+	                );
+	            }
+	
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'panel panel-default' },
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'panel-heading' },
+	                    _react2.default.createElement(
+	                        'span',
+	                        null,
+	                        'Log entries'
+	                    )
+	                ),
+	                panelBody
+	            );
+	        }
+	    }]);
+	
+	    return RecentLogsPanel;
+	}(_react2.default.Component);
+	
+	exports.default = RecentLogsPanel;
 
 /***/ }
 /******/ ]);

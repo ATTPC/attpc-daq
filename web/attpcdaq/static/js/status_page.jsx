@@ -5,6 +5,7 @@ import DataRouterPanel from './data_router_status.jsx'
 import RunInfoPanel from './run_info.jsx'
 import SystemControlPanel from './system_controls.jsx'
 import SystemStatusPanel from './system_status.jsx'
+import RecentLogsPanel from './recent_logs.jsx'
 
 class StatusPageApp extends React.Component {
     render() {
@@ -14,9 +15,7 @@ class StatusPageApp extends React.Component {
                     <RunInfoPanel/>
                     <ECCServerPanel/>
                     <DataRouterPanel/>
-                    {/*<div id="log-panel">*/}
-                        {/*{% include 'logs/log_list_panel_fragment.html' %}*/}
-                    {/*</div>*/}
+                    <RecentLogsPanel/>
                 </div>
                 <div className="col-md-3">
                     <SystemStatusPanel/>

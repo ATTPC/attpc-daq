@@ -105,7 +105,7 @@ class ECCServerPanel extends React.Component {
             const ecc_actions = ['describe', 'prepare', 'configure', 'start', 'stop', 'reset'];
             const buttons = ecc_actions.map((action, actionIndex) => {
                 return (
-                    <td width="35px">
+                    <td key={action} width="35px">
                         <EccControlButton
                             action={action}
                             onClick={() => this.doStateTransition(serverIndex, action)}
