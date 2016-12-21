@@ -22,11 +22,18 @@ class LogEntryViewSet(ModelViewSet):
     serializer_class = LogEntrySerializer
     queryset = LogEntry.objects.order_by('-create_time')
 
+    @list_route(methods=['get'])
+    def latest(self, request):
+        logs = self.get_queryset()[:10]
+        serializer = self.serializer_class(logs, many=True)
+        return Response(serializer.data)
+
     @list_route(['delete'])
     def all(self, request):
         logs = self.get_queryset()
         logs.delete()
         return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+
 
 class LogEntryListView(LoginRequiredMixin, ListView):
     model = LogEntry

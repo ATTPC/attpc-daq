@@ -26,7 +26,7 @@ class RecentLogsPanel extends React.Component {
     }
 
     updateFromServer() {
-        $.get('/logs/api/log_entries/').done(response => this.setState({logs: response}));
+        $.get('/logs/api/log_entries/latest/').done(response => this.setState({logs: response}));
     }
 
     clearAllLogs() {
@@ -56,7 +56,7 @@ class RecentLogsPanel extends React.Component {
             let rows = this.state.logs.map((log, logIndex) => {
                 return (
                     <tr key={log.pk} className={getClassName(log.get_level_display)}>
-                        <td>{log.create_time}</td>
+                        <td><a href={`/logs/details/${log.pk}/`}>{log.create_time}</a></td>
                         <td>{log.get_level_display}</td>
                         <td>{log.logger_name}</td>
                         <td>{log.message}</td>
