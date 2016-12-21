@@ -41,20 +41,6 @@ which contacts a remote computer, fetches the end of a log file, and renders a p
     easy_setup
 
 
-ECC interaction views
----------------------
-
-..  currentmodule:: attpcdaq.daq.views.api
-
-A few of the views in the module :mod:`attpcdaq.daq.views.api` are used to interact with the ECC servers and request
-that they perform some action. These views are called when the user clicks a button to request a state change.
-
-..  autosummary::
-    :toctree: generated/
-
-    source_change_state
-    source_change_state_all
-
 API views
 ---------
 
@@ -68,12 +54,6 @@ Unlike other views described above, the API views for manipulating database obje
 functions. These are all subclasses of generic views provided by Django, so for more information on these views, take
 a look at Django's documentation for class-based views.
 
-..  rubric:: Refreshing data
-
-..  autosummary::
-    :toctree: generated/
-
-    refresh_state_all
 
 ..  rubric:: Working with data sources
 
@@ -139,6 +119,3 @@ These helper functions are called by some of the views to avoid duplicating code
     :toctree: generated/
 
     calculate_overall_state
-    get_ecc_server_statuses
-    get_data_router_statuses
-    get_status

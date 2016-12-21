@@ -13,30 +13,6 @@ class StatusTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
         super().setUp()
         self.view_name = 'daq/status'
 
-    def _sorting_test_impl(self, model, context_item_name):
-        self.client.force_login(self.user)
-
-        # Add new instances to make sure they aren't just listed in the order they were added (i.e. by pk)
-        for i in (15, 14, 13, 12, 11):
-            model.objects.create(
-                name='Item{}'.format(i),
-                ip_address='117.0.0.1',
-                port='1234',
-            )
-
-        resp = self.client.get(reverse(self.view_name))
-        self.assertEqual(resp.status_code, 200)
-
-        item_list = resp.context[context_item_name]
-        names = [s.name for s in item_list]
-        self.assertEqual(names, sorted(names))
-
-    def test_ecc_list_is_sorted(self):
-        self._sorting_test_impl(ECCServer, 'ecc_servers')
-
-    def test_data_router_list_is_sorted(self):
-        self._sorting_test_impl(DataRouter, 'data_routers')
-
 
 class ChooseConfigTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):

@@ -19,9 +19,6 @@ urlpatterns = [
     url(r'^sources/add/$', views.AddDataSourceView.as_view(), name='daq/add_source'),
     url(r'^sources/edit/(?P<pk>\d+)$', views.UpdateDataSourceView.as_view(), name='daq/update_source'),
     url(r'^sources/remove/(?P<pk>\d+)$', views.RemoveDataSourceView.as_view(), name='daq/remove_source'),
-    url(r'^sources/refresh_state_all$', views.refresh_state_all, name='daq/source_refresh_state_all'),
-    url(r'^sources/change_state/$', views.source_change_state, name='daq/source_change_state'),
-    url(r'^sources/change_state_all/$', views.source_change_state_all, name='daq/source_change_state_all'),
     url(r'^sources/choose_config/(\d+)$', views.choose_config, name='daq/choose_config'),
 
     url(r'^ecc_servers/$', views.ListECCServersView.as_view(), name='daq/ecc_server_list'),

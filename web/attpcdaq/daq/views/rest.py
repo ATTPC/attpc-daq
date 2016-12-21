@@ -61,6 +61,22 @@ class ECCServerViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'], url_path=r'(?P<transition>describe|prepare|configure|start|stop|reset)')
     def change_state(self, request, pk, transition):
+        """Submits a request to tell the ECC server to change a source's state.
+
+        The transition request is put in the Celery task queue.
+
+        Parameters
+        ----------
+        request : HttpRequest
+            The request must include the primary key ``pk`` of the ECC server and the integer ``target_state``
+            to change to. The request must be made via POST.
+
+        Returns
+        -------
+        JsonResponse
+            The JSON response includes the items outlined in `_make_status_response`.
+
+        """
         try:
             ecc_server = self.get_object()
 
@@ -88,6 +104,21 @@ class ECCServerViewSet(viewsets.ModelViewSet):
 
     @list_route(methods=['post'], url_path=r'(?P<transition>describe|prepare|configure|start|stop|reset)')
     def change_state_all(self, request, transition):
+        """Send requests to change the state of all ECC servers.
+
+        The requests are queued to be performed asynchronously.
+
+        Parameters
+        ----------
+        request : HttpRequest
+            The request method must be POST, and it must contain an integer representing the target state.
+
+        Returns
+        -------
+        JsonResponse
+            A JSON array containing status information about all ECC servers.
+
+        """
         current_state, current_state_name = calculate_overall_state()
         if current_state is None:
             logger.error('Overall state is inconsistent. Fix this before changing state of all servers.')
