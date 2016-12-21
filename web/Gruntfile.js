@@ -8,7 +8,7 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
 
         less: {
-            production: {
+            site: {
                 options: {
                     paths: [
                         'node_modules/bootstrap/dist/css',
@@ -16,7 +16,7 @@ module.exports = function(grunt) {
                     ]
                 },
                 files: {
-                    'attpcdaq/static/css/site.css': 'attpcdaq/static/css/site.less'
+                    'attpcdaq/static/css/site.css': 'attpcdaq/static/less/site.less'
                 }
             }
         },
@@ -41,7 +41,7 @@ module.exports = function(grunt) {
         },
 
         webpack: {
-            development: {
+            statuspage: {
                 entry: JS_DIR + '/status_page.jsx',
                 output: {
                     path: BUILD_DIR,
@@ -60,7 +60,7 @@ module.exports = function(grunt) {
         },
 
         uglify: {
-            production: {
+            statuspage: {
                 files: {
                     'attpcdaq/static/js/build/status_page.min.js': ['attpcdaq/static/js/build/status_page.js']
                 }
