@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import ECCServerPanel from './ecc_status.jsx'
-import DataRouterPanel from './data_router_status.jsx'
-import RunInfoPanel from './run_info.jsx'
-import SystemControlPanel from './system_controls.jsx'
-import SystemStatusPanel from './system_status.jsx'
-import RecentLogsPanel from './recent_logs.jsx'
+import ECCServerPanel from './ecc_status.jsx';
+import DataRouterPanel from './data_router_status.jsx';
+import RunInfoPanel from './run_info.jsx';
+import SystemControlPanel from './system_controls.jsx';
+import SystemStatusPanel from './system_status.jsx';
+import RecentLogsPanel from './recent_logs.jsx';
 
 class StatusPageApp extends React.Component {
     render() {

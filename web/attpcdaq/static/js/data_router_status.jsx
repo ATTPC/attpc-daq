@@ -1,5 +1,6 @@
 import React from "react";
 import {Modal} from "./components.jsx";
+import $ from 'jquery';
 
 
 function StatusIndicator(props) {

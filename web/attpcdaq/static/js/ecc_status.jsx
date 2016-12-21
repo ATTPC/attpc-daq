@@ -2,6 +2,7 @@
 import React from 'react';
 import {Modal, getStateLabelClass, getActionIcon} from "./components.jsx";
 import Cookies from "js-cookie";
+import $ from 'jquery';
 
 
 function ECCStatusLabel(props) {
