@@ -5,3 +5,8 @@ __pycache__
 web/doc/_build
 celerybeat-schedule.db
 node_modules
+
+# Build products
+web/attpcdaq/static/css/
+web/attpcdaq/static/fonts/
+web/attpcdaq/static/js/build/
