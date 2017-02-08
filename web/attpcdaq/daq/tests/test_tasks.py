@@ -8,7 +8,8 @@ from celery.exceptions import SoftTimeLimitExceeded
 from ..tasks import organize_files_task, eccserver_refresh_state_task, eccserver_change_state_task
 from ..tasks import check_ecc_server_online_task, check_data_router_status_task, organize_files_all_task
 from ..tasks import eccserver_refresh_all_task, check_ecc_server_online_all_task, check_data_router_status_all_task
-from ..models import ECCServer, DataRouter
+from ..tasks import backup_config_files_task, backup_config_files_all_task
+from ..models import ECCServer, DataRouter, ConfigId
 
 
 class TaskTestCaseBase(TestCase):
@@ -426,6 +427,89 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
 
     def call_task(self):
         return organize_files_all_task(self.experiment_name, self.run_number)
+
+    def get_expected_subtask_calls(self):
+        return super().get_expected_subtask_calls(self.experiment_name, self.run_number)
+
+
+class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
+    def setUp(self):
+        super().setUp()
+
+        self.ecc = ECCServer.objects.create(
+            name='ECC',
+            ip_address='123.123.123.123',
+        )
+
+        self.config = ConfigId.objects.create(
+            describe='describe',
+            prepare='prepare',
+            configure='configure',
+            ecc_server=self.ecc,
+        )
+
+        self.ecc.selected_config = self.config
+        self.ecc.save()
+
+        self.experiment_name = 'experiment'
+        self.run_num = 1
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.WorkerInterface'
+
+    def get_callable(self):
+        return self.mock.return_value.__enter__.return_value.backup_config_files
+
+    def call_task(self, pk=None):
+        if pk is None:
+            pk = self.ecc.pk
+        return backup_config_files_task(pk, self.experiment_name, self.run_num)
+
+    def test_backup_files(self):
+        """Test that the task works with valid parameters."""
+        self.call_task()
+
+        self.mock.assert_called_once_with(self.ecc.ip_address)
+        self.get_callable().assert_called_once_with(self.experiment_name, self.run_num,
+                                                    self.ecc.config_file_paths(), self.ecc.config_backup_root)
+
+    def test_with_invalid_ecc_pk(self):
+        """Test that the task logs an error if the pk is invalid."""
+        with self.assertLogs(level=logging.ERROR):
+            self.call_task(self.ecc.pk + 10)
+
+
+class BackupConfigFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
+    def setUp(self):
+        super().setUp()
+
+        for i in range(10):
+            ecc = ECCServer.objects.create(
+                name='ECC{}'.format(i),
+                ip_address='123.123.123.123',
+            )
+
+            config = ConfigId.objects.create(
+                describe='describe',
+                prepare='prepare',
+                configure='configure',
+                ecc_server=ecc
+            )
+
+            ecc.selected_config = config
+            ecc.save()
+
+        self.experiment_name = 'Test experiment'
+        self.run_number = 1
+
+    def get_patch_target(self):
+        return 'attpcdaq.daq.tasks.backup_config_files_task'
+
+    def get_queryset(self):
+        return ECCServer.objects.all()
+
+    def call_task(self):
+        return backup_config_files_all_task(self.experiment_name, self.run_number)
 
     def get_expected_subtask_calls(self):
         return super().get_expected_subtask_calls(self.experiment_name, self.run_number)

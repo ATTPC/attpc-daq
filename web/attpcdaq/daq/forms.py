@@ -27,7 +27,7 @@ class DataSourceForm(CrispyModelFormBase):
 class ECCServerForm(CrispyModelFormBase):
     class Meta:
         model = ECCServer
-        fields = ['name', 'ip_address', 'port', 'log_path']
+        fields = ['name', 'ip_address', 'port', 'log_path', 'config_root', 'config_backup_root']
 
 
 class DataRouterForm(CrispyModelFormBase):

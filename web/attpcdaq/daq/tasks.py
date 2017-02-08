@@ -246,3 +246,33 @@ def organize_files_all_task(experiment_name, run_number):
         logger.error('Time limit exceeded while rearranging remote files on all nodes')
     except Exception:
         logger.exception('Failed to reorganize files on all nodes')
+
+
+@shared_task(soft_time_limit=30, time_limit=40)
+def backup_config_files_task(ecc_pk, experiment_name, run_number):
+    try:
+        ecc = ECCServer.objects.get(pk=ecc_pk)
+    except ECCServer.DoesNotExist:
+        logger.error('No ECC server exists with pk %d', ecc_pk)
+        return
+
+    try:
+        with WorkerInterface(ecc.ip_address) as wint:
+            wint.backup_config_files(experiment_name, run_number, ecc.config_file_paths(), ecc.config_backup_root)
+
+    except SoftTimeLimitExceeded:
+        logger.error('Time limit exceeded while backing up configs for ECC server %s', ecc.name)
+    except Exception:
+        logger.exception('Config backup failed')
+
+
+@shared_task(soft_time_limit=30, time_limit=40)
+def backup_config_files_all_task(experiment_name, run_number):
+    try:
+        pk_list = [ecc.pk for ecc in ECCServer.objects.all()]
+        gp = group([backup_config_files_task.s(pk, experiment_name, run_number) for pk in pk_list])
+        gp()
+    except SoftTimeLimitExceeded:
+        logger.error('Time limit exceeded while backing up config files on all nodes')
+    except Exception:
+        logger.exception('Failed to back up config files on all nodes')

@@ -186,6 +186,42 @@ class WorkerInterfaceTestCase(TestCase):
         client = mock_client.return_value
         self.assertEqual(client.exec_command.call_args_list, [mkdir_call, mv_call])
 
+    @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
+    def test_build_run_dir_path(self, mock_find_data_router, mock_client, mock_config):
+        mock_find_data_router.return_value = self.router_path
+
+        exp_name = 'experiment'
+        run_num = 1
+        run_name = 'run_{:04d}'.format(run_num)
+
+        expect = os.path.join(self.router_path, exp_name, run_name)
+
+        with WorkerInterface(self.hostname) as wint:
+            result = wint.build_run_dir_path(exp_name, run_num)
+
+        self.assertEqual(result, expect)
+        mock_find_data_router.assert_called_once_with()
+
+    def test_backup_config_files(self, mock_client, mock_config):
+        dest_root = '/backup/destination'
+
+        exp_name = 'experiment'
+        run_num = 1
+        run_name = 'run_{:04d}'.format(run_num)
+
+        run_dir = os.path.join(dest_root, exp_name, run_name)
+
+        files = ['/path/to/a/config/file.xcfg']
+
+        with WorkerInterface(self.hostname) as wint:
+            wint.backup_config_files(exp_name, run_num, files, dest_root)
+
+        mkdir_call = call(r"mkdir -p {}".format(run_dir))
+        cp_call = call(r"cp {} {}".format(files[0], run_dir))
+
+        client = mock_client.return_value
+        self.assertEqual(client.exec_command.call_args_list, [mkdir_call, cp_call])
+
 
 
 

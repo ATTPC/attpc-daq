@@ -163,6 +163,30 @@ class WorkerInterface(object):
         """
         return self._check_process_status(r'dataRouter')
 
+    def build_run_dir_path(self, experiment_name, run_number):
+        """Get the path to the directory for a given run.
+
+        This returns a path of the format ``experiment_name/run_name`` under the directory where the data router
+        is running. The ``run_name``, in this case, has the format ``run_NNNN``.
+
+        Parameters
+        ----------
+        experiment_name : str
+            The name of the experiment directory.
+        run_number : int
+            The run number.
+
+        Returns
+        -------
+        run_dir : str
+            The full path to the run directory. *This should be escaped before passing it to a shell command.*
+
+        """
+        pwd = self.find_data_router()
+        run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
+        run_dir = os.path.join(pwd, experiment_name, run_name)
+        return run_dir
+
     def organize_files(self, experiment_name, run_number):
         """Organize the GRAW files at the end of a run.
 
@@ -178,9 +202,7 @@ class WorkerInterface(object):
             The current run number.
 
         """
-        pwd = self.find_data_router()
-        run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
-        run_dir = os.path.join(pwd, experiment_name, run_name)
+        run_dir = self.build_run_dir_path(experiment_name, run_number)
         run_dir_esc = shlex.quote(run_dir)
 
         graws = [shlex.quote(s) for s in self.get_graw_list()]
@@ -188,6 +210,35 @@ class WorkerInterface(object):
         self.client.exec_command('mkdir -p {}'.format(run_dir_esc))
 
         self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir_esc))
+
+    def backup_config_files(self, experiment_name, run_number, file_paths, backup_root):
+        """Makes a copy of the config files on the remote computer.
+
+        The files are copied to a subdirectory ``experiment_name/run_name`` of ``backup_root``.
+
+        Parameters
+        ----------
+        experiment_name : str
+            The name of the experiment.
+        run_number : int
+            The run number.
+        file_paths : iterable of str
+            The paths to the config files.
+        backup_root : str
+            Where the backups should be written.
+
+        """
+        run_name = 'run_{:04d}'.format(run_number)
+        config_dir = os.path.join(backup_root, experiment_name, run_name)
+        config_dir_esc = shlex.quote(config_dir)
+
+        file_paths_esc = [shlex.quote(s) for s in file_paths]
+
+        self.client.exec_command('mkdir -p {}'.format(config_dir_esc))
+        self.client.exec_command('cp {src} {dest}'.format(
+            src=' '.join(file_paths_esc),
+            dest=config_dir_esc,
+        ))
 
     def tail_file(self, path, num_lines=50):
         """Retrieve the tail of a text file on the remote host.

@@ -105,6 +105,17 @@ class ECCServerModelTestCase(TestCase):
         expected = 'http://{}:{}/'.format(self.ip_address, self.port)
         self.assertEqual(ecc_url, expected)
 
+    def test_config_paths(self):
+        expected_root = '/Volumes/configs'
+        expected = (
+            os.path.join(expected_root, 'describe-describe.xcfg'),
+            os.path.join(expected_root, 'prepare-prepare.xcfg'),
+            os.path.join(expected_root, 'configure-configure.xcfg'),
+        )
+        result = self.ecc_server.config_file_paths()
+
+        self.assertEqual(result, expected)
+
     def data_link_xml_test_impl(self):
         xml_string = self.ecc_server.get_data_link_xml_from_clients()
         root = ET.fromstring(xml_string)

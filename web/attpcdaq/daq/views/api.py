@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse_lazy
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm
-from ..tasks import eccserver_change_state_task, organize_files_all_task
+from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
 from .helpers import get_status, calculate_overall_state
 
 import json
@@ -203,6 +203,7 @@ def source_change_state_all(request):
         experiment.stop_run()
         run_number = experiment.latest_run.run_number
         organize_files_all_task.delay(experiment.name, run_number)
+        backup_config_files_all_task.delay(experiment.name, run_number)
 
     output = get_status(request)
 
