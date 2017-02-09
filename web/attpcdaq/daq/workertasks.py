@@ -96,20 +96,18 @@ class WorkerInterface(object):
         Returns
         -------
         list[str]
-            A list of the file names.
+            A list of the full paths to the GRAW files.
 
         """
-        pwd = self.find_data_router()
+        data_dir = self.find_data_router()
 
-        _, stdout, _ = self.client.exec_command('ls -1 {}'.format(os.path.join(pwd, '*.graw')))
+        with self.client.open_sftp() as sftp:
+            full_list = sftp.listdir(data_dir)
 
-        graws = []
-        for line in stdout:
-            line = line.strip()
-            if re.search(r'\.graw$', line):
-                graws.append(line)
+        graws = filter(lambda s: re.match(r'.*\.graw$', s), full_list)
+        full_graw_paths = (os.path.join(data_dir, filename) for filename in graws)
 
-        return graws
+        return list(full_graw_paths)
 
     def working_dir_is_clean(self):
         """Check if there are GRAW files in the data router's working directory.

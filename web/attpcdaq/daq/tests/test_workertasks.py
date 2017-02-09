@@ -145,6 +145,26 @@ class WorkerInterfaceTestCase(TestCase):
     def test_check_data_router_running_when_false(self, mock_client, mock_config):
         self._check_data_router_running_impl(mock_client, False)
 
+    @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
+    def test_get_graw_list(self, mock_find_data_router, mock_client, mock_config):
+        mock_open_sftp = mock_client.return_value.open_sftp
+        mock_sftp = mock_open_sftp.return_value.__enter__.return_value
+
+        mock_find_data_router.return_value = self.router_path
+
+        file_list = ['file1.graw', 'file2.graw', 'file3.graw', 'file4.txt', 'file5.html']
+        mock_sftp.listdir.return_value = file_list
+
+        with WorkerInterface(self.hostname) as wint:
+            result = wint.get_graw_list()
+
+        mock_find_data_router.assert_called_once_with()
+        mock_open_sftp.assert_called_once_with()
+        mock_sftp.listdir.assert_called_once_with(self.router_path)
+
+        expect = [os.path.join(self.router_path, f) for f in file_list[:3]]
+        self.assertEqual(result, expect)
+
     @patch('attpcdaq.daq.workertasks.WorkerInterface.get_graw_list')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
     def test_organize_files(self, mock_find_data_router, mock_get_graw_list, mock_client, mock_config):
