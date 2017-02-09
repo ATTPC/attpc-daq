@@ -2,7 +2,92 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock, call
 import os
 
-from ..workertasks import WorkerInterface
+from ..workertasks import WorkerInterface, mkdir_recursive
+
+
+class MkdirRecursiveTestCase(TestCase):
+    def test_dir_already_exists(self):
+        target_path = '/some/path'
+        mock = MagicMock()
+        mkdir_recursive(mock, target_path)
+
+        mock.chdir.assert_called_once_with(target_path)
+        mock.mkdir.assert_not_called()
+
+    def test_basedir_exists(self):
+        target_path = '/some/path'
+        mock = MagicMock()
+
+        good_dirs = ['/some']
+
+        def chdir_side_effect(arg):
+            if arg not in good_dirs:
+                raise FileNotFoundError()
+
+        mock.chdir.side_effect = chdir_side_effect
+        mock.mkdir.side_effect = lambda x: good_dirs.append(x)
+
+        mkdir_recursive(mock, target_path)
+
+        expect = [call(target_path), call(os.path.dirname(target_path)), call(os.path.basename(target_path))]
+        self.assertEqual(mock.chdir.call_args_list, expect)
+        mock.mkdir.assert_called_once_with(os.path.basename(target_path))
+
+    def test_make_two_levels(self):
+        target_path = '/some/long/path'
+        mock = MagicMock()
+
+        good_dirs = ['/some']
+
+        def chdir_side_effect(arg):
+            if arg not in good_dirs:
+                raise FileNotFoundError()
+
+        mock.chdir.side_effect = chdir_side_effect
+        mock.mkdir.side_effect = lambda x: good_dirs.append(x)
+
+        mkdir_recursive(mock, target_path)
+
+        mkdir_calls = [call('long'), call('path')]
+        self.assertEqual(mock.mkdir.call_args_list, mkdir_calls)
+
+        chdir_calls = [
+            call('/some/long/path'),
+            call('/some/long'),
+            call('/some'),
+            call('long'),
+            call('path'),
+        ]
+        self.assertEqual(mock.chdir.call_args_list, chdir_calls)
+
+    def test_root_path(self):
+        target_path = '/'
+        mock = MagicMock()
+
+        mkdir_recursive(mock, target_path)
+
+        mock.chdir.assert_called_once_with(target_path)
+        mock.mkdir.assert_not_called()
+
+    def test_empty_path(self):
+        target_path = ''
+        mock = MagicMock()
+
+        mkdir_recursive(mock, target_path)
+
+        mock.chdir.assert_not_called()
+        mock.mkdir.assert_not_called()
+
+    def test_tilde_in_path(self):
+        target_path = '~/some/path'
+        mock = MagicMock()
+
+        with self.assertRaisesRegex(ValueError, r'Cannot handle'):
+            mkdir_recursive(mock, target_path)
+
+        mock.mkdir.assert_not_called()
+        mock.chdir.assert_not_called()
+
 
 @patch('attpcdaq.daq.workertasks.SSHConfig')
 @patch('attpcdaq.daq.workertasks.SSHClient')
@@ -165,46 +250,56 @@ class WorkerInterfaceTestCase(TestCase):
         expect = [os.path.join(self.router_path, f) for f in file_list[:3]]
         self.assertEqual(result, expect)
 
+    @patch('attpcdaq.daq.workertasks.mkdir_recursive')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.get_graw_list')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
-    def test_organize_files(self, mock_find_data_router, mock_get_graw_list, mock_client, mock_config):
-        mock_find_data_router.return_value = self.router_path
-        mock_get_graw_list.return_value = self.graw_list
+    def test_organize_files(self, mock_find_data_router, mock_get_graw_list, mock_mkdir, mock_client, mock_config):
+        # Shortcuts to mocks
+        mock_sftp = mock_client.return_value.open_sftp.return_value.__enter__.return_value
 
-        exp_name = 'experiment_name'
+        # Experiment info
+        exp_name = 'experiment name'
         run_number = 1
 
+        # Build file paths
+        full_src_graws = [os.path.join(self.router_path, g) for g in self.graw_list]
+        dest_dir = os.path.join(self.router_path, exp_name, 'run_{:04d}'.format(run_number))
+        full_dest_graws = [os.path.join(dest_dir, g) for g in self.graw_list]
+
+        # Set side effects
+        mock_find_data_router.return_value = self.router_path
+        mock_get_graw_list.return_value = full_src_graws
+
+        # Call method
         with WorkerInterface(self.hostname) as wint:
             wint.organize_files(exp_name, run_number)
 
+        # Check calls
         mock_find_data_router.assert_called_once_with()
         mock_get_graw_list.assert_called_once_with()
 
-        mkdir_call = call('mkdir -p /path/to/router/experiment_name/run_0001')
-        mv_call = call('mv test1.graw test2.graw /path/to/router/experiment_name/run_0001')
-        client = mock_client.return_value
-        self.assertEqual(client.exec_command.call_args_list, [mkdir_call, mv_call])
+        expected_calls = [call(s, d) for s, d in zip(full_src_graws, full_dest_graws)]
+        self.assertEqual(mock_sftp.rename.call_args_list, expected_calls)
 
+    @patch('attpcdaq.daq.workertasks.mkdir_recursive')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.get_graw_list')
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
-    def test_organize_files_spaces_escaped(self, mock_find_data_router, mock_get_graw_list,
-                                           mock_client, mock_config):
-        mock_find_data_router.return_value = self.router_path
-        mock_get_graw_list.return_value = self.graw_list
+    def test_organize_files_failure(self, mock_find_data_router, mock_get_graw_list, mock_mkdir, mock_client, mock_config):
+        # Shortcuts to mocks
+        mock_sftp = mock_client.return_value.open_sftp.return_value.__enter__.return_value
 
-        exp_name = 'name with spaces'
+        # Experiment info
+        exp_name = 'experiment name'
         run_number = 1
 
-        with WorkerInterface(self.hostname) as wint:
-            wint.organize_files(exp_name, run_number)
+        # Set side effects
+        mock_get_graw_list.return_value = self.graw_list  # Not full paths, but that's not important here
+        mock_sftp.rename.side_effect = FileNotFoundError('Something happened')
 
-        mock_find_data_router.assert_called_once_with()
-        mock_get_graw_list.assert_called_once_with()
-
-        mkdir_call = call(r"mkdir -p '/path/to/router/name with spaces/run_0001'")
-        mv_call = call(r"mv test1.graw test2.graw '/path/to/router/name with spaces/run_0001'")
-        client = mock_client.return_value
-        self.assertEqual(client.exec_command.call_args_list, [mkdir_call, mv_call])
+        # Call method
+        with self.assertRaises(FileNotFoundError):
+            with WorkerInterface(self.hostname) as wint:
+                wint.organize_files(exp_name, run_number)
 
     @patch('attpcdaq.daq.workertasks.WorkerInterface.find_data_router')
     def test_build_run_dir_path(self, mock_find_data_router, mock_client, mock_config):

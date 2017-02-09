@@ -13,6 +13,44 @@ import re
 import shlex
 
 
+def mkdir_recursive(sftp, path):
+    """Recursively create the directory tree given by ``path``.
+
+    This emulates ``mkdir -p`` on the remote system.
+
+    Parameters
+    ----------
+    sftp : paramiko.sftp_client.SFTPClient
+        The SFTP client object. This should be connected to the remote host.
+    path : str
+        The path that needs to be created.
+
+    Raises
+    ------
+    ValueError
+        If the path contains a '~'. Home directory expansion is not currently supported on the remote host.
+
+    """
+    # Based on http://stackoverflow.com/a/14819803/3820658
+    if '~' in path:
+        raise ValueError('Cannot handle ~ in remote directory.')
+
+    if path == '':
+        return
+    elif path == '/':
+        sftp.chdir(path)
+        return
+
+    try:
+        sftp.chdir(path)
+    except IOError:
+        head, tail = os.path.split(path.rstrip('/'))
+        mkdir_recursive(sftp, head)
+        sftp.mkdir(tail)
+        sftp.chdir(tail)
+        return
+
+
 class WorkerInterface(object):
     """An interface to perform tasks on the DAQ worker nodes.
 
@@ -201,13 +239,16 @@ class WorkerInterface(object):
 
         """
         run_dir = self.build_run_dir_path(experiment_name, run_number)
-        run_dir_esc = shlex.quote(run_dir)
 
-        graws = [shlex.quote(s) for s in self.get_graw_list()]
+        graws = self.get_graw_list()
 
-        self.client.exec_command('mkdir -p {}'.format(run_dir_esc))
+        with self.client.open_sftp() as sftp:
+            mkdir_recursive(sftp, run_dir)
+            for srcpath in graws:
+                _, srcfile = os.path.split(srcpath)
+                destpath = os.path.join(run_dir, srcfile)
+                sftp.rename(srcpath, destpath)
 
-        self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir_esc))
 
     def backup_config_files(self, experiment_name, run_number, file_paths, backup_root):
         """Makes a copy of the config files on the remote computer.
