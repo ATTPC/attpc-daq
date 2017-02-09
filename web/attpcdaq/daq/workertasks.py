@@ -249,7 +249,6 @@ class WorkerInterface(object):
                 destpath = os.path.join(run_dir, srcfile)
                 sftp.rename(srcpath, destpath)
 
-
     def backup_config_files(self, experiment_name, run_number, file_paths, backup_root):
         """Makes a copy of the config files on the remote computer.
 
@@ -262,22 +261,21 @@ class WorkerInterface(object):
         run_number : int
             The run number.
         file_paths : iterable of str
-            The paths to the config files.
+            The *full* paths to the config files.
         backup_root : str
             Where the backups should be written.
 
         """
         run_name = 'run_{:04d}'.format(run_number)
-        config_dir = os.path.join(backup_root, experiment_name, run_name)
-        config_dir_esc = shlex.quote(config_dir)
+        backup_dest = os.path.join(backup_root, experiment_name, run_name)
 
-        file_paths_esc = [shlex.quote(s) for s in file_paths]
-
-        self.client.exec_command('mkdir -p {}'.format(config_dir_esc))
-        self.client.exec_command('cp {src} {dest}'.format(
-            src=' '.join(file_paths_esc),
-            dest=config_dir_esc,
-        ))
+        with self.client.open_sftp() as sftp:
+            mkdir_recursive(sftp, backup_dest)
+            for source_path in file_paths:
+                dest_path = os.path.join(backup_dest, os.path.basename(source_path))
+                with sftp.open(source_path, 'r') as src, sftp.open(dest_path, 'w') as dest:
+                    buffer = src.read()
+                    dest.write(buffer)
 
     def tail_file(self, path, num_lines=50):
         """Retrieve the tail of a text file on the remote host.

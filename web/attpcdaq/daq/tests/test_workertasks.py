@@ -1,6 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, call
 import os
+from itertools import chain
 
 from ..workertasks import WorkerInterface, mkdir_recursive
 
@@ -317,29 +318,36 @@ class WorkerInterfaceTestCase(TestCase):
         self.assertEqual(result, expect)
         mock_find_data_router.assert_called_once_with()
 
-    def test_backup_config_files(self, mock_client, mock_config):
+    @patch('attpcdaq.daq.workertasks.mkdir_recursive')
+    def test_backup_config_files(self, mock_mkdir, mock_client, mock_config):
+        mock_sftp = mock_client.return_value.open_sftp.return_value.__enter__.return_value
+
         dest_root = '/backup/destination'
 
         exp_name = 'experiment'
         run_num = 1
         run_name = 'run_{:04d}'.format(run_num)
 
-        run_dir = os.path.join(dest_root, exp_name, run_name)
+        backup_dest = os.path.join(dest_root, exp_name, run_name)
 
-        files = ['/path/to/a/config/file.xcfg']
+        src_paths = ['/some/config/file1.xcfg', '/some/config/file2.xcfg']
+        dest_paths = [os.path.join(backup_dest, os.path.basename(s)) for s in src_paths]
+
+        mock_file = mock_sftp.open.return_value.__enter__.return_value
+        sample_contents = b'Some file contents'
+        mock_file.read.return_value = sample_contents
 
         with WorkerInterface(self.hostname) as wint:
-            wint.backup_config_files(exp_name, run_num, files, dest_root)
+            wint.backup_config_files(exp_name, run_num, src_paths, dest_root)
 
-        mkdir_call = call(r"mkdir -p {}".format(run_dir))
-        cp_call = call(r"cp {} {}".format(files[0], run_dir))
+        mock_mkdir.assert_called_once_with(mock_sftp, backup_dest)
 
-        client = mock_client.return_value
-        self.assertEqual(client.exec_command.call_args_list, [mkdir_call, cp_call])
+        expected_calls = list(chain.from_iterable(zip(
+            (call(f, 'r') for f in src_paths),
+            (call(f, 'w') for f in dest_paths)
+        )))
 
-
-
-
-
-
+        self.assertEqual(mock_sftp.open.call_args_list, expected_calls)
+        self.assertEqual(mock_file.read.call_count, len(src_paths))
+        self.assertEqual(mock_file.write.call_args_list, [call(sample_contents)] * len(dest_paths))
 
