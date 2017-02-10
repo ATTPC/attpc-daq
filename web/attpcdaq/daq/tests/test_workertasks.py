@@ -297,6 +297,7 @@ class WorkerInterfaceTestCase(TestCase):
         # Set side effects
         mock_get_graw_list.return_value = self.graw_list  # Not full paths, but that's not important here
         mock_sftp.rename.side_effect = FileNotFoundError('Something happened')
+        mock_find_data_router.return_value = self.router_path
 
         # Call method
         with self.assertRaises(FileNotFoundError):
