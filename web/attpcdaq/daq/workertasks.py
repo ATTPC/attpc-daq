@@ -7,6 +7,7 @@ for example, organize files at the end of a run.
 
 from paramiko.client import SSHClient
 from paramiko.config import SSHConfig
+from paramiko.sftp_file import SFTPFile
 from paramiko import AutoAddPolicy
 import os
 import re
@@ -294,5 +295,17 @@ class WorkerInterface(object):
         str
             The tail of the file's contents.
         """
-        _, stdout, _ = self.client.exec_command('tail -n {:d} {:s}'.format(num_lines, path))
-        return stdout.read().decode('ascii')
+        # Based on https://gist.github.com/volker48/3437288
+        with self.client.open_sftp() as sftp:
+            with sftp.open(path, 'r') as f:
+                f.seek(-1, SFTPFile.SEEK_END)
+                lines = 0
+                while lines < num_lines and f.tell() > 0:
+                    char = f.read(1)
+                    if char == b'\n':
+                        lines += 1
+                        if lines == num_lines:
+                            break
+                    f.seek(-2, SFTPFile.SEEK_CUR)
+
+                return f.read().decode('ascii')

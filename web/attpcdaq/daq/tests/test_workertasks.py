@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock, call
 import os
 from itertools import chain
+from io import BytesIO
 
 from ..workertasks import WorkerInterface, mkdir_recursive
 
@@ -350,4 +351,25 @@ class WorkerInterfaceTestCase(TestCase):
         self.assertEqual(mock_sftp.open.call_args_list, expected_calls)
         self.assertEqual(mock_file.read.call_count, len(src_paths))
         self.assertEqual(mock_file.write.call_args_list, [call(sample_contents)] * len(dest_paths))
+
+    def test_tail_file(self, mock_client, mock_config):
+        path = '/path/to/file'
+        contents = 'Sample\nfile\ncontents\nwith\nfive\nlines'
+        num_lines = 3
+        buffer = BytesIO(bytes(contents, 'ascii'))
+
+        mock_sftp = mock_client.return_value.open_sftp.return_value.__enter__.return_value
+        mock_file = mock_sftp.open.return_value.__enter__.return_value
+
+        mock_file.seek.side_effect = buffer.seek
+        mock_file.read.side_effect = buffer.read
+        mock_file.tell.side_effect = buffer.tell
+
+        with WorkerInterface(self.hostname) as wint:
+            result = wint.tail_file(path, num_lines=num_lines)
+
+        expect = '\n'.join(contents.splitlines()[-3:])
+        self.assertEqual(result, expect)
+
+        mock_sftp.open.assert_called_once_with(path, 'r')
 
