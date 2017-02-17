@@ -14,6 +14,7 @@ class ECCServerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ECCServer
         fields = ['name', 'ip_address', 'port', 'get_state_display', 'is_transitioning', 'is_online', 'selected_config', 'url']
+        depth = 1
 
 
 class ConfigIdSerializer(serializers.HyperlinkedModelSerializer):

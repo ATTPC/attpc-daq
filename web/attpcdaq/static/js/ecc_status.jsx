@@ -25,7 +25,7 @@ function get_config_text(config) {
         return config.describe + '/' + config.prepare + '/' + config.configure;
     }
     else {
-        return ''
+        return 'None'
     }
 }
 
@@ -41,7 +41,6 @@ class ECCServerPanel extends React.Component {
         super(props);
         this.state = {
             servers: [],
-            configs: [],
             logFileModalVisible: false,
             logFileModalContent: '',
         };
@@ -50,16 +49,8 @@ class ECCServerPanel extends React.Component {
     updateFromServer() {
         const ecc_request = $.get('/daq/api/ecc_servers');
         ecc_request.done(servers => {
-            let promises = servers.map((server, index) => $.get(server.selected_config));
-
-            $.when.apply($, promises).done(configs => {
-                if (!$.isArray(configs)) {
-                    configs = [configs];
-                }
-                this.setState({
-                    servers: servers,
-                    configs: configs,
-                });
+            this.setState({
+                servers: servers,
             });
         });
     }
@@ -100,8 +91,7 @@ class ECCServerPanel extends React.Component {
 
     render() {
         const rows = this.state.servers.map((server, serverIndex) => {
-            const config = this.state.configs[serverIndex];
-            const config_text = get_config_text(config);
+            const config_text = get_config_text(server.selected_config);
 
             const ecc_actions = ['describe', 'prepare', 'configure', 'start', 'stop', 'reset'];
             const buttons = ecc_actions.map((action, actionIndex) => {
