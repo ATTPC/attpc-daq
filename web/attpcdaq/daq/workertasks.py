@@ -7,10 +7,49 @@ for example, organize files at the end of a run.
 
 from paramiko.client import SSHClient
 from paramiko.config import SSHConfig
+from paramiko.sftp_file import SFTPFile
 from paramiko import AutoAddPolicy
 import os
 import re
 import shlex
+
+
+def mkdir_recursive(sftp, path):
+    """Recursively create the directory tree given by ``path``.
+
+    This emulates ``mkdir -p`` on the remote system.
+
+    Parameters
+    ----------
+    sftp : paramiko.sftp_client.SFTPClient
+        The SFTP client object. This should be connected to the remote host.
+    path : str
+        The path that needs to be created.
+
+    Raises
+    ------
+    ValueError
+        If the path contains a '~'. Home directory expansion is not currently supported on the remote host.
+
+    """
+    # Based on http://stackoverflow.com/a/14819803/3820658
+    if '~' in path:
+        raise ValueError('Cannot handle ~ in remote directory.')
+
+    if path == '':
+        return
+    elif path == '/':
+        sftp.chdir(path)
+        return
+
+    try:
+        sftp.chdir(path)
+    except IOError:
+        head, tail = os.path.split(path.rstrip('/'))
+        mkdir_recursive(sftp, head)
+        sftp.mkdir(tail)
+        sftp.chdir(tail)
+        return
 
 
 class WorkerInterface(object):
@@ -96,20 +135,18 @@ class WorkerInterface(object):
         Returns
         -------
         list[str]
-            A list of the file names.
+            A list of the full paths to the GRAW files.
 
         """
-        pwd = self.find_data_router()
+        data_dir = self.find_data_router()
 
-        _, stdout, _ = self.client.exec_command('ls -1 {}'.format(os.path.join(pwd, '*.graw')))
+        with self.client.open_sftp() as sftp:
+            full_list = sftp.listdir(data_dir)
 
-        graws = []
-        for line in stdout:
-            line = line.strip()
-            if re.search(r'\.graw$', line):
-                graws.append(line)
+        graws = filter(lambda s: re.match(r'.*\.graw$', s), full_list)
+        full_graw_paths = (os.path.join(data_dir, filename) for filename in graws)
 
-        return graws
+        return list(full_graw_paths)
 
     def working_dir_is_clean(self):
         """Check if there are GRAW files in the data router's working directory.
@@ -163,6 +200,30 @@ class WorkerInterface(object):
         """
         return self._check_process_status(r'dataRouter')
 
+    def build_run_dir_path(self, experiment_name, run_number):
+        """Get the path to the directory for a given run.
+
+        This returns a path of the format ``experiment_name/run_name`` under the directory where the data router
+        is running. The ``run_name``, in this case, has the format ``run_NNNN``.
+
+        Parameters
+        ----------
+        experiment_name : str
+            The name of the experiment directory.
+        run_number : int
+            The run number.
+
+        Returns
+        -------
+        run_dir : str
+            The full path to the run directory. *This should be escaped before passing it to a shell command.*
+
+        """
+        pwd = self.find_data_router()
+        run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
+        run_dir = os.path.join(pwd, experiment_name, run_name)
+        return run_dir
+
     def organize_files(self, experiment_name, run_number):
         """Organize the GRAW files at the end of a run.
 
@@ -178,16 +239,44 @@ class WorkerInterface(object):
             The current run number.
 
         """
-        pwd = self.find_data_router()
-        run_name = 'run_{:04d}'.format(run_number)  # run_0001, run_0002, etc.
-        run_dir = os.path.join(pwd, experiment_name, run_name)
-        run_dir_esc = shlex.quote(run_dir)
+        run_dir = self.build_run_dir_path(experiment_name, run_number)
 
-        graws = [shlex.quote(s) for s in self.get_graw_list()]
+        graws = self.get_graw_list()
 
-        self.client.exec_command('mkdir -p {}'.format(run_dir_esc))
+        with self.client.open_sftp() as sftp:
+            mkdir_recursive(sftp, run_dir)
+            for srcpath in graws:
+                _, srcfile = os.path.split(srcpath)
+                destpath = os.path.join(run_dir, srcfile)
+                sftp.rename(srcpath, destpath)
 
-        self.client.exec_command('mv {} {}'.format(' '.join(graws), run_dir_esc))
+    def backup_config_files(self, experiment_name, run_number, file_paths, backup_root):
+        """Makes a copy of the config files on the remote computer.
+
+        The files are copied to a subdirectory ``experiment_name/run_name`` of ``backup_root``.
+
+        Parameters
+        ----------
+        experiment_name : str
+            The name of the experiment.
+        run_number : int
+            The run number.
+        file_paths : iterable of str
+            The *full* paths to the config files.
+        backup_root : str
+            Where the backups should be written.
+
+        """
+        run_name = 'run_{:04d}'.format(run_number)
+        backup_dest = os.path.join(backup_root, experiment_name, run_name)
+
+        with self.client.open_sftp() as sftp:
+            mkdir_recursive(sftp, backup_dest)
+            for source_path in file_paths:
+                dest_path = os.path.join(backup_dest, os.path.basename(source_path))
+                with sftp.open(source_path, 'r') as src, sftp.open(dest_path, 'w') as dest:
+                    buffer = src.read()
+                    dest.write(buffer)
 
     def tail_file(self, path, num_lines=50):
         """Retrieve the tail of a text file on the remote host.
@@ -206,5 +295,17 @@ class WorkerInterface(object):
         str
             The tail of the file's contents.
         """
-        _, stdout, _ = self.client.exec_command('tail -n {:d} {:s}'.format(num_lines, path))
-        return stdout.read().decode('ascii')
+        # Based on https://gist.github.com/volker48/3437288
+        with self.client.open_sftp() as sftp:
+            with sftp.open(path, 'r') as f:
+                f.seek(-1, SFTPFile.SEEK_END)
+                lines = 0
+                while lines < num_lines and f.tell() > 0:
+                    char = f.read(1)
+                    if char == b'\n':
+                        lines += 1
+                        if lines == num_lines:
+                            break
+                    f.seek(-2, SFTPFile.SEEK_CUR)
+
+                return f.read().decode('ascii')

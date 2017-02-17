@@ -27,7 +27,7 @@ class DataSourceForm(CrispyModelFormBase):
 class ECCServerForm(CrispyModelFormBase):
     class Meta:
         model = ECCServer
-        fields = ['name', 'ip_address', 'port', 'log_path']
+        fields = ['name', 'ip_address', 'port', 'log_path', 'config_root', 'config_backup_root']
 
 
 class DataRouterForm(CrispyModelFormBase):
@@ -108,7 +108,7 @@ class RunMetadataForm(CrispyModelFormBase):
             if name in self.Meta.fields:
                 continue
 
-            observable = Observable.objects.get(name=name)
+            observable = Observable.objects.get(name=name, experiment=self.instance.experiment)
             measurement = Measurement.objects.get(run_metadata=self.instance, observable=observable)
             measurement.value = value
             measurement.save()

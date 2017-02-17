@@ -1,7 +1,7 @@
 from ..models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment, ECCError
 from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer, ExperimentSerializer
 from ..workertasks import WorkerInterface
-from ..tasks import eccserver_change_state_task, organize_files_all_task
+from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
 from .helpers import calculate_overall_state
 
 from rest_framework import viewsets, status
@@ -156,6 +156,7 @@ class ECCServerViewSet(viewsets.ModelViewSet):
             experiment.stop_run()
             run_number = experiment.latest_run.run_number
             organize_files_all_task.delay(experiment.name, run_number)
+            backup_config_files_all_task.delay(experiment.name, run_number)
 
         return Response({'success': True})
 

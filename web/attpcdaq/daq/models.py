@@ -213,6 +213,12 @@ class ECCServer(models.Model):
     #: The path to the ECC server process's log file on the computer where the process is running.
     log_path = models.CharField(max_length=500, default='~/Library/Logs/getEccSoapServer.log')
 
+    #: The path to where the config files are stored on the remote computer.
+    config_root = models.CharField(max_length=500, default='/Volumes/configs')
+
+    #: Path where config file backups should be stored
+    config_backup_root = models.CharField(max_length=500, default='~/config_backups')
+
     #: A constant representing the "idle" state
     IDLE = 1
 
@@ -262,6 +268,24 @@ class ECCServer(models.Model):
         """Get the URL of the ECC server as a string.
         """
         return 'http://{}:{}/'.format(self.ip_address, self.port)
+
+    def config_file_paths(self):
+        """Get the paths to the config files on the remote computer.
+
+        Returns
+        -------
+        describe_path, prepare_path, configure_path : str
+            The full paths to the three config files.
+        """
+        if self.selected_config is None:
+            raise RuntimeError('No config is selected for this ECC server.')
+
+        suffix = 'xcfg'
+        filenames = (step + '-' + getattr(self.selected_config, step) + '.' + suffix
+                     for step in ('describe', 'prepare', 'configure'))
+        paths = (os.path.join(self.config_root, f) for f in filenames)
+
+        return tuple(paths)
 
     def _get_soap_client(self):
         """Creates a SOAP client for communicating with the ECC server.
