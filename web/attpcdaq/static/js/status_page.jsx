@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import ECCServerPanel from './ecc_status.jsx';
 import DataRouterPanel from './data_router_status.jsx';
 import RunInfoPanel from './run_info.jsx';
@@ -7,7 +6,7 @@ import SystemControlPanel from './system_controls.jsx';
 import SystemStatusPanel from './system_status.jsx';
 import RecentLogsPanel from './recent_logs.jsx';
 
-class StatusPageApp extends React.Component {
+class StatusPage extends React.Component {
     render() {
         return (
             <div className="row">
@@ -26,7 +25,4 @@ class StatusPageApp extends React.Component {
     }
 }
 
-ReactDOM.render(
-    <StatusPageApp/>,
-    document.getElementById('status-page-app')
-);
+export default StatusPage;

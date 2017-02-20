@@ -41,11 +41,11 @@ module.exports = function(grunt) {
         },
 
         webpack: {
-            statuspage: {
-                entry: JS_DIR + '/status_page.jsx',
+            app: {
+                entry: JS_DIR + '/app.jsx',
                 output: {
                     path: BUILD_DIR,
-                    filename: 'status_page.js'
+                    filename: 'app.js'
                 },
                 module: {
                     loaders: [
