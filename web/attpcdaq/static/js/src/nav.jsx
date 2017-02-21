@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router'
+import $ from 'jquery'
 
 export function SideNavbarItem(props) {
     const isActive = props.isActive || false;
@@ -24,28 +25,40 @@ export function SideNavbar(props) {
     )
 }
 
-export function TopNavbar(props) {
-    return (
-        <div className="navbar navbar-default">
-            <ul className="nav navbar-nav pull-right">
-                <li><span className="fa fa-user"/>{` ${props.username} (${props.experiment_name})`}</li>
-                <li>
-                    <a href="/doc" target="_blank"><span className="fa fa-question-circle"/> Help</a>
-                </li>
-                <li><a href="accounts/logout">Log out</a></li>
-            </ul>
-        </div>
-    )
+export class TopNavbar extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            username: 'Unknown',
+            experimentName: 'Unknown',
+        };
+        this.api_url = '/daq/api/experiment';
+    }
+
+    componentDidMount() {
+        const request = $.get(this.api_url);
+        request.done((response) => {
+            const expt = response[0];
+            this.setState({
+                username: expt.user.username,
+                experimentName: expt.name,
+            })
+        });
+    }
+
+    render() {
+        return (
+            <div className="navbar navbar-default">
+                <ul className="nav navbar-nav pull-right">
+                    <li>
+                        <a><span className="fa fa-user"/>{` ${this.state.username} (${this.state.experimentName})`}</a>
+                    </li>
+                    <li>
+                        <a href="/doc" target="_blank"><span className="fa fa-question-circle"/> Help</a>
+                    </li>
+                    <li><a href="accounts/logout"><span className="fa fa-sign-out"/> Log out</a></li>
+                </ul>
+            </div>
+        )
+    }
 }
-
-
-
-// <div class="container-fluid">
-//         <div class="row">
-//
-//             <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2">
-
-//
-//                 <div id="app-mount"></div>
-//                 <script src="{% static 'js/build/app.js' %}"></script>
-//             </div>

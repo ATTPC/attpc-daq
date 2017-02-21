@@ -10,6 +10,7 @@ router.register(r'ecc_servers', views.ECCServerViewSet)
 router.register(r'configids', views.ConfigIdViewSet)
 router.register(r'runmetadata', views.RunMetadataViewSet, base_name='runmetadata')
 router.register(r'experiment', views.ExperimentViewSet, base_name='experiment')
+router.register(r'current_user', views.UserViewSet, base_name='user')
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='daq/status')),

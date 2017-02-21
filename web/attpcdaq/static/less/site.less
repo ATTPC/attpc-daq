@@ -83,25 +83,16 @@ body {
   font-family: "Lato", "Helvetica", "Arial", sans-serif;
 }
 
-.navbar-default {
+.navbar.navbar-default {
   background-color: @bgcolor;
   margin-bottom: 10px;
+  border-radius: 0;
+  height: @top-navbar-height;
+  border: none;
 }
 
 #run-control-toolbar {
     display: inline-block;
-}
-
-.navbar.navbar-default {
-  border-radius: 0;
-  height: @top-navbar-height;
-  border: none;
-
-  .navbar-nav > .open > a,
-  .navbar-nav > .open > a:focus,
-  .navbar-nav > .open > a:hover {
-    background-color: lighten(@bgcolor, 5%);
-  }
 }
 
 .sidebar-app-name {

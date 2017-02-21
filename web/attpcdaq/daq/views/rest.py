@@ -1,5 +1,5 @@
 from ..models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment, ECCError
-from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer, ExperimentSerializer
+from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer, ExperimentSerializer, UserSerializer
 from ..workertasks import WorkerInterface
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
 from .helpers import calculate_overall_state
@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import detail_route, list_route
 
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 
 import logging
 logger = logging.getLogger(__name__)
@@ -188,3 +189,10 @@ class ExperimentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Experiment.objects.filter(user=self.request.user)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(pk=self.request.user.pk)

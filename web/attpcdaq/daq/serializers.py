@@ -1,4 +1,5 @@
 from .models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment
+from django.contrib.auth.models import User
 
 from rest_framework import serializers
 from django.core.urlresolvers import reverse
@@ -29,8 +30,16 @@ class RunMetadataSerializer(serializers.HyperlinkedModelSerializer):
         fields = ['run_number', 'title', 'get_run_class_display', 'start_datetime', 'stop_datetime', 'duration_string', 'config_name']
 
 
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
+
+
 class ExperimentSerializer(serializers.HyperlinkedModelSerializer):
     latest_run = RunMetadataSerializer()
+    user = UserSerializer()
     class Meta:
         model = Experiment
-        fields = ['name', 'latest_run', 'is_running', 'target_run_duration']
+        fields = ['name', 'latest_run', 'is_running', 'target_run_duration', 'user']
+        depth = 1
