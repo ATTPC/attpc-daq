@@ -1,6 +1,6 @@
 import React from 'react';
 import Cookies from 'js-cookie';
-import {getActionIcon} from './components.jsx';
+import {getActionIcon} from '../components.jsx';
 import $ from 'jquery';
 
 function getButtonClass(action) {

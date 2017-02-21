@@ -1,5 +1,5 @@
 from django.conf.urls import include, url
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from rest_framework import routers
 
 from . import views
@@ -14,6 +14,7 @@ router.register(r'experiment', views.ExperimentViewSet, base_name='experiment')
 urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='daq/status')),
     url(r'^status/$', views.status, name='daq/status'),
+    url(r'app/.*$', TemplateView.as_view(template_name='daq/app.html'), name='daq/app'),
 
     url(r'^sources/$', views.ListDataSourcesView.as_view(), name='daq/data_source_list'),
     url(r'^sources/add/$', views.AddDataSourceView.as_view(), name='daq/add_source'),

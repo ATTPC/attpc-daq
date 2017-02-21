@@ -1,6 +1,6 @@
 "use strict";
 import React from 'react';
-import {Modal, getStateLabelClass, getActionIcon} from "./components.jsx";
+import {Modal, getStateLabelClass, getActionIcon} from "../components.jsx";
 import Cookies from "js-cookie";
 import $ from 'jquery';
 

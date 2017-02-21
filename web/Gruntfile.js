@@ -1,6 +1,6 @@
 var path = require('path');
 
-var JS_DIR = path.resolve(__dirname, 'attpcdaq/static/js');
+var JS_DIR = path.resolve(__dirname, 'attpcdaq/static/js/src');
 var BUILD_DIR = path.resolve(__dirname, 'attpcdaq/static/js/build');
 
 module.exports = function(grunt) {
@@ -41,7 +41,7 @@ module.exports = function(grunt) {
         },
 
         webpack: {
-            app: {
+            build: {
                 entry: JS_DIR + '/app.jsx',
                 output: {
                     path: BUILD_DIR,
@@ -52,10 +52,27 @@ module.exports = function(grunt) {
                         {
                             test: /\.jsx?/,
                             include: JS_DIR,
-                            loader: 'babel',
+                            loader: 'babel-loader',
                         }
                     ]
                 }
+            },
+            dev: {
+                entry: JS_DIR + '/app.jsx',
+                output: {
+                    path: BUILD_DIR,
+                    filename: 'app.js'
+                },
+                module: {
+                    loaders: [
+                        {
+                            test: /\.jsx?/,
+                            include: JS_DIR,
+                            loader: 'babel-loader',
+                        }
+                    ]
+                },
+                watch: true,
             }
         },
 
@@ -73,5 +90,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-webpack');
     grunt.loadNpmTasks('grunt-contrib-uglify');
 
-    grunt.registerTask('default', ['less', 'copy', 'webpack', 'uglify']);
+    grunt.registerTask('default', ['less', 'copy', 'webpack:build', 'uglify']);
 };

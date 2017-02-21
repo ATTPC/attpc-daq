@@ -1,5 +1,5 @@
 import React from 'react';
-import {getStateBgColor, getStateIcon} from './components.jsx';
+import {getStateBgColor, getStateIcon} from '../components.jsx';
 import $ from 'jquery';
 
 class SystemStatusPanel extends React.Component {
