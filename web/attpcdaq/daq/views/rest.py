@@ -1,5 +1,6 @@
-from ..models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment, ECCError
-from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer, ExperimentSerializer, UserSerializer
+from ..models import DataRouter, ECCServer, ConfigId, RunMetadata, Experiment, ECCError, Observable, Measurement
+from ..serializers import DataRouterSerializer, ECCServerSerializer, ConfigIdSerializer, RunMetadataSerializer
+from ..serializers import ExperimentSerializer, UserSerializer, ObservableSerializer, MeasurementSerializer
 from ..workertasks import WorkerInterface
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
 from .helpers import calculate_overall_state
@@ -196,3 +197,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return User.objects.filter(pk=self.request.user.pk)
+
+
+class MeasurementViewSet(viewsets.ModelViewSet):
+    serializer_class = MeasurementSerializer
+    queryset = Measurement.objects.all()
+
+
+class ObservableViewSet(viewsets.ModelViewSet):
+    serializer_class = ObservableSerializer
+    queryset = Observable.objects.all()

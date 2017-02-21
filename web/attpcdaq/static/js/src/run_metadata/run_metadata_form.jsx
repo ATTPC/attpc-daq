@@ -1,7 +1,7 @@
 import React from 'react'
 import $ from 'jquery'
 import { Panel } from '../panel.jsx'
-import { FormInputWithLabel, SelectWithLabel } from '../forms.jsx'
+import { FormInputWithLabel, FormInputGroupWithLabel, SelectWithLabel, FormButtonBar } from '../forms.jsx'
 
 class RunMetadataForm extends React.Component {
     constructor(props) {
@@ -17,6 +17,7 @@ class RunMetadataForm extends React.Component {
             start_datetime: '',
             stop_datetime: '',
             config_name: '',
+            measurement_set: [],
         };
 
         const optRequest = $.ajax({
@@ -56,6 +57,8 @@ class RunMetadataForm extends React.Component {
     }
 
     render() {
+        let measurements = this.state.measurement_set;
+        measurements.sort((a, b) => a.observable.order - b.observable.order);
         const form = (
             <form className="form-horizontal">
                 <fieldset>
@@ -99,6 +102,29 @@ class RunMetadataForm extends React.Component {
                         onChange={this.handleInputChange}
                     />
                 </fieldset>
+                <fieldset>
+                    <legend>Measurements</legend>
+                    {measurements.map((meas, measIndex) => (
+                        <FormInputGroupWithLabel
+                            key={measIndex}
+                            name={meas.observable.name}
+                            content={meas.value}
+                            suffix={meas.observable.units}
+                            label={meas.observable.name}
+                            helpText={meas.observable.comment}
+                        />
+                    ))}
+                </fieldset>
+                <FormButtonBar>
+                    <input
+                        className="btn btn-primary"
+                        type="submit"
+                        value="Submit"
+                    />
+                    <a className="btn btn-default">
+                        Fill from last run
+                    </a>
+                </FormButtonBar>
             </form>
         );
 
