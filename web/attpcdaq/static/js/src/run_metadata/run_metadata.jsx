@@ -1,14 +1,7 @@
 import React from 'react'
 import $ from 'jquery'
+import { Panel, PanelButton, PanelButtonBar } from '../panel.jsx'
 
-function Panel(props) {
-    return (
-        <div className="panel panel-default">
-            <div className="panel-heading">{props.title}</div>
-            {props.table}
-        </div>
-    )
-}
 
 function RunMetadataListEntry(props) {
     return (
@@ -77,9 +70,16 @@ class RunMetadataList extends React.Component {
 
     render() {
         const table = this.makeTable();
+        const icon = <span className="fa fa-download"/>;
+        const button = <PanelButton href="/daq/runs/download"
+                                    label="Download as CSV"
+                                    icon={icon}
+                       />;
+        const buttonBar = <PanelButtonBar>{button}</PanelButtonBar>;
         return (
             <Panel title="Run information"
-                   table={table}
+                   body={table}
+                   buttons={buttonBar}
             />
         )
     }

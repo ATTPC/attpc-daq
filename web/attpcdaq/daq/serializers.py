@@ -27,7 +27,7 @@ class ConfigIdSerializer(serializers.HyperlinkedModelSerializer):
 class RunMetadataSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = RunMetadata
-        fields = ['run_number', 'title', 'get_run_class_display', 'start_datetime', 'stop_datetime', 'duration_string', 'config_name']
+        fields = ['url', 'run_number', 'title', 'get_run_class_display', 'run_class', 'start_datetime', 'stop_datetime', 'duration_string', 'config_name']
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
