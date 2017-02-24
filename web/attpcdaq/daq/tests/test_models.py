@@ -351,12 +351,7 @@ class DataSourceModelTestCase(TestCase):
 
 class ExperimentModelTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create(
-            username='test',
-            password='test1234',
-        )
         self.experiment = Experiment.objects.create(
-            user=self.user,
             name='Test experiment',
         )
 
@@ -441,13 +436,12 @@ class ExperimentModelTestCase(TestCase):
 
 class RunMetadataModelTestCase(TestCase):
     def setUp(self):
-        self.user = User(username='test', password='test1234')
-        self.user.save()
         self.name = 'Test experiment'
         self.target_run_duration = 1000
-        self.experiment = Experiment(user=self.user,
-                                     name=self.name,
-                                     target_run_duration=self.target_run_duration)
+        self.experiment = Experiment(
+            name=self.name,
+            target_run_duration=self.target_run_duration
+        )
         self.experiment.save()
 
         self.run0 = RunMetadata(experiment=self.experiment,
@@ -480,13 +474,8 @@ class RunMetadataModelTestCase(TestCase):
 
 class MeasurementModelTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create(
-            username='test',
-            password='test1234',
-        )
         self.experiment = Experiment.objects.create(
             name='Test experiment',
-            user=self.user,
         )
         self.run = RunMetadata.objects.create(
             run_number=0,

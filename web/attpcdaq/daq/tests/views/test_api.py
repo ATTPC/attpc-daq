@@ -7,14 +7,14 @@ import json
 import tempfile
 import logging
 
-from .helpers import RequiresLoginTestMixin, ManySourcesTestCaseBase
+from .helpers import RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase
 from ...models import ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ... import views
 from ...views import UpdateRunMetadataView
 from ...forms import RunMetadataForm
 
 
-class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
+class RefreshStateAllViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_refresh_state_all'
@@ -72,14 +72,14 @@ class RefreshStateAllViewTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBas
         self.assertEqual(resp_json['run_duration'], run0.duration_string)
 
 
-class SourceChangeStateTestCase(RequiresLoginTestMixin, TestCase):
+class SourceChangeStateTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_change_state'
 
 
 @patch('attpcdaq.daq.views.api.eccserver_change_state_task.delay')
-class SourceChangeStateAllTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
+class SourceChangeStateAllTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_change_state_all'
@@ -121,13 +121,17 @@ class RemoveDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
         super().test_no_login(rev_args=(1,))
 
 
-class ListRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
+class ListRunMetadataViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/run_list'
 
         self.user = User.objects.create(username='testUser', password='test1234')
-        self.experiment = Experiment.objects.create(name='Test experiment', user=self.user)
+        self.experiment = Experiment.objects.create(name='Test experiment')
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
 
         self.runs = []
         for i in (0, 3, 1, 2, 5, 4, 7, 9, 8):  # In a random order to test sorting
@@ -150,7 +154,7 @@ class ListRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
         self.client.force_login(self.user)
 
         newuser = User.objects.create(username='newExperiment', password='new12345')
-        newexpt = Experiment.objects.create(name='Another experiment', user=newuser)
+        newexpt = Experiment.objects.create(name='Another experiment')
         newrun = RunMetadata.objects.create(run_number=0,
                                             start_datetime=datetime.now(),
                                             stop_datetime=datetime.now(),
@@ -202,7 +206,6 @@ class UpdateRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
         )
         self.experiment = Experiment.objects.create(
             name='Test experiment',
-            user=self.user,
         )
         self.observable = Observable.objects.create(
             name='Observable quantity',
@@ -264,7 +267,7 @@ class UpdateRunMetadataViewTestCase(RequiresLoginTestMixin, TestCase):
         self.assertEqual(resp.status_code, 200)  # Even though it won't prepopulate, it should still work
 
 
-class SetObservableOrderingTestCase(RequiresLoginTestMixin, TestCase):
+class SetObservableOrderingTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
         self.view_name = 'daq/set_observable_ordering'
         self.user = User.objects.create(
@@ -273,8 +276,12 @@ class SetObservableOrderingTestCase(RequiresLoginTestMixin, TestCase):
         )
         self.experiment = Experiment.objects.create(
             name='Test experiment',
-            user=self.user,
         )
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
+
         for i in range(20):
             Observable.objects.create(
                 name='Observable{}'.format(i),

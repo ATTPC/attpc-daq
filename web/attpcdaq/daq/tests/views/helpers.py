@@ -16,6 +16,21 @@ class RequiresLoginTestMixin(object):
         self.assertEqual(resp.status_code, 302)
 
 
+class NeedsExperimentTestMixin(object):
+    def setUp(self):
+        super().setUp()
+
+    def test_no_experiment(self, *args, **kwargs):
+        session = self.client.session
+        session.pop('current_experiment_pk', None)
+        session.save()
+
+        request_data = kwargs.get('data')
+        reverse_args = kwargs.get('rev_args')
+        resp = self.client.get(reverse(self.view_name, args=reverse_args), data=request_data)
+        self.assertEqual(resp.status_code, 302)
+
+
 class ManySourcesTestCaseBase(TestCase):
     def setUp(self):
         self.ecc_ip_address = '123.45.67.8'
@@ -58,5 +73,8 @@ class ManySourcesTestCaseBase(TestCase):
 
         self.experiment = Experiment.objects.create(
             name='Test experiment',
-            user=self.user
         )
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()

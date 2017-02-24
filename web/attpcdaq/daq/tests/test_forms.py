@@ -61,13 +61,8 @@ class RunMetadataFormTestCase(TestModelFormFieldsMixin, TestCase):
         self.model = RunMetadata
         self.form = RunMetadataForm
 
-        self.user = User.objects.create(
-            username='test',
-            password='test1234',
-        )
         self.experiment = Experiment.objects.create(
             name='Test experiment',
-            user=self.user,
         )
         self.string_observable = Observable.objects.create(
             name='string observable',
