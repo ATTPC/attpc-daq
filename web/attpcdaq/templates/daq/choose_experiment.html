@@ -1,0 +1,12 @@
+{% extends 'login_base.html' %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="panel panel-default" id="login-panel">
+    <div class="panel-body">
+        <div class="login-app-name">AT-TPC DAQ</div>
+        {% crispy form %}
+    </div>
+
+</div>
+{% endblock %}

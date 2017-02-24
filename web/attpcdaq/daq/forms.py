@@ -56,6 +56,17 @@ class ExperimentSettingsForm(CrispyModelFormBase):
         fields = ['name', 'target_run_duration']
 
 
+class ExperimentChoiceForm(forms.Form):
+    experiment = forms.ModelChoiceField(queryset=Experiment.objects.all(), label='Choose experiment')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+
+        self.helper.add_input(Submit('submit', 'Load experiment', css_class='btn btn-primary btn-block'))
+
+
 class RunMetadataForm(CrispyModelFormBase):
     class Meta:
         model = RunMetadata

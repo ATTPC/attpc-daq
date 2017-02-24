@@ -7,21 +7,39 @@ The views in this module render the pages of the web app.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Min
 from django.db import transaction
+from django.views.generic.edit import FormView
 
 from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
-from ..forms import ExperimentSettingsForm, ConfigSelectionForm, EasySetupForm
+from ..forms import ExperimentSettingsForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
 
 from attpcdaq.logs.models import LogEntry
+
+from functools import wraps
 
 import logging
 logger = logging.getLogger(__name__)
 
 
+def needs_experiment(func):
+    """Decorator to check if a chosen experiment is set in the current session.
+    """
+    @wraps(func)
+    def wrapped_func(request, *args, **kwargs):
+        if 'current_experiment_pk' in request.session:
+            return func(request, *args, **kwargs)
+        else:
+            return redirect(reverse('daq/choose_experiment'))
+
+    return wrapped_func
+
+
 @login_required
+@needs_experiment
 def status(request):
     """Renders the main status page.
 
@@ -41,7 +59,7 @@ def status(request):
     data_routers = DataRouter.objects.order_by('name')
     system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
 
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_object_or_404(Experiment, pk=request.session['current_experiment_pk'])
     latest_run = experiment.latest_run
 
     logs = LogEntry.objects.order_by('-create_time')[:10]
@@ -313,4 +331,12 @@ def measurement_chart(request):
     })
 
 
+class ExperimentChoiceView(LoginRequiredMixin, FormView):
+    form_class = ExperimentChoiceForm
+    success_url = reverse_lazy('daq/status')
+    template_name = 'daq/choose_experiment.html'
 
+    def form_valid(self, form):
+        expt = form.cleaned_data['experiment']
+        self.request.session['current_experiment_pk'] = expt.pk
+        return super().form_valid(form)

@@ -7,6 +7,8 @@ urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='daq/status')),
     url(r'^status/$', views.status, name='daq/status'),
 
+    url(r'^choose_experiment/$', views.ExperimentChoiceView.as_view(), name='daq/choose_experiment'),
+
     url(r'^sources/$', views.ListDataSourcesView.as_view(), name='daq/data_source_list'),
     url(r'^sources/add/$', views.AddDataSourceView.as_view(), name='daq/add_source'),
     url(r'^sources/edit/(?P<pk>\d+)$', views.UpdateDataSourceView.as_view(), name='daq/update_source'),
