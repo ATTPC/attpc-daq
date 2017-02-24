@@ -1,5 +1,6 @@
 {% load staticfiles %}
 {% load tags %}
+{% load experiment_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +62,7 @@
                     <ul class="nav navbar-nav pull-right">
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
-                                <span class="fa fa-user"></span> {{ user.experiment.name }} ({{ user.username }}) <span class="fa fa-caret-down"></span>
+                                <span class="fa fa-user"></span> {% current_experiment_name request %} ({{ user.username }}) <span class="fa fa-caret-down"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-right">
                                 <li><a href="{% url 'daq/choose_experiment' %}">Choose experiment</a></li>

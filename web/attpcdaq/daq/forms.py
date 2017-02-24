@@ -64,7 +64,15 @@ class ExperimentChoiceForm(forms.Form):
         self.helper = FormHelper()
         self.helper.form_method = 'post'
 
-        self.helper.add_input(Submit('submit', 'Load experiment', css_class='btn btn-primary btn-block'))
+        new_expt_btn_html = """
+        <a href='#' class='btn btn-success btn-block'>New experiment</a>
+        """
+        self.helper.layout = Layout(
+            'experiment',
+            Submit('submit', 'Load experiment', css_class='btn btn-primary btn-block'),
+            HTML("<p class='text-center'>or</h3>"),
+            HTML(new_expt_btn_html),
+        )
 
 
 class RunMetadataForm(CrispyModelFormBase):
