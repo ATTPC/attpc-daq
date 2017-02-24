@@ -36,7 +36,7 @@ class RunMetadataAdmin(admin.ModelAdmin):
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
     model = Experiment
-    list_display = ['name', 'user']
+    list_display = ['name']
 
 
 @admin.register(Observable)

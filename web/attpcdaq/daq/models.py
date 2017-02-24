@@ -590,12 +590,7 @@ class Experiment(models.Model):
     This model keeps track of run numbers and knows the name of the experiment. It is queried when
     rearranging data files at the end of a run, when the experiment name is used as the name of the directory
     in which to store the files.
-
-    The active experiment is selected by a one-to-one mapping from the name of the current user.
     """
-
-    #: The user associated with this experiment
-    user = models.OneToOneField(User)
 
     #: The name of the experiment. This must be unique.
     name = models.CharField(max_length=100, unique=True)
