@@ -16,26 +16,12 @@ from django.views.generic.edit import FormView
 from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
 from ..forms import ExperimentSettingsForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
+from .helpers import needs_experiment, get_current_experiment
 
 from attpcdaq.logs.models import LogEntry
 
-from functools import wraps
-
 import logging
 logger = logging.getLogger(__name__)
-
-
-def needs_experiment(func):
-    """Decorator to check if a chosen experiment is set in the current session.
-    """
-    @wraps(func)
-    def wrapped_func(request, *args, **kwargs):
-        if 'current_experiment_pk' in request.session:
-            return func(request, *args, **kwargs)
-        else:
-            return redirect(reverse('daq/choose_experiment'))
-
-    return wrapped_func
 
 
 @login_required
@@ -59,7 +45,7 @@ def status(request):
     data_routers = DataRouter.objects.order_by('name')
     system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
 
-    experiment = get_object_or_404(Experiment, pk=request.session['current_experiment_pk'])
+    experiment = get_current_experiment(request)
     latest_run = experiment.latest_run
 
     logs = LogEntry.objects.order_by('-create_time')[:10]
@@ -110,10 +96,11 @@ def choose_config(request, pk):
 
 
 @login_required
+@needs_experiment
 def experiment_settings(request):
     """Renders the experiment settings page."""
 
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
 
     if request.method == 'POST':
         form = ExperimentSettingsForm(request.POST, instance=experiment)
@@ -313,8 +300,9 @@ def easy_setup_page(request):
 
 
 @login_required
+@needs_experiment
 def measurement_chart(request):
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
     observables = Observable.objects.filter(experiment=experiment)
     runs = RunMetadata.objects.filter(experiment=experiment)
 

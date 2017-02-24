@@ -19,7 +19,7 @@ from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment,
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
-from .helpers import get_status, calculate_overall_state
+from .helpers import get_status, calculate_overall_state, needs_experiment, NeedsExperimentMixin, get_current_experiment
 
 import json
 
@@ -93,6 +93,7 @@ def refresh_state_all(request):
 
 
 @login_required
+@needs_experiment
 def source_change_state(request):
     """Submits a request to tell the ECC server to change a source's state.
 
@@ -121,7 +122,7 @@ def source_change_state(request):
         logger.error('Must provide ECC server pk and target state')
         return HttpResponseBadRequest("Must provide ECC server pk and target state")
 
-    ecc_server = get_object_or_404(ECCServer, pk=pk)
+    ecc_server = get_current_experiment(request)
 
     # Handle "reset" case
     if target_state == ECCServer.RESET:
@@ -141,6 +142,7 @@ def source_change_state(request):
 
 
 @login_required
+@needs_experiment
 def source_change_state_all(request):
     """Send requests to change the state of all ECC servers.
 
@@ -192,7 +194,7 @@ def source_change_state_all(request):
         except (ECCError, ValueError):
             logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
 
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
 
     is_starting = target_state == ECCServer.RUNNING and not experiment.is_running
     is_stopping = target_state == ECCServer.READY and experiment.is_running
@@ -211,6 +213,7 @@ def source_change_state_all(request):
 
 
 @login_required
+@needs_experiment
 def set_observable_ordering(request):
     """An AJAX request that sets the order in which observables are displayed.
 
@@ -246,7 +249,7 @@ def set_observable_ordering(request):
         logger.exception('Provided ordering was invalid')
         return HttpResponseBadRequest('Provided ordering was invalid')
 
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
     observables = Observable.objects.filter(experiment=experiment)
 
     for i, pk in enumerate(new_order):
@@ -385,14 +388,14 @@ class RemoveDataRouterView(LoginRequiredMixin, DeleteView):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-class ListRunMetadataView(LoginRequiredMixin, ListView):
+class ListRunMetadataView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     """List the run information for all runs."""
     model = RunMetadata
     template_name = 'daq/run_metadata_list.html'
 
     def get_queryset(self):
         """Filter the queryset based on the Experiment, and sort by run number."""
-        expt = get_object_or_404(Experiment, user=self.request.user)
+        expt = get_current_experiment(self.request)
         return RunMetadata.objects.filter(experiment=expt).order_by('run_number')
 
 
@@ -441,18 +444,18 @@ class UpdateLatestRunMetadataView(RedirectView):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-class ListObservablesView(LoginRequiredMixin, ListView):
+class ListObservablesView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     """List the observables registered for this experiment."""
     model = Observable
     template_name = 'daq/observable_list.html'
 
     def get_queryset(self):
         """Filter the queryset based on the experiment."""
-        expt = get_object_or_404(Experiment, user=self.request.user)
+        expt = get_current_experiment(self.request)
         return Observable.objects.filter(experiment=expt)
 
 
-class AddObservableView(LoginRequiredMixin, PanelTitleMixin, CreateView):
+class AddObservableView(LoginRequiredMixin, NeedsExperimentMixin, PanelTitleMixin, CreateView):
     """Add a new observable to the experiment."""
     model = Observable
     form_class = ObservableForm
@@ -463,7 +466,7 @@ class AddObservableView(LoginRequiredMixin, PanelTitleMixin, CreateView):
     def form_valid(self, form):
         observable = form.save(commit=False)
 
-        experiment = get_object_or_404(Experiment, user=self.request.user)
+        experiment = get_current_experiment(self.request)
         observable.experiment = experiment
         return super().form_valid(form)
 

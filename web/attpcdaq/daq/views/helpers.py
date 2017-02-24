@@ -5,13 +5,41 @@ could be shared between multiple views.
 
 """
 
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 
 from ..models import DataSource, ECCServer, DataRouter, Experiment
 
+from functools import wraps
+
 import logging
 logger = logging.getLogger(__name__)
+
+
+def needs_experiment(func):
+    """Decorator to check if a chosen experiment is set in the current session.
+    """
+    @wraps(func)
+    def wrapped_func(request, *args, **kwargs):
+        if 'current_experiment_pk' in request.session:
+            return func(request, *args, **kwargs)
+        else:
+            return redirect(reverse('daq/choose_experiment'))
+
+    return wrapped_func
+
+
+class NeedsExperimentMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if 'current_experiment_pk' in request.session:
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            return redirect(reverse('daq/choose_experiment'))
+
+
+def get_current_experiment(request):
+    """Returns the experiment listed in the current session."""
+    return get_object_or_404(Experiment, pk=request.session['current_experiment_pk'])
 
 
 def calculate_overall_state():
@@ -115,6 +143,7 @@ def get_data_router_statuses():
     return data_router_status_list
 
 
+@needs_experiment
 def get_status(request):
     """Returns some information about the system's status.
 
@@ -160,7 +189,7 @@ def get_status(request):
     data_router_status_list = get_data_router_statuses()
     overall_state, overall_state_name = calculate_overall_state()
 
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
     current_run = experiment.latest_run
     if current_run is not None:
         run_number = current_run.run_number

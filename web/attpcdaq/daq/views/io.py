@@ -6,15 +6,16 @@ create entries in the database from it.
 
 """
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core import serializers
 from django.db import transaction
 
-from ..models import DataSource, RunMetadata, Experiment, Observable, Measurement
+from ..models import DataSource, RunMetadata, Observable, Measurement
 from ..forms import DataSourceListUploadForm
+from .helpers import needs_experiment, get_current_experiment
 
 import csv
 
@@ -23,8 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+@needs_experiment
 def download_run_metadata(request):
-    experiment = get_object_or_404(Experiment, user=request.user)
+    experiment = get_current_experiment(request)
     observables = Observable.objects.filter(experiment=experiment)
 
     run_fields = ['run_number', 'run_class', 'title', 'start_datetime', 'stop_datetime', 'config_name']
