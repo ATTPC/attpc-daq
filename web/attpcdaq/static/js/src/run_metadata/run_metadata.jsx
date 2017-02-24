@@ -1,11 +1,13 @@
 import React from 'react'
 import $ from 'jquery'
 import { Panel, PanelButton, PanelButtonBar } from '../panel.jsx'
+import Link from 'react-router/lib/Link'
 
 
 function RunMetadataListEntry(props) {
     return (
         <tr>
+            <td><Link to="/runs/edit/7" className="icon-btn"><span className="fa fa-pencil"/></Link></td>
             <td>{props.run_number}</td>
             <td>{props.get_run_class_display}</td>
             <td>{props.title}</td>
@@ -54,6 +56,7 @@ class RunMetadataList extends React.Component {
             <table className="table">
                 <thead>
                     <tr>
+                        <th>Edit</th>
                         <th>Run number</th>
                         <th>Type</th>
                         <th>Run title</th>

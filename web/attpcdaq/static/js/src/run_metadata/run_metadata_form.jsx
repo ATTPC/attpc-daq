@@ -8,6 +8,7 @@ class RunMetadataForm extends React.Component {
         super(props);
 
         this.apiUrl = '/daq/api/runmetadata/' + props.params.runid;
+        this.observablesUrl = '/daq/api/observables';
 
         this.state = {
             run_number: 0,
@@ -17,6 +18,7 @@ class RunMetadataForm extends React.Component {
             start_datetime: '',
             stop_datetime: '',
             config_name: '',
+            observables: [],
             measurement_set: [],
         };
 
@@ -31,6 +33,9 @@ class RunMetadataForm extends React.Component {
                 run_class_options: fields.run_class.choices,
             });
         });
+
+        const observableRequest = $.get('/daq/api/observables');
+        observableRequest.done(resp => this.setState({observables: resp}));
 
         this.handleInputChange = this.handleInputChange.bind(this);
     }
@@ -112,6 +117,7 @@ class RunMetadataForm extends React.Component {
                             suffix={meas.observable.units}
                             label={meas.observable.name}
                             helpText={meas.observable.comment}
+                            onChange={(e) => console.log(e.target)}
                         />
                     ))}
                 </fieldset>

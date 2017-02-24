@@ -44,7 +44,7 @@ class RunMetadataSerializer(serializers.HyperlinkedModelSerializer):
     )
     class Meta:
         model = RunMetadata
-        fields = ['url', 'run_number', 'title', 'get_run_class_display', 'run_class', 'start_datetime', 'stop_datetime', 'duration_string', 'config_name', 'measurement_set']
+        fields = ['url', 'run_number', 'title', 'get_run_class_display', 'run_class', 'start_datetime', 'stop_datetime', 'duration_string', 'config_name', 'measurement_set', 'pk']
         depth = 1
 
 
