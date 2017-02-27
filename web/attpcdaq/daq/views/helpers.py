@@ -42,7 +42,7 @@ def get_current_experiment(request):
     return get_object_or_404(Experiment, pk=request.session['current_experiment_pk'])
 
 
-def calculate_overall_state():
+def calculate_overall_state(request):
     """Find the overall state of the system.
 
     Parameters
@@ -59,7 +59,8 @@ def calculate_overall_state():
         consistent state.
 
     """
-    ecc_server_list = ECCServer.objects.all()
+    expt = get_current_experiment(request)
+    ecc_server_list = ECCServer.objects.filter(experiment=expt)
     if len(set(s.state for s in ecc_server_list)) == 1:
         # All states are the same
         overall_state = ecc_server_list.first().state
@@ -71,7 +72,7 @@ def calculate_overall_state():
     return overall_state, overall_state_name
 
 
-def get_ecc_server_statuses():
+def get_ecc_server_statuses(request):
     """Gets some information about the ECC servers.
 
     This produces a dictionary with the following key-value pairs:
@@ -96,7 +97,8 @@ def get_ecc_server_statuses():
 
     """
     ecc_server_status_list = []
-    for ecc_server in ECCServer.objects.all():
+    expt = get_current_experiment(request)
+    for ecc_server in ECCServer.objects.filter(experiment=expt):
         ecc_res = {
             'success': True,
             'pk': ecc_server.pk,
@@ -110,7 +112,7 @@ def get_ecc_server_statuses():
     return ecc_server_status_list
 
 
-def get_data_router_statuses():
+def get_data_router_statuses(request):
     """Gets some information about the data routers.
 
     This produces a dictionary with the following key-value pairs:
@@ -131,7 +133,8 @@ def get_data_router_statuses():
 
     """
     data_router_status_list = []
-    for router in DataRouter.objects.all():
+    expt = get_current_experiment(request)
+    for router in DataRouter.objects.filter(experiment=expt):
         router_res = {
             'success': True,
             'pk': router.pk,
@@ -143,7 +146,6 @@ def get_data_router_statuses():
     return data_router_status_list
 
 
-@needs_experiment
 def get_status(request):
     """Returns some information about the system's status.
 
@@ -185,9 +187,9 @@ def get_status(request):
         A dictionary containing the information above.
 
     """
-    ecc_server_status_list = get_ecc_server_statuses()
-    data_router_status_list = get_data_router_statuses()
-    overall_state, overall_state_name = calculate_overall_state()
+    ecc_server_status_list = get_ecc_server_statuses(request)
+    data_router_status_list = get_data_router_statuses(request)
+    overall_state, overall_state_name = calculate_overall_state(request)
 
     experiment = get_current_experiment(request)
     current_run = experiment.latest_run

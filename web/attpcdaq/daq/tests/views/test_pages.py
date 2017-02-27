@@ -38,6 +38,24 @@ class StatusTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
     def test_data_router_list_is_sorted(self):
         self._sorting_test_impl(DataRouter, 'data_routers')
 
+    def _excludes_other_experiment_impl(self, model, context_item_name):
+        self.client.force_login(self.user)
+        other_expt = Experiment.objects.create(name='Test')
+        other_object = model.objects.create(
+            name='Other',
+            ip_address='123.123.123.123',
+            experiment=other_expt,
+        )
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(other_object, resp.context[context_item_name])
+
+    def test_ecc_list_excludes_other_experiments(self):
+        self._excludes_other_experiment_impl(ECCServer, 'ecc_servers')
+
+    def test_data_router_list_excludes_other_experiments(self):
+        self._excludes_other_experiment_impl(DataRouter, 'data_routers')
+
 
 class ChooseConfigTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):

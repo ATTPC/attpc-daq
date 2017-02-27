@@ -21,6 +21,7 @@ class NeedsExperimentTestMixin(object):
         super().setUp()
 
     def test_no_experiment(self, *args, **kwargs):
+        self.client.force_login(self.user)
         session = self.client.session
         session.pop('current_experiment_pk', None)
         session.save()

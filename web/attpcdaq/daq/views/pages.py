@@ -40,13 +40,16 @@ def status(request):
         The rendered page.
 
     """
-    sources = DataSource.objects.order_by('name')
-    ecc_servers = ECCServer.objects.order_by('name')
-    data_routers = DataRouter.objects.order_by('name')
-    system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
-
     experiment = get_current_experiment(request)
     latest_run = experiment.latest_run
+
+    sources = DataSource.objects.filter(
+        ecc_server__experiment=experiment,
+        data_router__experiment=experiment,
+    ).order_by('name')
+    ecc_servers = ECCServer.objects.filter(experiment=experiment).order_by('name')
+    data_routers = DataRouter.objects.filter(experiment=experiment).order_by('name')
+    system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
 
     logs = LogEntry.objects.order_by('-create_time')[:10]
 

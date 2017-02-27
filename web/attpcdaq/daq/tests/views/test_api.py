@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.contrib.auth.models import User
 from unittest.mock import patch
 from datetime import datetime
@@ -8,7 +8,7 @@ import tempfile
 import logging
 
 from .helpers import RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase
-from ...models import ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
+from ...models import ECCServer, DataRouter, DataSource, RunMetadata, Experiment, Observable, Measurement
 from ... import views
 from ...views import UpdateRunMetadataView
 from ...forms import RunMetadataForm
@@ -71,11 +71,41 @@ class RefreshStateAllViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMix
         self.assertEqual(resp_json['start_time'], run0.start_datetime.strftime('%b %d %Y, %H:%M:%S'))  # This is perhaps not the best
         self.assertEqual(resp_json['run_duration'], run0.duration_string)
 
+    def test_ecc_servers_only_for_this_experiment(self):
+        self.client.force_login(self.user)
+
+        other_expt = Experiment.objects.create(name='Other')
+        other_ecc = ECCServer.objects.create(
+            name='Other ecc',
+            ip_address='123.123.123.123',
+            experiment=other_expt,
+        )
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(other_ecc.pk, [int(e['pk']) for e in resp.json()['ecc_server_status_list']])
+
+    def test_data_routers_only_for_this_experiment(self):
+        self.client.force_login(self.user)
+
+        other_expt = Experiment.objects.create(name='Other')
+        other_router = DataRouter.objects.create(
+            name='Other router',
+            ip_address='123.123.123.123',
+            experiment=other_expt,
+        )
+
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(other_router.pk, [int(e['pk']) for e in resp.json()['data_router_status_list']])
+
 
 class SourceChangeStateTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.view_name = 'daq/source_change_state'
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
 
 
 @patch('attpcdaq.daq.views.api.eccserver_change_state_task.delay')
@@ -300,3 +330,125 @@ class SetObservableOrderingTestCase(RequiresLoginTestMixin, NeedsExperimentTestM
 
         order_after = [o.pk for o in Observable.objects.filter(experiment=self.experiment).order_by('order')]
         self.assertEqual(order_after, new_order)
+
+
+class ListEccServerViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name='Test')
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
+
+        self.user = User.objects.create(
+            username='User',
+            password='test1234',
+        )
+
+        self.view_name = 'daq/ecc_server_list'
+
+    def test_excludes_other_experiments(self):
+        ECCServer.objects.create(
+            name='good ecc',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+
+        other_experiment = Experiment.objects.create(name='Other')
+        bad_ecc = ECCServer.objects.create(
+            name='bad ecc',
+            ip_address='122.122.122.122',
+            experiment=other_experiment,
+        )
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(bad_ecc, resp.context['eccserver_list'])
+
+
+class ListDataRoutersViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name='Test')
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
+
+        self.user = User.objects.create(
+            username='User',
+            password='test1234',
+        )
+
+        self.view_name = 'daq/data_router_list'
+
+    def test_excludes_other_experiments(self):
+        DataRouter.objects.create(
+            name='good router',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+
+        other_experiment = Experiment.objects.create(name='Other')
+        bad_router = DataRouter.objects.create(
+            name='bad router',
+            ip_address='122.122.122.122',
+            experiment=other_experiment,
+        )
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(bad_router, resp.context['datarouter_list'])
+
+
+class ListDataSourcesViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
+    def setUp(self):
+        self.experiment = Experiment.objects.create(name='Test')
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
+
+        self.user = User.objects.create(
+            username='User',
+            password='test1234',
+        )
+
+        self.view_name = 'daq/data_source_list'
+
+    def test_excludes_other_experiments(self):
+        good_ecc = ECCServer.objects.create(
+            name='good ecc',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+        good_router = DataRouter.objects.create(
+            name='good router',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+        DataSource.objects.create(
+            name='Good source',
+            ecc_server=good_ecc,
+            data_router=good_router,
+        )
+
+        other_experiment = Experiment.objects.create(name='Other')
+        bad_ecc = ECCServer.objects.create(
+            name='bad ecc',
+            ip_address='122.122.122.122',
+            experiment=other_experiment,
+        )
+        bad_router = DataRouter.objects.create(
+            name='bad router',
+            ip_address='122.122.122.122',
+            experiment=other_experiment,
+        )
+        bad_source = DataSource.objects.create(
+            name='Bad source',
+            ecc_server=bad_ecc,
+            data_router=bad_router,
+        )
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name))
+        self.assertNotIn(bad_source, resp.context['datasource_list'])
