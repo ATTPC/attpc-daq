@@ -275,3 +275,28 @@ class LogViewerTestCase(RequiresLoginTestMixin, TestCase):
 
     def test_data_router_log(self, mock_worker_interface):
         self._log_test_impl(mock_worker_interface, self.data_router)
+
+
+class ExperimentChoiceViewTestCase(RequiresLoginTestMixin, TestCase):
+    def setUp(self):
+        self.user = User.objects.create(
+            username='test',
+            password='test1234',
+        )
+        self.experiment0 = Experiment.objects.create(name='expt0')
+        self.experiment1 = Experiment.objects.create(name='expt1')
+
+        self.view_name = 'daq/choose_experiment'
+
+    def test_redirects_if_ecc_running(self):
+        ecc = ECCServer.objects.create(
+            name='ecc',
+            ip_address='123.123.123.123',
+            experiment=self.experiment0,
+            state=ECCServer.READY,
+        )
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse(self.view_name), follow=True)
+        self.assertEqual(resp.redirect_chain[0][1], 302)
+        self.assertEqual(resp.redirect_chain[-1][0], reverse('daq/cannot_change_experiment'))

@@ -1,0 +1,18 @@
+{% extends 'login_base.html' %}
+
+{% block body %}
+<div class="panel panel-default" id="login-panel" style="height: 220px;">
+    <div class="panel-body">
+        <h4 class="">Error</h4>
+        <p class="">
+            The experiment cannot be changed unless all ECC servers are idle.
+            Use the Reset button to return all ECC servers to the <span class="label label-idle">Idle</span>
+            state and try again.
+        </p>
+        <div class="">
+            <a class="btn btn-primary" href="{% url 'daq/status' %}">Go back</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

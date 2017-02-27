@@ -339,3 +339,9 @@ class ExperimentChoiceView(LoginRequiredMixin, FormView):
         expt = form.cleaned_data['experiment']
         self.request.session['current_experiment_pk'] = expt.pk
         return super().form_valid(form)
+
+    def dispatch(self, request, *args, **kwargs):
+        if ECCServer.objects.exclude(state=ECCServer.IDLE).exists():
+            return redirect(reverse('daq/cannot_change_experiment'))
+        else:
+            return super().dispatch(request, *args, **kwargs)
