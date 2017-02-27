@@ -5,41 +5,10 @@ could be shared between multiple views.
 
 """
 
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
-
-from ..models import DataSource, ECCServer, DataRouter, Experiment
-
-from functools import wraps
+from ..models import ECCServer, DataRouter
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-def needs_experiment(func):
-    """Decorator to check if a chosen experiment is set in the current session.
-    """
-    @wraps(func)
-    def wrapped_func(request, *args, **kwargs):
-        if 'current_experiment_pk' in request.session:
-            return func(request, *args, **kwargs)
-        else:
-            return redirect(reverse('daq/choose_experiment'))
-
-    return wrapped_func
-
-
-class NeedsExperimentMixin:
-    def dispatch(self, request, *args, **kwargs):
-        if 'current_experiment_pk' in request.session:
-            return super().dispatch(request, *args, **kwargs)
-        else:
-            return redirect(reverse('daq/choose_experiment'))
-
-
-def get_current_experiment(request):
-    """Returns the experiment listed in the current session."""
-    return get_object_or_404(Experiment, pk=request.session['current_experiment_pk'])
 
 
 def calculate_overall_state(request):
@@ -59,8 +28,7 @@ def calculate_overall_state(request):
         consistent state.
 
     """
-    expt = get_current_experiment(request)
-    ecc_server_list = ECCServer.objects.filter(experiment=expt)
+    ecc_server_list = ECCServer.objects.filter(experiment=request.experiment)
     if len(set(s.state for s in ecc_server_list)) == 1:
         # All states are the same
         overall_state = ecc_server_list.first().state
@@ -97,8 +65,7 @@ def get_ecc_server_statuses(request):
 
     """
     ecc_server_status_list = []
-    expt = get_current_experiment(request)
-    for ecc_server in ECCServer.objects.filter(experiment=expt):
+    for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
         ecc_res = {
             'success': True,
             'pk': ecc_server.pk,
@@ -133,8 +100,7 @@ def get_data_router_statuses(request):
 
     """
     data_router_status_list = []
-    expt = get_current_experiment(request)
-    for router in DataRouter.objects.filter(experiment=expt):
+    for router in DataRouter.objects.filter(experiment=request.experiment):
         router_res = {
             'success': True,
             'pk': router.pk,
@@ -191,8 +157,7 @@ def get_status(request):
     data_router_status_list = get_data_router_statuses(request)
     overall_state, overall_state_name = calculate_overall_state(request)
 
-    experiment = get_current_experiment(request)
-    current_run = experiment.latest_run
+    current_run = request.experiment.latest_run
     if current_run is not None:
         run_number = current_run.run_number
         start_time = current_run.start_datetime.strftime('%b %d %Y, %H:%M:%S')

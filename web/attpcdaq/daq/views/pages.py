@@ -16,7 +16,7 @@ from django.views.generic.edit import FormView
 from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
 from ..forms import ExperimentForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
-from .helpers import needs_experiment, get_current_experiment
+from ..middleware import needs_experiment
 
 from attpcdaq.logs.models import LogEntry
 
@@ -40,7 +40,7 @@ def status(request):
         The rendered page.
 
     """
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
     latest_run = experiment.latest_run
 
     sources = DataSource.objects.filter(
@@ -289,10 +289,9 @@ def easy_setup_page(request):
     """
     if request.method == 'POST':
         form = EasySetupForm(request.POST)
-        experiment = get_current_experiment(request)
         if form.is_valid():
             easy_setup(
-                experiment=experiment,
+                experiment=request.experiment,
                 num_cobos=form.cleaned_data['num_cobos'],
                 one_ecc_server=form.cleaned_data['one_ecc_server'],
                 first_cobo_ecc_ip=form.cleaned_data['first_cobo_ecc_ip'],
@@ -313,7 +312,7 @@ def easy_setup_page(request):
 @login_required
 @needs_experiment
 def measurement_chart(request):
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
     observables = Observable.objects.filter(experiment=experiment)
     runs = RunMetadata.objects.filter(experiment=experiment)
 

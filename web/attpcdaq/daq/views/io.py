@@ -15,7 +15,7 @@ from django.db import transaction
 
 from ..models import DataSource, RunMetadata, Observable, Measurement
 from ..forms import DataSourceListUploadForm
-from .helpers import needs_experiment, get_current_experiment
+from ..middleware import needs_experiment
 
 import csv
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 @login_required
 @needs_experiment
 def download_run_metadata(request):
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
     observables = Observable.objects.filter(experiment=experiment)
 
     run_fields = ['run_number', 'run_class', 'title', 'start_datetime', 'stop_datetime', 'config_name']

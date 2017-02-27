@@ -19,7 +19,8 @@ from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment,
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm, NewExperimentForm
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
-from .helpers import get_status, calculate_overall_state, needs_experiment, NeedsExperimentMixin, get_current_experiment
+from .helpers import get_status, calculate_overall_state
+from ..middleware import needs_experiment, NeedsExperimentMixin
 
 import json
 
@@ -123,7 +124,7 @@ def source_change_state(request):
         logger.error('Must provide ECC server pk and target state')
         return HttpResponseBadRequest("Must provide ECC server pk and target state")
 
-    ecc_server = get_current_experiment(request)
+    ecc_server = get_object_or_404(ECCServer, pk)
 
     # Handle "reset" case
     if target_state == ECCServer.RESET:
@@ -195,7 +196,7 @@ def source_change_state_all(request):
         except (ECCError, ValueError):
             logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
 
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
 
     is_starting = target_state == ECCServer.RUNNING and not experiment.is_running
     is_stopping = target_state == ECCServer.READY and experiment.is_running
@@ -250,7 +251,7 @@ def set_observable_ordering(request):
         logger.exception('Provided ordering was invalid')
         return HttpResponseBadRequest('Provided ordering was invalid')
 
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
     observables = Observable.objects.filter(experiment=experiment)
 
     for i, pk in enumerate(new_order):
@@ -299,7 +300,7 @@ class ListDataSourcesView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     template_name = 'daq/data_source_list.html'
 
     def get_queryset(self):
-        expt = get_current_experiment(self.request)
+        expt = self.request.experiment
         return DataSource.objects.filter(
             ecc_server__experiment=expt,
             data_router__experiment=expt,
@@ -340,7 +341,7 @@ class ListECCServersView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     template_name = 'daq/ecc_server_list.html'
 
     def get_queryset(self):
-        expt = get_current_experiment(self.request)
+        expt = self.request.experiment
         return ECCServer.objects.filter(experiment=expt).order_by('name')
 
 
@@ -378,7 +379,7 @@ class ListDataRoutersView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     template_name = 'daq/data_router_list.html'
 
     def get_queryset(self):
-        expt = get_current_experiment(self.request)
+        expt = self.request.experiment
         return DataRouter.objects.filter(experiment=expt).order_by('name')
 
 
@@ -421,7 +422,7 @@ class ListRunMetadataView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
 
     def get_queryset(self):
         """Filter the queryset based on the Experiment, and sort by run number."""
-        expt = get_current_experiment(self.request)
+        expt = self.request.experiment
         return RunMetadata.objects.filter(experiment=expt).order_by('run_number')
 
 
@@ -477,7 +478,7 @@ class ListObservablesView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
 
     def get_queryset(self):
         """Filter the queryset based on the experiment."""
-        expt = get_current_experiment(self.request)
+        expt = self.request.experiment
         return Observable.objects.filter(experiment=expt)
 
 
@@ -492,7 +493,7 @@ class AddObservableView(LoginRequiredMixin, NeedsExperimentMixin, PanelTitleMixi
     def form_valid(self, form):
         observable = form.save(commit=False)
 
-        experiment = get_current_experiment(self.request)
+        experiment = self.request.experiment
         observable.experiment = experiment
         return super().form_valid(form)
 
