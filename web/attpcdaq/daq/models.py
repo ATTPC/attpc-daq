@@ -199,7 +199,7 @@ class ECCServer(models.Model):
     may control many data sources. Alternatively, each data source may have its own ECC server, if that is desired.
     """
     #: A unique name for the ECC server
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     #: The IP address of the ECC server
     ip_address = models.GenericIPAddressField(verbose_name='IP address')
@@ -262,6 +262,7 @@ class ECCServer(models.Model):
 
     class Meta:
         ordering = ('name',)
+        unique_together = ('name', 'experiment')
 
     def __str__(self):
         return self.name
@@ -481,7 +482,7 @@ class DataRouter(models.Model):
     and type of the data router.
     """
     #: A unique name for the data router
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     #: The IP address of the data router
     ip_address = models.GenericIPAddressField(verbose_name='IP address')
@@ -525,6 +526,7 @@ class DataRouter(models.Model):
 
     class Meta:
         ordering = ('name',)
+        unique_together = ('name', 'experiment')
 
     def __str__(self):
         return self.name
@@ -542,7 +544,7 @@ class DataSource(models.Model):
     #: For example, if your config file has an entry for a CoBo with ID 3, this name *must* be
     #: "CoBo[3]". If your config file has an entry for a MuTAnT with ID "master", the corresponding name must be
     #: "Mutant[master]". If this is not correct, the ECC server will return an error during the Configure transition.
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     #: The :class:`ECCServer` that controls this data source. One :class:`ECCServer` may control many data sources.
     ecc_server = models.ForeignKey(ECCServer, on_delete=models.SET_NULL, null=True)
@@ -553,6 +555,7 @@ class DataSource(models.Model):
 
     class Meta:
         ordering = ('name',)
+        unique_together = ('name', 'ecc_server', 'data_router')
 
     def __str__(self):
         return self.name

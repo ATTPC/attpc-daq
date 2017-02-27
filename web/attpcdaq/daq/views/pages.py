@@ -103,7 +103,7 @@ def choose_config(request, pk):
 def experiment_settings(request):
     """Renders the experiment settings page."""
 
-    experiment = get_current_experiment(request)
+    experiment = request.experiment
 
     if request.method == 'POST':
         form = ExperimentForm(request.POST, instance=experiment)

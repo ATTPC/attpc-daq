@@ -98,7 +98,7 @@ class EasySetupTestCase(TestCase):
         )
 
     def check_all_eccs_present(self):
-        ecc_count = ECCServer.objects.count()
+        ecc_count = ECCServer.objects.filter(experiment=self.experiment).count()
         if self.one_ecc_server:
             self.assertEqual(ecc_count, 1)
         else:
@@ -108,14 +108,18 @@ class EasySetupTestCase(TestCase):
                 self.assertEqual(ecc_count, self.num_cobos)
 
     def check_all_data_routers_present(self):
-        data_router_count = DataRouter.objects.count()
+        data_router_count = DataRouter.objects.filter(experiment=self.experiment).count()
         if self.mutant_is_present:
             self.assertEqual(data_router_count, self.num_cobos + 1)
         else:
             self.assertEqual(data_router_count, self.num_cobos)
 
     def check_all_data_sources_present(self):
-        data_source_count = DataSource.objects.count()
+        data_source_count = (
+            DataSource.objects
+            .filter(ecc_server__experiment=self.experiment, data_router__experiment=self.experiment)
+            .count()
+        )
         if self.mutant_is_present:
             self.assertEqual(data_source_count, self.num_cobos + 1)
         else:
@@ -130,38 +134,64 @@ class EasySetupTestCase(TestCase):
 
     def check_ecc_servers(self):
         if self.one_ecc_server:
-            self.check_ip_addresses(ECCServer.objects.all().order_by('ip_address'),
-                                    self.first_cobo_ecc_ip)
+            self.check_ip_addresses(
+                ECCServer.objects.filter(experiment=self.experiment).order_by('ip_address'),
+                self.first_cobo_ecc_ip
+            )
         else:
-            cobos = DataSource.objects.filter(name__contains='CoBo').select_related('ecc_server')
+            cobos = (
+                DataSource.objects
+                .filter(name__contains='CoBo', ecc_server__experiment=self.experiment)
+                .select_related('ecc_server')
+            )
             cobo_eccs = [ds.ecc_server for ds in cobos]
             self.check_ip_addresses(cobo_eccs, self.first_cobo_ecc_ip)
 
             if self.mutant_is_present:
-                mutant_ecc = DataSource.objects.get(name__icontains='mutant').ecc_server
+                mutant_ecc = (
+                    DataSource.objects
+                    .get(name__icontains='mutant', ecc_server__experiment=self.experiment)
+                    .ecc_server
+                )
                 self.assertEqual(mutant_ecc.ip_address, self.mutant_ecc_ip)
 
     def check_data_routers(self):
-        cobos = DataSource.objects.filter(name__contains='CoBo').select_related('data_router')
+        cobos = (
+            DataSource.objects
+            .filter(name__contains='CoBo', data_router__experiment=self.experiment)
+            .select_related('data_router')
+        )
         cobo_routers = [ds.data_router for ds in cobos]
         self.check_ip_addresses(cobo_routers, self.first_cobo_data_router_ip)
         for r in cobo_routers:
             self.assertEqual(r.connection_type, DataRouter.TCP)
 
         if self.mutant_is_present:
-            mutant_router = DataSource.objects.get(name__icontains='mutant').data_router
+            mutant_router = (
+                DataSource.objects
+                .get(name__icontains='mutant', data_router__experiment=self.experiment)
+                .data_router
+            )
             self.assertEqual(mutant_router.ip_address, self.mutant_data_router_ip)
             self.assertEqual(mutant_router.connection_type, DataRouter.FDT)
 
     def check_data_sources(self):
-        cobos = DataSource.objects.filter(name__contains='CoBo')
+        cobos = DataSource.objects.filter(
+            name__contains='CoBo',
+            ecc_server__experiment=self.experiment,
+            data_router__experiment=self.experiment,
+        )
         for cobo in cobos:
             self.assertRegex(cobo.name, r'CoBo\[(\d)\]')
             self.assertIsNotNone(cobo.ecc_server)
             self.assertIsNotNone(cobo.data_router)
 
         if self.mutant_is_present:
-            mutant = DataSource.objects.get(name__icontains='mutant')
+            mutant = DataSource.objects.get(
+                name__icontains='mutant',
+                ecc_server__experiment=self.experiment,
+                data_router__experiment=self.experiment
+            )
             self.assertRegex(mutant.name, 'Mutant\[master\]')
             self.assertIsNotNone(mutant.ecc_server)
             self.assertIsNotNone(mutant.data_router)
@@ -219,6 +249,14 @@ class EasySetupTestCase(TestCase):
         self.assertTrue(DataRouter.objects.filter(experiment=other_expt).exists())
         self.assertTrue(DataSource.objects.filter(ecc_server__experiment=other_expt).exists())
         self.assertTrue(DataSource.objects.filter(data_router__experiment=other_expt).exists())
+
+    def test_no_name_collisions(self):
+        old_expt = self.experiment
+        self.easy_setup_test_impl()
+
+        new_expt = Experiment.objects.create(name='Some other experiment')
+        self.experiment = new_expt
+        self.easy_setup_test_impl()
 
 
 @patch('attpcdaq.daq.views.pages.WorkerInterface')
