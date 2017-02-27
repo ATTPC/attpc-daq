@@ -14,7 +14,7 @@ from django.db import transaction
 from django.views.generic.edit import FormView
 
 from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
-from ..forms import ExperimentSettingsForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
+from ..forms import ExperimentForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
 from .helpers import needs_experiment, get_current_experiment
 
@@ -103,11 +103,11 @@ def experiment_settings(request):
     experiment = get_current_experiment(request)
 
     if request.method == 'POST':
-        form = ExperimentSettingsForm(request.POST, instance=experiment)
+        form = ExperimentForm(request.POST, instance=experiment)
         form.save()
         return redirect(reverse('daq/experiment_settings'))
     else:
-        form = ExperimentSettingsForm(instance=experiment)
+        form = ExperimentForm(instance=experiment)
         return render(request, 'daq/experiment_settings.html', {'form': form})
 
 

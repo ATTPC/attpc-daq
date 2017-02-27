@@ -17,7 +17,7 @@ from django.core.urlresolvers import reverse_lazy
 
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
 from ..models import ECCError
-from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm
+from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm, NewExperimentForm
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
 from .helpers import get_status, calculate_overall_state, needs_experiment, NeedsExperimentMixin, get_current_experiment
 
@@ -387,6 +387,19 @@ class RemoveDataRouterView(LoginRequiredMixin, DeleteView):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+class AddExperimentView(LoginRequiredMixin, CreateView):
+    """Create a new experiment."""
+    model = Experiment
+    template_name = 'daq/choose_experiment.html'
+    form_class = NewExperimentForm
+    success_url = reverse_lazy('daq/status')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        self.request.session['current_experiment_pk'] = self.object.pk
+        return response
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 class ListRunMetadataView(LoginRequiredMixin, NeedsExperimentMixin, ListView):
     """List the run information for all runs."""

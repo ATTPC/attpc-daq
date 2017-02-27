@@ -437,10 +437,8 @@ class ExperimentModelTestCase(TestCase):
 class RunMetadataModelTestCase(TestCase):
     def setUp(self):
         self.name = 'Test experiment'
-        self.target_run_duration = 1000
         self.experiment = Experiment(
             name=self.name,
-            target_run_duration=self.target_run_duration
         )
         self.experiment.save()
 

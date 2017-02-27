@@ -50,10 +50,10 @@ class ConfigSelectionForm(CrispyModelFormBase):
         self.fields['selected_config'].queryset = ConfigId.objects.filter(ecc_server=self.instance)
 
 
-class ExperimentSettingsForm(CrispyModelFormBase):
+class ExperimentForm(CrispyModelFormBase):
     class Meta:
         model = Experiment
-        fields = ['name', 'target_run_duration']
+        fields = ['name']
 
 
 class ExperimentChoiceForm(forms.Form):
@@ -65,7 +65,7 @@ class ExperimentChoiceForm(forms.Form):
         self.helper.form_method = 'post'
 
         new_expt_btn_html = """
-        <a href='#' class='btn btn-success btn-block'>New experiment</a>
+        <a href='{% url "daq/new_experiment" %}' class='btn btn-success btn-block'>New experiment</a>
         """
         self.helper.layout = Layout(
             'experiment',
@@ -73,6 +73,20 @@ class ExperimentChoiceForm(forms.Form):
             HTML("<p class='text-center'>or</h3>"),
             HTML(new_expt_btn_html),
         )
+
+
+class NewExperimentForm(forms.ModelForm):
+    class Meta:
+        model = Experiment
+        fields = ['name']
+        labels = {'name': 'Experiment name'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+
+        self.helper.add_input(Submit('submit', 'Create experiment', css_class='btn btn-primary btn-block'))
 
 
 class RunMetadataForm(CrispyModelFormBase):

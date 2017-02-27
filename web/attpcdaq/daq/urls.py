@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^status/$', views.status, name='daq/status'),
 
     url(r'^choose_experiment/$', views.ExperimentChoiceView.as_view(), name='daq/choose_experiment'),
+    url(r'^new_experiment/$', views.AddExperimentView.as_view(), name='daq/new_experiment'),
 
     url(r'^sources/$', views.ListDataSourcesView.as_view(), name='daq/data_source_list'),
     url(r'^sources/add/$', views.AddDataSourceView.as_view(), name='daq/add_source'),

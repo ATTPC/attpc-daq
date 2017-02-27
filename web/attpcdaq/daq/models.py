@@ -595,9 +595,6 @@ class Experiment(models.Model):
     #: The name of the experiment. This must be unique.
     name = models.CharField(max_length=100, unique=True)
 
-    #: The expected duration of a run, in seconds.
-    target_run_duration = models.PositiveIntegerField(default=3600)
-
     def __str__(self):
         return self.name
 
