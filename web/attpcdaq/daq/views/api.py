@@ -458,13 +458,13 @@ class UpdateRunMetadataView(LoginRequiredMixin, PanelTitleMixin, UpdateView):
         return initial
 
 
-class UpdateLatestRunMetadataView(RedirectView):
+class UpdateLatestRunMetadataView(NeedsExperimentMixin, RedirectView):
     """Redirects to :class:`UpdateRunMetadataView` for the latest run."""
     pattern_name = 'daq/update_run_metadata'
     query_string = True
 
     def get_redirect_url(self, *args, **kwargs):
-        latest_run_pk = RunMetadata.objects.latest('start_datetime').pk
+        latest_run_pk = RunMetadata.objects.filter(experiment=self.request.experiment).latest('start_datetime').pk
         return super().get_redirect_url(pk=latest_run_pk)
 
 
