@@ -9,7 +9,7 @@ from ..tasks import organize_files_task, eccserver_refresh_state_task, eccserver
 from ..tasks import check_ecc_server_online_task, check_data_router_status_task, organize_files_all_task
 from ..tasks import eccserver_refresh_all_task, check_ecc_server_online_all_task, check_data_router_status_all_task
 from ..tasks import backup_config_files_task, backup_config_files_all_task
-from ..models import ECCServer, DataRouter, ConfigId
+from ..models import ECCServer, DataRouter, ConfigId, Experiment
 
 
 class TaskTestCaseBase(TestCase):
@@ -153,9 +153,14 @@ class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
+            experiment=self.experiment,
         )
 
     def get_patch_target(self):
@@ -181,10 +186,15 @@ class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForA
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         for i in range(10):
             ECCServer.objects.create(
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
+                experiment=self.experiment,
             )
 
     def get_patch_target(self):
@@ -201,10 +211,15 @@ class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
             state=ECCServer.IDLE,
+            experiment=self.experiment,
         )
         self.target_state = ECCServer.DESCRIBED
 
@@ -231,11 +246,16 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
             state=ECCServer.IDLE,
-            is_online=False
+            is_online=False,
+            experiment=self.experiment,
         )
 
     def get_patch_target(self):
@@ -269,10 +289,15 @@ class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalled
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         for i in range(10):
             ECCServer.objects.create(
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
+                experiment=self.experiment,
             )
 
     def get_patch_target(self):
@@ -289,9 +314,14 @@ class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.data_router = DataRouter.objects.create(
             name='DataRouter',
             ip_address='123.123.123.123',
+            experiment=self.experiment,
         )
 
     def get_patch_target(self):
@@ -349,10 +379,15 @@ class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalle
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         for i in range(10):
             DataRouter.objects.create(
                 name='DataRouter{}'.format(i),
                 ip_address='123.123.123.123',
+                experiment=self.experiment,
             )
 
     def get_patch_target(self):
@@ -369,11 +404,15 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.data_router = DataRouter.objects.create(
             name='DataRouter',
             ip_address='123.456.789.0',
+            experiment=self.experiment
         )
-        self.experiment_name = 'Test experiment'
         self.run_num = 10
 
     def get_patch_target(self):
@@ -385,7 +424,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def call_task(self, pk=None):
         if pk is None:
             pk = self.data_router.pk
-        organize_files_task(pk, self.experiment_name, self.run_num)
+        organize_files_task(pk, self.experiment.name, self.run_num)
 
     def test_organize_files(self):
         """Test that the task works."""
@@ -395,7 +434,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
         self.call_task()
 
         self.mock.assert_called_once_with(self.data_router.ip_address)
-        self.get_callable().assert_called_once_with(self.experiment_name, self.run_num)
+        self.get_callable().assert_called_once_with(self.experiment.name, self.run_num)
 
         self.data_router.refresh_from_db()
         self.assertTrue(self.data_router.staging_directory_is_clean)
@@ -410,13 +449,17 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         for i in range(10):
             DataRouter.objects.create(
                 name='DataRouter{}'.format(i),
                 ip_address='123.123.123.123',
+                experiment=self.experiment,
             )
 
-        self.experiment_name = 'Test experiment'
         self.run_number = 1
 
     def get_patch_target(self):
@@ -426,19 +469,24 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
         return DataRouter.objects.all()
 
     def call_task(self):
-        return organize_files_all_task(self.experiment_name, self.run_number)
+        return organize_files_all_task(self.experiment.name, self.run_number)
 
     def get_expected_subtask_calls(self):
-        return super().get_expected_subtask_calls(self.experiment_name, self.run_number)
+        return super().get_expected_subtask_calls(self.experiment.name, self.run_number)
 
 
 class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
+            experiment=self.experiment,
         )
 
         self.config = ConfigId.objects.create(
@@ -451,7 +499,6 @@ class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase
         self.ecc.selected_config = self.config
         self.ecc.save()
 
-        self.experiment_name = 'experiment'
         self.run_num = 1
 
     def get_patch_target(self):
@@ -463,14 +510,14 @@ class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase
     def call_task(self, pk=None):
         if pk is None:
             pk = self.ecc.pk
-        return backup_config_files_task(pk, self.experiment_name, self.run_num)
+        return backup_config_files_task(pk, self.experiment.name, self.run_num)
 
     def test_backup_files(self):
         """Test that the task works with valid parameters."""
         self.call_task()
 
         self.mock.assert_called_once_with(self.ecc.ip_address)
-        self.get_callable().assert_called_once_with(self.experiment_name, self.run_num,
+        self.get_callable().assert_called_once_with(self.experiment.name, self.run_num,
                                                     self.ecc.config_file_paths(), self.ecc.config_backup_root)
 
     def test_with_invalid_ecc_pk(self):
@@ -483,23 +530,27 @@ class BackupConfigFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledFor
     def setUp(self):
         super().setUp()
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         for i in range(10):
             ecc = ECCServer.objects.create(
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
+                experiment=self.experiment,
             )
 
             config = ConfigId.objects.create(
                 describe='describe',
                 prepare='prepare',
                 configure='configure',
-                ecc_server=ecc
+                ecc_server=ecc,
             )
 
             ecc.selected_config = config
             ecc.save()
 
-        self.experiment_name = 'Test experiment'
         self.run_number = 1
 
     def get_patch_target(self):
@@ -509,7 +560,7 @@ class BackupConfigFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledFor
         return ECCServer.objects.all()
 
     def call_task(self):
-        return backup_config_files_all_task(self.experiment_name, self.run_number)
+        return backup_config_files_all_task(self.experiment.name, self.run_number)
 
     def get_expected_subtask_calls(self):
-        return super().get_expected_subtask_calls(self.experiment_name, self.run_number)
+        return super().get_expected_subtask_calls(self.experiment.name, self.run_number)

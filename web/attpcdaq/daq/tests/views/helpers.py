@@ -33,6 +33,17 @@ class NeedsExperimentTestMixin(object):
 
 class ManySourcesTestCaseBase(TestCase):
     def setUp(self):
+        self.user = User(username='test', password='test1234')
+        self.user.save()
+
+        self.experiment = Experiment.objects.create(
+            name='Test experiment',
+        )
+
+        session = self.client.session
+        session['current_experiment_pk'] = self.experiment.pk
+        session.save()
+
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'
         self.data_router_ip_address = '123.456.78.9'
@@ -51,6 +62,7 @@ class ManySourcesTestCaseBase(TestCase):
                 name='ECC{}'.format(i),
                 ip_address=self.ecc_ip_address,
                 port=self.ecc_port,
+                experiment=self.experiment,
             )
             self.ecc_servers.append(ecc)
 
@@ -58,6 +70,7 @@ class ManySourcesTestCaseBase(TestCase):
                 name='DataRouter{}'.format(i),
                 ip_address=self.data_router_ip_address,
                 port=self.data_router_port,
+                experiment=self.experiment,
             )
             self.data_routers.append(router)
 
@@ -67,14 +80,3 @@ class ManySourcesTestCaseBase(TestCase):
                 data_router=router,
             )
             self.datasources.append(source)
-
-        self.user = User(username='test', password='test1234')
-        self.user.save()
-
-        self.experiment = Experiment.objects.create(
-            name='Test experiment',
-        )
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()

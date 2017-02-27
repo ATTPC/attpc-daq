@@ -35,7 +35,7 @@ class ECCServerFormTestCase(TestModelFormFieldsMixin, TestCase):
         self.form = ECCServerForm
 
     def get_excluded_fields(self):
-        return {'is_online', 'state', 'selected_config', 'is_transitioning'}
+        return {'is_online', 'state', 'selected_config', 'is_transitioning', 'experiment'}
 
 
 class DataRouterFormTestCase(TestModelFormFieldsMixin, TestCase):
@@ -44,7 +44,7 @@ class DataRouterFormTestCase(TestModelFormFieldsMixin, TestCase):
         self.form = DataRouterForm
 
     def get_excluded_fields(self):
-        return {'is_online', 'staging_directory_is_clean'}
+        return {'is_online', 'staging_directory_is_clean', 'experiment'}
 
 
 class ConfigSelectionFormTestCase(TestModelFormFieldsMixin, TestCase):

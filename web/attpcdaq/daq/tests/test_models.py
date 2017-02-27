@@ -88,6 +88,9 @@ class ECCServerModelTestCase(TestCase):
         self.name = 'ECC'
         self.ip_address = '123.45.67.8'
         self.port = '1234'
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
         self.selected_config = ConfigId.objects.create(
             describe='describe',
             prepare='prepare',
@@ -97,7 +100,8 @@ class ECCServerModelTestCase(TestCase):
             name=self.name,
             ip_address=self.ip_address,
             port=self.port,
-            selected_config=self.selected_config
+            selected_config=self.selected_config,
+            experiment=self.experiment,
         )
 
     def test_ecc_url(self):
@@ -135,6 +139,7 @@ class ECCServerModelTestCase(TestCase):
         data_router = DataRouter.objects.create(
             name='DataRouter0',
             ip_address=self.ip_address,
+            experiment=self.experiment,
         )
         datasource = DataSource.objects.create(
             name='CoBo[0]',
@@ -149,6 +154,7 @@ class ECCServerModelTestCase(TestCase):
             router = DataRouter.objects.create(
                 name='DataRouter{:d}'.format(i),
                 ip_address='123.456.789.{:d}'.format(i),
+                experiment=self.experiment,
             )
             DataSource.objects.create(
                 name='CoBo[{:d}]'.format(i),
@@ -326,14 +332,19 @@ def check_data_link_xml_helper(testcase, datasource, link_xml):
 class DataSourceModelTestCase(TestCase):
     def setUp(self):
         self.name = 'CoBo[0]'
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
         self.ecc_server = ECCServer(
             name='ECC0',
             ip_address='123.456.789.0',
+            experiment=self.experiment,
         )
         self.data_router = DataRouter(
             name='Router0',
             ip_address='111.111.111.111',
             connection_type=DataRouter.FDT,
+            experiment=self.experiment,
         )
         self.datasource = DataSource(
             name=self.name,
@@ -401,6 +412,7 @@ class ExperimentModelTestCase(TestCase):
         ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.123.123.123',
+            experiment=self.experiment,
         )
         config = ConfigId.objects.create(
             ecc_server=ecc,

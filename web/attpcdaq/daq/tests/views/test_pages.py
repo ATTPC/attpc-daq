@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from unittest.mock import patch
 
 from .helpers import RequiresLoginTestMixin, ManySourcesTestCaseBase
-from ...models import ECCServer, DataRouter, DataSource
+from ...models import ECCServer, DataRouter, DataSource, Experiment
 from ...views.pages import easy_setup
 
 
@@ -22,6 +22,7 @@ class StatusTestCase(RequiresLoginTestMixin, ManySourcesTestCaseBase):
                 name='Item{}'.format(i),
                 ip_address='117.0.0.1',
                 port='1234',
+                experiment=self.experiment,
             )
 
         resp = self.client.get(reverse(self.view_name))
@@ -62,9 +63,13 @@ class EasySetupTestCase(TestCase):
         self.mutant_is_present = True
         self.mutant_ecc_ip = '100.200.300.400'
         self.mutant_data_router_ip = '500.600.700.800'
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
 
     def run_easy_setup(self):
         easy_setup(
+            experiment=self.experiment,
             num_cobos=self.num_cobos,
             one_ecc_server=self.one_ecc_server,
             first_cobo_ecc_ip=self.first_cobo_ecc_ip,
@@ -172,19 +177,50 @@ class EasySetupTestCase(TestCase):
         self.mutant_is_present = True
         self.easy_setup_test_impl()
 
+    def test_only_affects_current_experiment(self):
+        other_expt = Experiment.objects.create(
+            name='Another experiment',
+        )
+        ecc = ECCServer.objects.create(
+            name='Some ecc',
+            ip_address='123.123.123.123',
+            experiment=other_expt,
+        )
+        router = DataRouter.objects.create(
+            name='Some router',
+            ip_address='123.123.123.123',
+            experiment=other_expt,
+        )
+        DataSource.objects.create(
+            ecc_server=ecc,
+            data_router=router,
+        )
+
+        self.run_easy_setup()
+        self.assertTrue(ECCServer.objects.filter(experiment=other_expt).exists())
+        self.assertTrue(DataRouter.objects.filter(experiment=other_expt).exists())
+        self.assertTrue(DataSource.objects.filter(ecc_server__experiment=other_expt).exists())
+        self.assertTrue(DataSource.objects.filter(data_router__experiment=other_expt).exists())
+
 
 @patch('attpcdaq.daq.views.pages.WorkerInterface')
 class LogViewerTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):
         self.view_name = 'daq/show_log'
 
+        self.experiment = Experiment.objects.create(
+            name='Test',
+        )
+
         self.ecc = ECCServer.objects.create(
             name='ECC',
             ip_address='123.456.789.1',
+            experiment=self.experiment,
         )
         self.data_router = DataRouter.objects.create(
             name='DataRouter',
             ip_address='123.456.789.0',
+            experiment=self.experiment,
         )
         self.user = User.objects.create(
             username='test',

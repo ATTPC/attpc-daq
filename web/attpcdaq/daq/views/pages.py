@@ -180,7 +180,7 @@ def _make_ip(base, offset):
 
 
 @transaction.atomic
-def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_router_ip,
+def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_router_ip,
                mutant_is_present=False, mutant_ecc_ip=None, mutant_data_router_ip=None):
     """Create a set of model instances with default values based on the given parameters.
 
@@ -208,15 +208,16 @@ def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_rou
         The IP address of the data router of the MuTAnT.
     """
     # Clear out old items
-    DataSource.objects.all().delete()
-    ECCServer.objects.all().delete()
-    DataRouter.objects.all().delete()
+    DataSource.objects.filter(ecc_server__experiment=experiment, data_router__experiment=experiment).delete()
+    ECCServer.objects.filter(experiment=experiment).delete()
+    DataRouter.objects.filter(experiment=experiment).delete()
 
     # Create CoBo ECC servers
     if one_ecc_server:
         global_ecc = ECCServer.objects.create(
             name='ECC'.format(),
             ip_address=first_cobo_ecc_ip,
+            experiment=experiment,
         )
 
     for i in range(num_cobos):
@@ -226,12 +227,14 @@ def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_rou
             ecc = ECCServer.objects.create(
                 name='ECC{}'.format(i),
                 ip_address=_make_ip(first_cobo_ecc_ip, i),
+                experiment=experiment,
             )
 
         data_router = DataRouter.objects.create(
             name='DataRouter{}'.format(i),
             ip_address=_make_ip(first_cobo_data_router_ip, i),
             connection_type=DataRouter.TCP,
+            experiment=experiment,
         )
 
         DataSource.objects.create(
@@ -247,12 +250,14 @@ def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_rou
             mutant_ecc = ECCServer.objects.create(
                 name='ECC_mutant',
                 ip_address=mutant_ecc_ip,
+                experiment=experiment,
             )
 
         mutant_router = DataRouter.objects.create(
             name='DataRouter_mutant',
             ip_address=mutant_data_router_ip,
             connection_type=DataRouter.FDT,
+            experiment=experiment,
         )
 
         DataSource.objects.create(
@@ -263,6 +268,7 @@ def easy_setup(num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_rou
 
 
 @login_required
+@needs_experiment
 def easy_setup_page(request):
     """Renders the easy setup form for one-step system configuration.
 
@@ -280,8 +286,10 @@ def easy_setup_page(request):
     """
     if request.method == 'POST':
         form = EasySetupForm(request.POST)
+        experiment = get_current_experiment(request)
         if form.is_valid():
             easy_setup(
+                experiment=experiment,
                 num_cobos=form.cleaned_data['num_cobos'],
                 one_ecc_server=form.cleaned_data['one_ecc_server'],
                 first_cobo_ecc_ip=form.cleaned_data['first_cobo_ecc_ip'],

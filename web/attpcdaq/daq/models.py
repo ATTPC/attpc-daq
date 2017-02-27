@@ -207,6 +207,9 @@ class ECCServer(models.Model):
     #: The TCP port that the ECC server listens on. The default value is 8083.
     port = models.PositiveIntegerField(default=8083)
 
+    #: The experiment that this server is associated with.
+    experiment = models.ForeignKey('Experiment', on_delete=models.CASCADE)
+
     #: The configuration file set this ECC server will use
     selected_config = models.ForeignKey(ConfigId, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -507,6 +510,9 @@ class DataRouter(models.Model):
     #: The protocol of the data router. This must be one of the constants defined in this class.
     #: The default value is :attr:`~DataRouter.TCP`.
     connection_type = models.CharField(max_length=4, choices=DATA_ROUTER_TYPES, default=TCP)
+
+    #: The experiment that this data router is associated with.
+    experiment = models.ForeignKey('Experiment', on_delete=models.CASCADE)
 
     #: The path to the log file on the computer where the data router is running.
     log_path = models.CharField(max_length=500, default='~/Library/Logs/dataRouter.log')
