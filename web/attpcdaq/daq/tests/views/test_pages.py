@@ -78,9 +78,17 @@ class EasySetupTestCase(TestCase):
         self.one_ecc_server = True
         self.first_cobo_ecc_ip = '123.456.789.100'
         self.first_cobo_data_router_ip = '123.456.800.100'
+        self.cobo_ecc_log_path = '/path/to/ecc_file.log'
+        self.cobo_router_log_path = '/path/to/router_file.log'
+        self.cobo_config_root = '/path/to/configs'
+        self.cobo_config_backup_root = '/backups'
         self.mutant_is_present = True
         self.mutant_ecc_ip = '100.200.300.400'
         self.mutant_data_router_ip = '500.600.700.800'
+        self.mutant_ecc_log_path = '/path/to/mutant/ecc_file.log'
+        self.mutant_router_log_path = '/path/to/mutant/router_file.log'
+        self.mutant_config_root = '/path/to/mutant/configs'
+        self.mutant_config_backup_root = '/mutant/backups'
         self.experiment = Experiment.objects.create(
             name='Test',
         )
@@ -92,9 +100,17 @@ class EasySetupTestCase(TestCase):
             one_ecc_server=self.one_ecc_server,
             first_cobo_ecc_ip=self.first_cobo_ecc_ip,
             first_cobo_data_router_ip=self.first_cobo_data_router_ip,
+            cobo_ecc_log_path=self.cobo_ecc_log_path,
+            cobo_router_log_path=self.cobo_router_log_path,
+            cobo_config_root=self.cobo_config_root,
+            cobo_config_backup_root=self.cobo_config_backup_root,
             mutant_is_present=self.mutant_is_present,
             mutant_ecc_ip=self.mutant_ecc_ip,
             mutant_data_router_ip=self.mutant_data_router_ip,
+            mutant_ecc_log_path=self.mutant_ecc_log_path,
+            mutant_router_log_path=self.mutant_router_log_path,
+            mutant_config_root=self.mutant_config_root,
+            mutant_config_backup_root=self.mutant_config_backup_root,
         )
 
     def check_all_eccs_present(self):
@@ -133,45 +149,39 @@ class EasySetupTestCase(TestCase):
             self.assertEqual(last_part, first_ip_end + i)
 
     def check_ecc_servers(self):
-        if self.one_ecc_server:
-            self.check_ip_addresses(
-                ECCServer.objects.filter(experiment=self.experiment).order_by('ip_address'),
-                self.first_cobo_ecc_ip
-            )
-        else:
-            cobos = (
-                DataSource.objects
-                .filter(name__contains='CoBo', ecc_server__experiment=self.experiment)
-                .select_related('ecc_server')
-            )
-            cobo_eccs = [ds.ecc_server for ds in cobos]
-            self.check_ip_addresses(cobo_eccs, self.first_cobo_ecc_ip)
+        ecc_servers = ECCServer.objects.filter(experiment=self.experiment)
+        cobo_eccs = ecc_servers.filter(datasource__name__icontains='cobo').distinct().order_by('ip_address')
 
-            if self.mutant_is_present:
-                mutant_ecc = (
-                    DataSource.objects
-                    .get(name__icontains='mutant', ecc_server__experiment=self.experiment)
-                    .ecc_server
-                )
-                self.assertEqual(mutant_ecc.ip_address, self.mutant_ecc_ip)
+        self.check_ip_addresses(cobo_eccs, self.first_cobo_ecc_ip)
+
+        for ecc in cobo_eccs:
+            self.assertEqual(ecc.log_path, self.cobo_ecc_log_path)
+            self.assertEqual(ecc.config_root, self.cobo_config_root)
+            self.assertEqual(ecc.config_backup_root, self.cobo_config_backup_root)
+
+        if self.one_ecc_server:
+            self.assertEqual(ecc_servers.count(), 1)
+
+        if self.mutant_is_present and not self.one_ecc_server:
+            mutant_ecc = ecc_servers.get(datasource__name__icontains='mutant')
+            self.assertEqual(mutant_ecc.ip_address, self.mutant_ecc_ip)
+            self.assertEqual(mutant_ecc.log_path, self.mutant_ecc_log_path)
+            self.assertEqual(mutant_ecc.config_root, self.mutant_config_root)
+            self.assertEqual(mutant_ecc.config_backup_root, self.mutant_config_backup_root)
 
     def check_data_routers(self):
-        cobos = (
-            DataSource.objects
-            .filter(name__contains='CoBo', data_router__experiment=self.experiment)
-            .select_related('data_router')
+        cobo_routers = (
+            DataRouter.objects
+            .filter(experiment=self.experiment, datasource__name__icontains='cobo')
+            .distinct()
+            .order_by('ip_address')
         )
-        cobo_routers = [ds.data_router for ds in cobos]
         self.check_ip_addresses(cobo_routers, self.first_cobo_data_router_ip)
         for r in cobo_routers:
             self.assertEqual(r.connection_type, DataRouter.TCP)
 
         if self.mutant_is_present:
-            mutant_router = (
-                DataSource.objects
-                .get(name__icontains='mutant', data_router__experiment=self.experiment)
-                .data_router
-            )
+            mutant_router = DataRouter.objects.get(experiment=self.experiment, datasource__name__icontains='mutant')
             self.assertEqual(mutant_router.ip_address, self.mutant_data_router_ip)
             self.assertEqual(mutant_router.connection_type, DataRouter.FDT)
 

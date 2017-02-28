@@ -51,5 +51,5 @@ urlpatterns = [
 
     url(r'^status/(?P<program>ecc|data_router)_log/(?P<pk>\d+)/$', views.show_log_page, name='daq/show_log'),
 
-    url(r'^easy_setup/$', views.easy_setup_page, name='daq/easy_setup'),
+    url(r'^easy_setup/$', views.EasySetupPage.as_view(), name='daq/easy_setup'),
 ]

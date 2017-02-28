@@ -127,6 +127,7 @@ if IS_PRODUCTION:
             'PORT': os.environ['POSTGRES_PORT'],
         }
     }
+    CRISPY_FAIL_SILENTLY = True
 else:
     DEBUG = True
     ALLOWED_HOSTS = []
@@ -137,6 +138,7 @@ else:
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
+    CRISPY_FAIL_SILENTLY = False
 
 LOGGING = {
     'version': 1,

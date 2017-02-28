@@ -180,18 +180,36 @@ class DataSourceListUploadForm(forms.Form):
 
 
 class EasySetupForm(forms.Form):
+    # General fields
     num_cobos = forms.IntegerField(label='Number of CoBos',
                                    help_text='CoBos will be numbered sequentially starting at 0.')
     one_ecc_server = forms.BooleanField(required=False, label='Use one ECC server for all sources?',
                                         help_text='This includes the MuTAnT, if present.')
 
+    # CoBo configuration fields
     first_cobo_ecc_ip = forms.GenericIPAddressField(protocol='IPv4', label='IP address of first CoBo ECC server')
-    first_cobo_data_router_ip = forms.GenericIPAddressField(protocol='IPv4', label='IP address of first CoBo data router')
+    first_cobo_data_router_ip = forms.GenericIPAddressField(protocol='IPv4',
+                                                            label='IP address of first CoBo data router')
+    cobo_ecc_log_file_location = forms.CharField(max_length=500, label='Location of CoBo ECC server log files')
+    cobo_router_log_file_location = forms.CharField(max_length=500, label='Location of CoBo data router log files')
+    cobo_config_root = forms.CharField(max_length=500, label='Location of CoBo config files')
+    cobo_config_backup_root = forms.CharField(max_length=500, label='CoBo config file backup destination')
 
+    # MuTAnT configuration fields
     mutant_is_present = forms.BooleanField(required=False, label='Is there a MuTAnT?',
-                                           help_text='The next two fields are only required if the MuTAnT is present.')
-    mutant_ecc_ip = forms.GenericIPAddressField(protocol='IPv4', required=False, label='IP address of MuTAnT ECC server')
-    mutant_data_router_ip = forms.GenericIPAddressField(protocol='IPv4', required=False, label='IP address of MuTAnT data router')
+                                           help_text='The remaining fields are only required if the MuTAnT is present.')
+    mutant_ecc_ip = forms.GenericIPAddressField(protocol='IPv4', required=False,
+                                                label='IP address of MuTAnT ECC server')
+    mutant_data_router_ip = forms.GenericIPAddressField(protocol='IPv4', required=False,
+                                                        label='IP address of MuTAnT data router')
+    mutant_ecc_log_file_location = forms.CharField(max_length=500, required=False,
+                                                   label='Location of MuTAnT ECC server log files')
+    mutant_router_log_file_location = forms.CharField(max_length=500, required=False,
+                                                      label='Location of MuTAnT data router log files')
+    mutant_config_root = forms.CharField(max_length=500, required=False,
+                                         label='Location of MuTAnT config files')
+    mutant_config_backup_root = forms.CharField(max_length=500, required=False,
+                                                label='MuTAnT config file backup destination')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -217,10 +235,23 @@ class EasySetupForm(forms.Form):
             </div>
         """
 
+        config_file_help = """
+            <div>
+                <p>The next fields set the paths to config files and log files. These paths are <em>on
+                the remote computer</em> where the GET software is running. These paths will be applied
+                to each ECC server and data router created, so if they are not the same for each CoBo,
+                they will need to be edited manually later.</p>
+
+                <div class='alert alert-warning'>
+                    <strong>Note:</strong> These must be <em>full paths</em>, and they may not contain '~'.
+                </div>
+            </div>
+        """
+
         delete_warning = """
             <div class='alert alert-danger'>
                 <strong>Warning:</strong> Submitting this form will remove all ECC servers, data routers, and data sources from
-                the system and replace them with new ones!
+                this experiment and replace them with new ones!
             </div>
         """
 
@@ -233,12 +264,21 @@ class EasySetupForm(forms.Form):
                 HTML(ip_help),
                 'first_cobo_ecc_ip',
                 'first_cobo_data_router_ip',
+                HTML(config_file_help),
+                'cobo_ecc_log_file_location',
+                'cobo_router_log_file_location',
+                'cobo_config_root',
+                'cobo_config_backup_root',
             ),
             Fieldset(
                 'MuTAnT setup',
                 'mutant_is_present',
                 'mutant_ecc_ip',
                 'mutant_data_router_ip',
+                'mutant_ecc_log_file_location',
+                'mutant_router_log_file_location',
+                'mutant_config_root',
+                'mutant_config_backup_root',
             ),
             HTML(delete_warning),
             FormActions(Submit('submit', 'Submit'))
@@ -247,10 +287,16 @@ class EasySetupForm(forms.Form):
     def clean(self):
         super().clean()
 
-        mutant_is_present = self.cleaned_data['mutant_is_present']
-        mutant_ecc_ip = self.cleaned_data['mutant_ecc_ip']
-        mutant_data_router_ip = self.cleaned_data['mutant_data_router_ip']
-        one_ecc_server = self.cleaned_data['one_ecc_server']
-
-        if mutant_is_present and ((not one_ecc_server and mutant_ecc_ip == '') or mutant_data_router_ip == ''):
-            raise forms.ValidationError('Must provide ECC and data router IP for MuTAnT if MuTAnT is present')
+        if self.cleaned_data['mutant_is_present']:
+            if not self.cleaned_data['one_ecc_server'] and self.cleaned_data['mutant_ecc_ip'] == '':
+                raise forms.ValidationError('Must provide ECC IP for MuTAnT if MuTAnT is present')
+            if self.cleaned_data['mutant_data_router_ip'] == '':
+                raise forms.ValidationError('Must provide router IP for MuTAnT if MuTAnT is present')
+            if self.cleaned_data['mutant_ecc_log_file_location'] == '':
+                raise forms.ValidationError('Must provide ECC log file path for MuTAnT if MuTAnT is present')
+            if self.cleaned_data['mutant_router_log_file_location'] == '':
+                raise forms.ValidationError('Must provide data router log file path for MuTAnT if MuTAnT is present')
+            if self.cleaned_data['mutant_config_root'] == '':
+                raise forms.ValidationError('Must provide config file directory for MuTAnT if MuTAnT is present')
+            if self.cleaned_data['mutant_config_backup_root'] == '':
+                raise forms.ValidationError('Must provide config file backup root for MuTAnT if MuTAnT is present')

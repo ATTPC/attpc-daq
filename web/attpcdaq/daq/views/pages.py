@@ -16,7 +16,8 @@ from django.views.generic.edit import FormView
 from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
 from ..forms import ExperimentForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
-from ..middleware import needs_experiment
+from ..middleware import needs_experiment, NeedsExperimentMixin
+from .api import PanelTitleMixin
 
 from attpcdaq.logs.models import LogEntry
 
@@ -184,7 +185,10 @@ def _make_ip(base, offset):
 
 @transaction.atomic
 def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_cobo_data_router_ip,
-               mutant_is_present=False, mutant_ecc_ip=None, mutant_data_router_ip=None):
+               cobo_ecc_log_path, cobo_router_log_path, cobo_config_root, cobo_config_backup_root,
+               mutant_is_present=False, mutant_ecc_ip=None, mutant_data_router_ip=None,
+               mutant_ecc_log_path=None, mutant_router_log_path=None,
+               mutant_config_root=None, mutant_config_backup_root=None):
     """Create a set of model instances with default values based on the given parameters.
 
     This will populate the database with all of the required DAQ components. Note that all old instances will
@@ -192,6 +196,8 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
 
     Parameters
     ----------
+    experiment : attpcdaq.daq.models.Experiment
+        The experiment to modify.
     num_cobos : int
         The number of CoBos to add to the system.
     one_ecc_server : bool
@@ -203,12 +209,28 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
     first_cobo_data_router_ip : str
         The IP address of the data router for the first CoBo. Subsequent data routers will have IP addresses whose
         last component is incremented by one.
+    cobo_ecc_log_path : str
+        The path to the CoBo ECC server log file. This is on the remote computer.
+    cobo_router_log_path : str
+        The path to the CoBo data router log file. This is on the remote computer.
+    cobo_config_root : str
+        The path to the config file directory on the remote computer.
+    cobo_config_backup_root : str
+        The path to which config files should be backed up on the remote computer.
     mutant_is_present : bool, optional
         True if the MuTAnT is present in the system and should be set up.
     mutant_ecc_ip : str, optional
         The IP address of the ECC server of the MuTAnT. This will be overridden if `one_ecc_server` is True.
     mutant_data_router_ip : str, optional
         The IP address of the data router of the MuTAnT.
+    mutant_ecc_log_path : str, optional
+        The path to the MuTAnT ECC server log file. This is on the remote computer.
+    mutant_router_log_path : str, optional
+        The path to the MuTAnT data router log file. This is on the remote computer.
+    mutant_config_root : str, optional
+        The path to the config file directory on the remote computer.
+    mutant_config_backup_root : str, optional
+        The path to which config files should be backed up on the remote computer.
     """
     # Clear out old items
     DataSource.objects.filter(ecc_server__experiment=experiment, data_router__experiment=experiment).delete()
@@ -221,6 +243,9 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
             name='ECC'.format(),
             ip_address=first_cobo_ecc_ip,
             experiment=experiment,
+            log_path=cobo_ecc_log_path,
+            config_root=cobo_config_root,
+            config_backup_root=cobo_config_backup_root,
         )
 
     for i in range(num_cobos):
@@ -231,6 +256,9 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
                 name='ECC{}'.format(i),
                 ip_address=_make_ip(first_cobo_ecc_ip, i),
                 experiment=experiment,
+                log_path=cobo_ecc_log_path,
+                config_root=cobo_config_root,
+                config_backup_root=cobo_config_backup_root,
             )
 
         data_router = DataRouter.objects.create(
@@ -238,6 +266,7 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
             ip_address=_make_ip(first_cobo_data_router_ip, i),
             connection_type=DataRouter.TCP,
             experiment=experiment,
+            log_path=cobo_router_log_path,
         )
 
         DataSource.objects.create(
@@ -254,6 +283,9 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
                 name='ECC_mutant',
                 ip_address=mutant_ecc_ip,
                 experiment=experiment,
+                log_path=mutant_ecc_log_path,
+                config_root=mutant_config_root,
+                config_backup_root=mutant_config_backup_root,
             )
 
         mutant_router = DataRouter.objects.create(
@@ -261,6 +293,7 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
             ip_address=mutant_data_router_ip,
             connection_type=DataRouter.FDT,
             experiment=experiment,
+            log_path=mutant_router_log_path,
         )
 
         DataSource.objects.create(
@@ -270,43 +303,33 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
         )
 
 
-@login_required
-@needs_experiment
-def easy_setup_page(request):
-    """Renders the easy setup form for one-step system configuration.
+class EasySetupPage(LoginRequiredMixin, NeedsExperimentMixin, PanelTitleMixin, FormView):
+    form_class = EasySetupForm
+    success_url = reverse_lazy('daq/status')
+    template_name = 'daq/generic_crispy_form.html'
+    panel_title = 'Easy setup'
 
-    The actual changes to the database are made by :func:`easy_setup`.
-
-    Parameters
-    ----------
-    request : HttpRequest
-        The request.
-
-    Returns
-    -------
-    HttpResponse
-        Renders the form. Redirects to the status page on success.
-    """
-    if request.method == 'POST':
-        form = EasySetupForm(request.POST)
-        if form.is_valid():
-            easy_setup(
-                experiment=request.experiment,
-                num_cobos=form.cleaned_data['num_cobos'],
-                one_ecc_server=form.cleaned_data['one_ecc_server'],
-                first_cobo_ecc_ip=form.cleaned_data['first_cobo_ecc_ip'],
-                first_cobo_data_router_ip=form.cleaned_data['first_cobo_data_router_ip'],
-                mutant_is_present=form.cleaned_data['mutant_is_present'],
-                mutant_ecc_ip=form.cleaned_data['mutant_ecc_ip'],
-                mutant_data_router_ip=form.cleaned_data['mutant_data_router_ip'],
-            )
-
-            return redirect(reverse('daq/status'))
-
-    else:
-        form = EasySetupForm()
-
-    return render(request, 'daq/generic_crispy_form.html', {'panel_title': 'Easy setup', 'form': form})
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        easy_setup(
+            experiment=self.request.experiment,
+            num_cobos=form.cleaned_data['num_cobos'],
+            one_ecc_server=form.cleaned_data['one_ecc_server'],
+            first_cobo_ecc_ip=form.cleaned_data['first_cobo_ecc_ip'],
+            first_cobo_data_router_ip=form.cleaned_data['first_cobo_data_router_ip'],
+            cobo_ecc_log_path=form.cleaned_data['cobo_ecc_log_file_location'],
+            cobo_router_log_path=form.cleaned_data['cobo_router_log_file_location'],
+            cobo_config_root=form.cleaned_data['cobo_config_root'],
+            cobo_config_backup_root=form.cleaned_data['cobo_config_backup_root'],
+            mutant_is_present=form.cleaned_data['mutant_is_present'],
+            mutant_ecc_ip=form.cleaned_data['mutant_ecc_ip'],
+            mutant_data_router_ip=form.cleaned_data['mutant_data_router_ip'],
+            mutant_ecc_log_path=form.cleaned_data['mutant_ecc_log_file_location'],
+            mutant_router_log_path=form.cleaned_data['mutant_router_log_file_location'],
+            mutant_config_root=form.cleaned_data['mutant_config_root'],
+            mutant_config_backup_root=form.cleaned_data['mutant_config_backup_root'],
+        )
+        return response
 
 
 @login_required
