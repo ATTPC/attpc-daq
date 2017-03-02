@@ -18,6 +18,7 @@ from ..forms import ExperimentForm, ConfigSelectionForm, EasySetupForm, Experime
 from ..workertasks import WorkerInterface
 from ..middleware import needs_experiment, NeedsExperimentMixin
 from .api import PanelTitleMixin
+from .helpers import calculate_overall_state
 
 from attpcdaq.logs.models import LogEntry
 
@@ -50,7 +51,7 @@ def status(request):
     ).order_by('name')
     ecc_servers = ECCServer.objects.filter(experiment=experiment).order_by('name')
     data_routers = DataRouter.objects.filter(experiment=experiment).order_by('name')
-    system_state = ECCServer.objects.all().aggregate(Min('state'))['state__min']
+    system_state, _ = calculate_overall_state(request)
 
     logs = LogEntry.objects.order_by('-create_time')[:10]
 

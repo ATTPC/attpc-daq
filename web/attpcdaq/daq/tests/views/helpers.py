@@ -28,8 +28,9 @@ class NeedsExperimentTestMixin(object):
 
         request_data = kwargs.get('data')
         reverse_args = kwargs.get('rev_args')
-        resp = self.client.get(reverse(self.view_name, args=reverse_args), data=request_data)
-        self.assertEqual(resp.status_code, 302)
+        resp = self.client.get(reverse(self.view_name, args=reverse_args), data=request_data, follow=True)
+        self.assertEqual(resp.redirect_chain[0][1], 302)
+        self.assertEqual(resp.redirect_chain[-1][0], reverse('daq/choose_experiment'))
 
 
 class ManySourcesTestCaseBase(TestCase):
@@ -64,6 +65,7 @@ class ManySourcesTestCaseBase(TestCase):
                 ip_address=self.ecc_ip_address,
                 port=self.ecc_port,
                 experiment=self.experiment,
+                selected_config=self.selected_config,
             )
             self.ecc_servers.append(ecc)
 

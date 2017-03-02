@@ -675,7 +675,7 @@ class Experiment(models.Model):
         if self.is_running:
             raise RuntimeError('Stop the current run before starting a new one')
 
-        config_names = {ecc.selected_config.configure for ecc in ECCServer.objects.all()}
+        config_names = {ecc.selected_config.configure for ecc in self.eccserver_set.all()}
         config_names_str = ', '.join(config_names)
 
         RunMetadata.objects.create(

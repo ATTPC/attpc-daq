@@ -427,6 +427,40 @@ class ExperimentModelTestCase(TestCase):
         run = RunMetadata.objects.latest('start_datetime')
         self.assertEqual(run.config_name, config.configure)
 
+    def test_start_run_only_considers_ecc_servers_from_this_experiment(self):
+        ecc = ECCServer.objects.create(
+            name='ECC',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+        config = ConfigId.objects.create(
+            ecc_server=ecc,
+            describe='describe',
+            prepare='prepare',
+            configure='configure',
+        )
+        ecc.selected_config = config
+        ecc.save()
+
+        other_experiment = Experiment.objects.create(name='other')
+        other_ecc = ECCServer.objects.create(
+            name='other ecc',
+            ip_address='123.123.123.123',
+            experiment=other_experiment,
+        )
+        other_config = ConfigId.objects.create(
+            ecc_server=other_ecc,
+            describe='otherdescribe',
+            prepare='otherprepare',
+            configure='otherconfigure',
+        )
+        other_ecc.selected_config = other_config
+        other_ecc.save()
+
+        self.experiment.start_run()
+        run = RunMetadata.objects.latest('start_datetime')
+        self.assertEqual(run.config_name, config.configure)
+
     def test_start_run_when_running(self):
         self.experiment.start_run()
         with self.assertRaisesRegex(RuntimeError, 'Stop the current run before starting a new one'):

@@ -124,7 +124,7 @@ def source_change_state(request):
         logger.error('Must provide ECC server pk and target state')
         return HttpResponseBadRequest("Must provide ECC server pk and target state")
 
-    ecc_server = get_object_or_404(ECCServer, pk)
+    ecc_server = get_object_or_404(ECCServer, pk=pk)
 
     # Handle "reset" case
     if target_state == ECCServer.RESET:
@@ -174,7 +174,7 @@ def source_change_state_all(request):
 
     # Handle "reset" case
     if target_state == ECCServer.RESET:
-        overall_state, _ = calculate_overall_state()
+        overall_state, _ = calculate_overall_state(request)
         if overall_state is not None:
             target_state = max(overall_state - 1, ECCServer.IDLE)
         else:
@@ -188,7 +188,7 @@ def source_change_state_all(request):
             logger.error('Data routers are not ready')
             return HttpResponseBadRequest('Data routers are not ready')
 
-    for ecc_server in ECCServer.objects.all():
+    for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
         try:
             ecc_server.is_transitioning = True
             ecc_server.save()

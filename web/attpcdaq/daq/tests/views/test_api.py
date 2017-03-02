@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.contrib.auth.models import User
-from unittest.mock import patch
+from unittest.mock import patch, call
 from datetime import datetime
 import json
 import tempfile
@@ -12,6 +12,7 @@ from ...models import ECCServer, DataRouter, DataSource, RunMetadata, Experiment
 from ... import views
 from ...views import UpdateRunMetadataView
 from ...forms import RunMetadataForm
+from ...middleware import CURRENT_EXPERIMENT_KEY
 
 
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase):
@@ -106,6 +107,65 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin
             username='test',
             password='test1234',
         )
+        self.experiment = Experiment.objects.create(name='experiment')
+        self.ecc = ECCServer.objects.create(
+            name='test ecc',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+
+        )
+        self.datarouter = DataRouter.objects.create(
+            name='router',
+            ip_address='123.123.123.123',
+            experiment=self.experiment,
+        )
+        self.datasource = DataSource.objects.create(
+            ecc_server=self.ecc,
+            data_router=self.datarouter,
+        )
+
+        session = self.client.session
+        session[CURRENT_EXPERIMENT_KEY] = self.experiment.pk
+        session.save()
+
+    def test_all_transitions_work(self):
+        self.client.force_login(self.user)
+
+        self.ecc.state = ECCServer.IDLE
+        self.ecc.save()
+
+        state_list = (
+            ECCServer.DESCRIBED,
+            ECCServer.PREPARED,
+            ECCServer.READY,
+            ECCServer.RUNNING,
+            ECCServer.READY,
+            ECCServer.RESET,
+            ECCServer.RESET,
+            ECCServer.RESET,
+        )
+
+        with patch('attpcdaq.daq.views.api.eccserver_change_state_task.delay') as mock_task_delay:
+            for transition_number in state_list:
+                if transition_number == ECCServer.RESET:
+                    target_state = self.ecc.state - 1
+                else:
+                    target_state = transition_number
+
+                resp = self.client.post(reverse(self.view_name), {'pk': self.ecc.pk, 'target_state': transition_number})
+                self.ecc.refresh_from_db()
+
+                self.assertEqual(resp.status_code, 200)
+                mock_task_delay.assert_called_once_with(self.ecc.pk, target_state)
+
+                self.assertTrue(self.ecc.is_transitioning)
+
+                mock_task_delay.reset_mock()
+
+                # Prepare for the next iteration since they won't actually transition
+                self.ecc.state = target_state
+                self.ecc.is_transitioning = False
+                self.ecc.save()
 
 
 @patch('attpcdaq.daq.views.api.eccserver_change_state_task.delay')
@@ -125,6 +185,67 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, NeedsExperimentTestMi
         resp = self.client.post(reverse(self.view_name), {'target_state': ECCServer.DESCRIBED})
         self.assertEqual(resp.status_code, 200)
         self.assertIsNone(resp.json()['run_number'])
+
+    def test_only_affects_current_experiment(self, mock_task_delay):
+        self.client.force_login(self.user)
+
+        new_expt = Experiment.objects.create(name='new experiment')
+        new_ecc = ECCServer.objects.create(
+            name='new ecc',
+            ip_address='123.123.123.123',
+            experiment=new_expt,
+        )
+        new_router = DataRouter.objects.create(
+            name='new router',
+            ip_address='123.123.123.123',
+            experiment=new_expt,
+        )
+        DataSource.objects.create(
+            ecc_server=new_ecc,
+            data_router=new_router,
+        )
+
+        resp = self.client.post(reverse(self.view_name), {'target_state': ECCServer.DESCRIBED})
+
+        used_pks = [c[0][0] for c in mock_task_delay.call_args_list]
+        self.assertNotIn(new_ecc.pk, used_pks)
+
+    def test_all_transitions_work(self, mock_task_delay):
+        self.client.force_login(self.user)
+
+        ECCServer.objects.all().update(state=ECCServer.IDLE)
+
+        state_list = (
+            ECCServer.DESCRIBED,
+            ECCServer.PREPARED,
+            ECCServer.READY,
+            ECCServer.RUNNING,
+            ECCServer.READY,
+            ECCServer.RESET,
+            ECCServer.RESET,
+            ECCServer.RESET,
+        )
+
+        with patch('attpcdaq.daq.views.api.organize_files_all_task.delay') as mock_organize:
+            with patch('attpcdaq.daq.views.api.backup_config_files_all_task.delay') as mock_backup:
+                for transition_number in state_list:
+                    if transition_number == ECCServer.RESET:
+                        target_state = ECCServer.objects.first().state - 1
+                    else:
+                        target_state = transition_number
+
+                    resp = self.client.post(reverse(self.view_name), {'target_state': transition_number})
+
+                    self.assertEqual(resp.status_code, 200)
+                    expected_calls = [call(e.pk, target_state) for e in ECCServer.objects.all()]
+                    mock_task_delay.assert_has_calls(expected_calls)
+
+                    self.assertFalse(ECCServer.objects.filter(is_transitioning=False).exists())
+
+                    mock_task_delay.reset_mock()
+
+                    # Prepare for the next iteration since they won't actually transition
+                    ECCServer.objects.all().update(state=target_state, is_transitioning=False)
 
 
 class AddDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
