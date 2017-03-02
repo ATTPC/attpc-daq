@@ -408,11 +408,6 @@ class AddExperimentView(LoginRequiredMixin, CreateView):
     form_class = NewExperimentForm
     success_url = reverse_lazy('daq/status')
 
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        self.request.session['current_experiment_pk'] = self.object.pk
-        return response
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 class ListRunMetadataView(LoginRequiredMixin, NeedsExperimentMixin, ListView):

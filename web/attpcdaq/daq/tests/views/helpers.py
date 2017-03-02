@@ -22,9 +22,7 @@ class NeedsExperimentTestMixin(object):
 
     def test_no_experiment(self, *args, **kwargs):
         self.client.force_login(self.user)
-        session = self.client.session
-        session.pop('current_experiment_pk', None)
-        session.save()
+        Experiment.objects.all().update(is_active=False)
 
         request_data = kwargs.get('data')
         reverse_args = kwargs.get('rev_args')
@@ -40,11 +38,8 @@ class ManySourcesTestCaseBase(TestCase):
 
         self.experiment = Experiment.objects.create(
             name='Test experiment',
+            is_active=True,
         )
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
 
         self.ecc_ip_address = '123.45.67.8'
         self.ecc_port = '1234'

@@ -88,6 +88,15 @@ class NewExperimentForm(forms.ModelForm):
 
         self.helper.add_input(Submit('submit', 'Create experiment', css_class='btn btn-primary btn-block'))
 
+    def save(self, commit=True):
+        """Override to make the new experiment the active one."""
+        instance = super().save(commit=False)
+        instance.is_active = True
+        instance.save()
+        self.save_m2m()
+
+        return instance
+
 
 class RunMetadataForm(CrispyModelFormBase):
     class Meta:

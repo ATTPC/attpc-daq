@@ -12,7 +12,6 @@ from ...models import ECCServer, DataRouter, DataSource, RunMetadata, Experiment
 from ... import views
 from ...views import UpdateRunMetadataView
 from ...forms import RunMetadataForm
-from ...middleware import CURRENT_EXPERIMENT_KEY
 
 
 class RefreshStateAllViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, ManySourcesTestCaseBase):
@@ -107,7 +106,7 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin
             username='test',
             password='test1234',
         )
-        self.experiment = Experiment.objects.create(name='experiment')
+        self.experiment = Experiment.objects.create(name='experiment', is_active=True)
         self.ecc = ECCServer.objects.create(
             name='test ecc',
             ip_address='123.123.123.123',
@@ -123,10 +122,6 @@ class SourceChangeStateTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin
             ecc_server=self.ecc,
             data_router=self.datarouter,
         )
-
-        session = self.client.session
-        session[CURRENT_EXPERIMENT_KEY] = self.experiment.pk
-        session.save()
 
     def test_all_transitions_work(self):
         self.client.force_login(self.user)
@@ -278,11 +273,7 @@ class ListRunMetadataViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMix
         self.view_name = 'daq/run_list'
 
         self.user = User.objects.create(username='testUser', password='test1234')
-        self.experiment = Experiment.objects.create(name='Test experiment')
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
+        self.experiment = Experiment.objects.create(name='Test experiment', is_active=True)
 
         self.runs = []
         for i in (0, 3, 1, 2, 5, 4, 7, 9, 8):  # In a random order to test sorting
@@ -427,11 +418,8 @@ class SetObservableOrderingTestCase(RequiresLoginTestMixin, NeedsExperimentTestM
         )
         self.experiment = Experiment.objects.create(
             name='Test experiment',
+            is_active=True,
         )
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
 
         for i in range(20):
             Observable.objects.create(
@@ -455,11 +443,7 @@ class SetObservableOrderingTestCase(RequiresLoginTestMixin, NeedsExperimentTestM
 
 class ListEccServerViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
-        self.experiment = Experiment.objects.create(name='Test')
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
+        self.experiment = Experiment.objects.create(name='Test', is_active=True)
 
         self.user = User.objects.create(
             username='User',
@@ -489,11 +473,7 @@ class ListEccServerViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin
 
 class ListDataRoutersViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
-        self.experiment = Experiment.objects.create(name='Test')
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
+        self.experiment = Experiment.objects.create(name='Test', is_active=True)
 
         self.user = User.objects.create(
             username='User',
@@ -523,11 +503,7 @@ class ListDataRoutersViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMix
 
 class ListDataSourcesViewTestCase(RequiresLoginTestMixin, NeedsExperimentTestMixin, TestCase):
     def setUp(self):
-        self.experiment = Experiment.objects.create(name='Test')
-
-        session = self.client.session
-        session['current_experiment_pk'] = self.experiment.pk
-        session.save()
+        self.experiment = Experiment.objects.create(name='Test', is_active=True)
 
         self.user = User.objects.create(
             username='User',

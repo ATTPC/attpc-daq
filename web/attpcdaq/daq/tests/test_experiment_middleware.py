@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from ..models import Experiment, ECCServer
-from ..middleware import CURRENT_EXPERIMENT_KEY
 
 
 class CurrentExperimentMiddlewareTestCase(TestCase):
@@ -21,23 +20,14 @@ class CurrentExperimentMiddlewareTestCase(TestCase):
         self.client.force_login(self.user)
         self.request_url = reverse('daq/status')
 
-    def test_gets_experiment_from_session(self):
-        session = self.client.session
-        session[CURRENT_EXPERIMENT_KEY] = self.experiment.pk
-        session.save()
+    def test_gets_experiment_from_database(self):
+        self.experiment.is_active = True
+        self.experiment.save()
 
         resp = self.client.get(self.request_url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context['experiment'], self.experiment)
 
-    def test_gets_experiment_from_running_ecc(self):
-        self.ecc.state = ECCServer.READY
-        self.ecc.save()
-
-        resp = self.client.get(self.request_url)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.context['experiment'], self.experiment)
-
-    def test_redirects_when_both_missing(self):
+    def test_redirects_when_no_experiment_is_active(self):
         resp = self.client.get(self.request_url, follow=True)
         self.assertEqual(resp.redirect_chain[-1][0], reverse('daq/choose_experiment'))

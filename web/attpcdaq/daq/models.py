@@ -604,8 +604,27 @@ class Experiment(models.Model):
     #: The name of the experiment. This must be unique.
     name = models.CharField(max_length=100, unique=True)
 
+    #: Is this the active experiment? Only one experiment may be active at a time.
+    is_active = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        """Override of save to enforce only one active experiment at a time."""
+        # http://stackoverflow.com/a/1455507/3820658
+        if self.is_active:
+            try:
+                currently_active = Experiment.objects.get(is_active=True)
+                if currently_active != self:
+                    assert not ECCServer.objects.exclude(state=ECCServer.IDLE).exists(), \
+                        "Cannot change experiments with ECCs running"
+                    currently_active.is_active = False
+                    currently_active.save()
+            except Experiment.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
 
     @property
     def latest_run(self):

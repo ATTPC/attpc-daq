@@ -479,6 +479,25 @@ class ExperimentModelTestCase(TestCase):
         run0 = self._create_run()
         self.assertRaisesRegex(RuntimeError, 'Not running', self.experiment.stop_run)
 
+    def test_change_active_experiment(self):
+        self.experiment.is_active = True
+        self.experiment.save()
+
+        other_experiment = Experiment.objects.create(name='other')
+        self.experiment.refresh_from_db()
+        other_experiment.refresh_from_db()
+
+        self.assertTrue(self.experiment.is_active)
+        self.assertFalse(other_experiment.is_active)
+
+        other_experiment.is_active = True
+        other_experiment.save()
+        self.experiment.refresh_from_db()
+        other_experiment.refresh_from_db()
+
+        self.assertFalse(self.experiment.is_active)
+        self.assertTrue(other_experiment.is_active)
+
 
 class RunMetadataModelTestCase(TestCase):
     def setUp(self):

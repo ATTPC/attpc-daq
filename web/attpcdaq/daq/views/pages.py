@@ -360,7 +360,8 @@ class ExperimentChoiceView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         expt = form.cleaned_data['experiment']
-        self.request.session['current_experiment_pk'] = expt.pk
+        expt.is_active = True
+        expt.save()
         return super().form_valid(form)
 
     def dispatch(self, request, *args, **kwargs):
