@@ -63,7 +63,6 @@ services:
       - CELERY_BROKER_PORT=5672
     depends_on:
       - db
-      - celery
     command: ['/bin/bash', './django_entrypoint.sh']
 
   celery:
@@ -84,7 +83,28 @@ services:
       - daq
     depends_on:
       - rabbitmq
+      - web
     command: ['/bin/bash', './celery_entrypoint.sh']
+
+  flower:
+    # Provides a management GUI for the Celery queue
+    image: attpc/attpcdaq
+    restart: unless-stopped
+    env_file:
+      - ./production.env
+    ports:
+      - "8081:5555"
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - CELERY_BROKER_HOST=rabbitmq
+      - CELERY_BROKER_PORT=5672
+    networks:
+      - daq
+    depends_on:
+      - rabbitmq
+      - web
+    command: ['/bin/bash', './flower_entrypoint.sh']
 
   nginx:
     # The nginx container serves the static resources and proxies all of the requests to Django.
