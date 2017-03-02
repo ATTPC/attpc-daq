@@ -9,7 +9,7 @@ from ..tasks import organize_files_task, eccserver_refresh_state_task, eccserver
 from ..tasks import check_ecc_server_online_task, check_data_router_status_task, organize_files_all_task
 from ..tasks import eccserver_refresh_all_task, check_ecc_server_online_all_task, check_data_router_status_all_task
 from ..tasks import backup_config_files_task, backup_config_files_all_task
-from ..models import ECCServer, DataRouter, ConfigId, Experiment
+from ..models import ECCServer, DataRouter, ConfigId, Experiment, RunMetadata
 
 
 class TaskTestCaseBase(TestCase):
@@ -120,15 +120,32 @@ class TestCalledForAllMixin(object):
     """A mixin with tests for the 'all' tasks."""
 
     def test_called_for_all(self: AllTaskTestCaseBase):
-        """Test that the task is called for all instances of the relevant model."""
+        """Test that the task is called for all relevant instances of the relevant model."""
         self.call_task()
         task_calls = self.get_expected_subtask_calls()
 
-        self.get_callable('subtask').assert_has_calls(task_calls)
+        subtask = self.get_callable('subtask')
+        self.assertEqual(subtask.call_args_list, task_calls)
 
         gp = self.get_callable('group')
         self.assertEqual(gp.call_count, 1)         # Check group object was constructed
         gp.return_value.assert_called_once_with()  # Check group object was called
+
+
+class TestOkWithoutActiveExperimentMixin(object):
+    """Tests for tasks that depend on an active experiment."""
+
+    def test_noop_if_no_active_experiment(self: AllTaskTestCaseBase):
+        """Tests that nothing happens if there's no active experiment."""
+        Experiment.objects.all().update(is_active=False)
+
+        with patch('attpcdaq.daq.tasks.logger', autospec=True) as mock_logger:
+            self.call_task()
+
+            gp = self.get_callable('group')
+            gp.return_value.assert_not_called()
+
+            mock_logger.exception.assert_not_called()
 
 
 class ExceptionHandlingTestMixin(object):
@@ -182,20 +199,31 @@ class EccServerRefreshStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
             self.call_task(self.ecc.pk + 10)
 
 
-class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
+class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin,
+                                      TestOkWithoutActiveExperimentMixin, AllTaskTestCaseBase):
     def setUp(self):
         super().setUp()
 
         self.experiment = Experiment.objects.create(
             name='Test',
+            is_active=True,
         )
-
         for i in range(10):
             ECCServer.objects.create(
                 name='ECC{}'.format(i),
                 ip_address='123.123.123.123',
                 experiment=self.experiment,
             )
+
+        self.other_experiment = Experiment.objects.create(
+            name='other experiment',
+            is_active=False
+        )
+        ECCServer.objects.create(
+            name='Other ECC',
+            ip_address='123.123.123.123',
+            experiment=self.other_experiment,
+        )
 
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.eccserver_refresh_state_task'
@@ -204,7 +232,7 @@ class EccServerRefreshAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForA
         return eccserver_refresh_all_task()
 
     def get_queryset(self):
-        return ECCServer.objects.all()
+        return ECCServer.objects.filter(experiment=self.experiment)
 
 
 class EccServerChangeStateTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
@@ -285,12 +313,14 @@ class CheckEccServerOnlineTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseB
             self.call_task(self.ecc.pk + 10)
 
 
-class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
+class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin,
+                                          TestOkWithoutActiveExperimentMixin, AllTaskTestCaseBase):
     def setUp(self):
         super().setUp()
 
         self.experiment = Experiment.objects.create(
             name='Test',
+            is_active=True,
         )
 
         for i in range(10):
@@ -300,6 +330,16 @@ class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalled
                 experiment=self.experiment,
             )
 
+        self.other_experiment = Experiment.objects.create(
+            name='other experiment',
+            is_active=False
+        )
+        ECCServer.objects.create(
+            name='Other ECC',
+            ip_address='123.123.123.123',
+            experiment=self.other_experiment,
+        )
+
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.check_ecc_server_online_task'
 
@@ -307,7 +347,7 @@ class CheckEccServerOnlineAllTaskTestCase(ExceptionHandlingTestMixin, TestCalled
         return check_ecc_server_online_all_task()
 
     def get_queryset(self):
-        return ECCServer.objects.all()
+        return ECCServer.objects.filter(experiment=self.experiment)
 
 
 class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
@@ -375,12 +415,14 @@ class CheckDataRouterStatusTaskTestCase(ExceptionHandlingTestMixin, TaskTestCase
         self.get_callable(which='clean').assert_not_called()
 
 
-class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin, AllTaskTestCaseBase):
+class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllMixin,
+                                           TestOkWithoutActiveExperimentMixin, AllTaskTestCaseBase):
     def setUp(self):
         super().setUp()
 
         self.experiment = Experiment.objects.create(
             name='Test',
+            is_active=True,
         )
 
         for i in range(10):
@@ -390,11 +432,21 @@ class CheckDataRouterStatusAllTaskTestCase(ExceptionHandlingTestMixin, TestCalle
                 experiment=self.experiment,
             )
 
+        self.other_experiment = Experiment.objects.create(
+            name='other experiment',
+            is_active=False
+        )
+        DataRouter.objects.create(
+            name='Other router',
+            ip_address='123.123.123.123',
+            experiment=self.other_experiment,
+        )
+
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.check_data_router_status_task'
 
     def get_queryset(self):
-        return DataRouter.objects.all()
+        return DataRouter.objects.filter(experiment=self.experiment)
 
     def call_task(self):
         return check_data_router_status_all_task()
@@ -413,7 +465,10 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
             ip_address='123.456.789.0',
             experiment=self.experiment
         )
-        self.run_num = 10
+        self.run = RunMetadata.objects.create(
+            run_number=10,
+            experiment=self.experiment,
+        )
 
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.WorkerInterface'
@@ -424,7 +479,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
     def call_task(self, pk=None):
         if pk is None:
             pk = self.data_router.pk
-        organize_files_task(pk, self.experiment.name, self.run_num)
+        organize_files_task(pk, self.experiment.pk, self.run.pk)
 
     def test_organize_files(self):
         """Test that the task works."""
@@ -434,7 +489,7 @@ class OrganizeFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
         self.call_task()
 
         self.mock.assert_called_once_with(self.data_router.ip_address)
-        self.get_callable().assert_called_once_with(self.experiment.name, self.run_num)
+        self.get_callable().assert_called_once_with(self.experiment.name, self.run.run_number)
 
         self.data_router.refresh_from_db()
         self.assertTrue(self.data_router.staging_directory_is_clean)
@@ -451,6 +506,7 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
 
         self.experiment = Experiment.objects.create(
             name='Test',
+            is_active=True,
         )
 
         for i in range(10):
@@ -460,19 +516,32 @@ class OrganizeFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledForAllM
                 experiment=self.experiment,
             )
 
-        self.run_number = 1
+        self.other_experiment = Experiment.objects.create(
+            name='other experiment',
+            is_active=False
+        )
+        DataRouter.objects.create(
+            name='Other router',
+            ip_address='123.123.123.123',
+            experiment=self.other_experiment,
+        )
+
+        self.run = RunMetadata.objects.create(
+            run_number=1,
+            experiment=self.experiment,
+        )
 
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.organize_files_task'
 
     def get_queryset(self):
-        return DataRouter.objects.all()
+        return DataRouter.objects.filter(experiment=self.experiment)
 
     def call_task(self):
-        return organize_files_all_task(self.experiment.name, self.run_number)
+        return organize_files_all_task(self.experiment.pk, self.run.pk)
 
     def get_expected_subtask_calls(self):
-        return super().get_expected_subtask_calls(self.experiment.name, self.run_number)
+        return super().get_expected_subtask_calls(self.experiment.pk, self.run.pk)
 
 
 class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase):
@@ -499,7 +568,10 @@ class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase
         self.ecc.selected_config = self.config
         self.ecc.save()
 
-        self.run_num = 1
+        self.run = RunMetadata.objects.create(
+            run_number=1,
+            experiment=self.experiment,
+        )
 
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.WorkerInterface'
@@ -510,14 +582,14 @@ class BackupConfigFilesTaskTestCase(ExceptionHandlingTestMixin, TaskTestCaseBase
     def call_task(self, pk=None):
         if pk is None:
             pk = self.ecc.pk
-        return backup_config_files_task(pk, self.experiment.name, self.run_num)
+        return backup_config_files_task(pk, self.experiment.pk, self.run.pk)
 
     def test_backup_files(self):
         """Test that the task works with valid parameters."""
         self.call_task()
 
         self.mock.assert_called_once_with(self.ecc.ip_address)
-        self.get_callable().assert_called_once_with(self.experiment.name, self.run_num,
+        self.get_callable().assert_called_once_with(self.experiment.name, self.run.run_number,
                                                     self.ecc.config_file_paths(), self.ecc.config_backup_root)
 
     def test_with_invalid_ecc_pk(self):
@@ -532,6 +604,7 @@ class BackupConfigFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledFor
 
         self.experiment = Experiment.objects.create(
             name='Test',
+            is_active=True,
         )
 
         for i in range(10):
@@ -551,16 +624,29 @@ class BackupConfigFilesAllTaskTestCase(ExceptionHandlingTestMixin, TestCalledFor
             ecc.selected_config = config
             ecc.save()
 
-        self.run_number = 1
+        self.other_experiment = Experiment.objects.create(
+            name='other experiment',
+            is_active=False
+        )
+        ECCServer.objects.create(
+            name='Other ECC',
+            ip_address='123.123.123.123',
+            experiment=self.other_experiment,
+        )
+
+        self.run = RunMetadata.objects.create(
+            run_number=1,
+            experiment=self.experiment,
+        )
 
     def get_patch_target(self):
         return 'attpcdaq.daq.tasks.backup_config_files_task'
 
     def get_queryset(self):
-        return ECCServer.objects.all()
+        return ECCServer.objects.filter(experiment=self.experiment)
 
     def call_task(self):
-        return backup_config_files_all_task(self.experiment.name, self.run_number)
+        return backup_config_files_all_task(self.experiment.pk, self.run.pk)
 
     def get_expected_subtask_calls(self):
-        return super().get_expected_subtask_calls(self.experiment.name, self.run_number)
+        return super().get_expected_subtask_calls(self.experiment.pk, self.run.pk)
