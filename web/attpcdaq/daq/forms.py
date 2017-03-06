@@ -29,11 +29,27 @@ class ECCServerForm(CrispyModelFormBase):
         model = ECCServer
         fields = ['name', 'ip_address', 'port', 'log_path', 'config_root', 'config_backup_root']
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        current_expt = Experiment.objects.get(is_active=True)
+        instance.experiment = current_expt
+        instance.save()
+        self.save_m2m()
+        return instance
+
 
 class DataRouterForm(CrispyModelFormBase):
     class Meta:
         model = DataRouter
         fields = ['name', 'ip_address', 'port', 'connection_type', 'log_path']
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        current_expt = Experiment.objects.get(is_active=True)
+        instance.experiment = current_expt
+        instance.save()
+        self.save_m2m()
+        return instance
 
 
 class ConfigSelectionForm(CrispyModelFormBase):
