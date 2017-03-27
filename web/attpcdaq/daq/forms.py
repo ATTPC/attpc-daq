@@ -1,6 +1,6 @@
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, HTML, Button
+from crispy_forms.layout import Submit, Layout, Fieldset, HTML
 from crispy_forms.bootstrap import FormActions, AppendedText
 
 from .models import DataSource, ECCServer, DataRouter, Experiment, ConfigId, RunMetadata, Observable, Measurement

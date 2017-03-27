@@ -16,8 +16,8 @@ def calculate_overall_state(request):
 
     Parameters
     ----------
-    ecc_server_list : QuerySet
-        A set of DataSource objects.
+    request : django.http.request.HttpRequest
+        The request object.
 
     Returns
     -------

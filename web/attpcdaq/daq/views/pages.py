@@ -9,11 +9,10 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db.models import Min
 from django.db import transaction
 from django.views.generic.edit import FormView
 
-from ..models import DataSource, ECCServer, DataRouter, Experiment, RunMetadata, Observable, Measurement
+from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Observable, Measurement
 from ..forms import ExperimentForm, ConfigSelectionForm, EasySetupForm, ExperimentChoiceForm
 from ..workertasks import WorkerInterface
 from ..middleware import needs_experiment, NeedsExperimentMixin

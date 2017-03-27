@@ -6,7 +6,7 @@ views that control refreshing the state of the system and changing the state.
 
 """
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponseNotAllowed, HttpResponseBadRequest, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -15,7 +15,7 @@ from django.views.generic.list import ListView
 from django.views.generic import RedirectView
 from django.core.urlresolvers import reverse_lazy
 
-from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable, Measurement
+from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm, NewExperimentForm
 from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task

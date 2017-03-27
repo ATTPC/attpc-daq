@@ -1,7 +1,6 @@
 """Unit tests for Django forms"""
 
 from django.test import TestCase
-from django.contrib.auth.models import User
 from django import forms
 
 from ..forms import RunMetadataForm, DataSourceForm, ECCServerForm, DataRouterForm, ConfigSelectionForm, ObservableForm

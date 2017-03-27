@@ -1,6 +1,4 @@
 from django.test import TestCase
-from django.conf import settings
-from django.contrib.auth.models import User
 from unittest.mock import patch
 from .utilities import FakeResponseState, FakeResponseText
 from ..models import DataSource, ECCServer, DataRouter, ConfigId, Experiment, RunMetadata, Observable, Measurement

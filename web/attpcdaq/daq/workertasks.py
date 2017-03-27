@@ -11,7 +11,6 @@ from paramiko.sftp_file import SFTPFile
 from paramiko import AutoAddPolicy
 import os
 import re
-import shlex
 
 
 def mkdir_recursive(sftp, path):

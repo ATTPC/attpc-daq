@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from unittest.mock import patch, call
 from datetime import datetime
