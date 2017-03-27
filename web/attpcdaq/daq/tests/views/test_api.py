@@ -242,6 +242,31 @@ class SourceChangeStateAllTestCase(RequiresLoginTestMixin, NeedsExperimentTestMi
                     # Prepare for the next iteration since they won't actually transition
                     ECCServer.objects.all().update(state=target_state, is_transitioning=False)
 
+    def test_start(self, mock_change_state_task_delay):
+        self.client.force_login(self.user)
+        ECCServer.objects.all().update(state=ECCServer.READY)
+
+        resp = self.client.post(reverse(self.view_name), {'target_state': ECCServer.RUNNING})
+
+        self.assertEqual(resp.status_code, 200)
+
+        self.experiment.refresh_from_db()
+        self.assertTrue(self.experiment.is_running)
+
+    def test_stop(self, mock_change_state_task_delay):
+        self.client.force_login(self.user)
+        ECCServer.objects.all().update(state=ECCServer.RUNNING)
+        self.experiment.start_run()
+
+        with patch('attpcdaq.daq.views.api.organize_files_all_task.delay') as mock_organize:
+            with patch('attpcdaq.daq.views.api.backup_config_files_all_task.delay') as mock_backup:
+                resp = self.client.post(reverse(self.view_name), {'target_state': ECCServer.READY})
+
+                self.assertEqual(resp.status_code, 200)
+
+                mock_organize.assert_called_once_with(self.experiment.pk, self.experiment.latest_run.pk)
+                mock_backup.assert_called_once_with(self.experiment.pk, self.experiment.latest_run.pk)
+
 
 class AddDataSourceViewTestCase(RequiresLoginTestMixin, TestCase):
     def setUp(self):

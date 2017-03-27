@@ -205,8 +205,8 @@ def source_change_state_all(request):
         experiment.start_run()
     elif is_stopping:
         experiment.stop_run()
-        organize_files_all_task.delay(experiment, experiment.latest_run)
-        backup_config_files_all_task.delay(experiment, experiment.latest_run)
+        organize_files_all_task.delay(experiment.pk, experiment.latest_run.pk)
+        backup_config_files_all_task.delay(experiment.pk, experiment.latest_run.pk)
 
     output = get_status(request)
 
