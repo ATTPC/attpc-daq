@@ -10,8 +10,7 @@ attpcdaq.daq.models.Experiment
    .. autosummary::
 
       ~Experiment.name
-      ~Experiment.user
-      ~Experiment.target_run_duration
+      ~Experiment.is_active
 
    .. rubric:: Properties
 
@@ -29,6 +28,7 @@ attpcdaq.daq.models.Experiment
 
       ~Experiment.start_run
       ~Experiment.stop_run
+      ~Experiment.save
    
    
 

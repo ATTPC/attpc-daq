@@ -146,8 +146,8 @@ def check_data_router_status_task(datarouter_pk):
 
     Parameters
     ----------
-    eccserver_pk : int
-        The primary key of the ECC server in the database.
+    datarouter_pk : int
+        The primary key of the data router in the database.
 
     """
     try:
@@ -203,10 +203,10 @@ def organize_files_task(datarouter_pk, experiment_pk, run_pk):
     ----------
     datarouter_pk : int
         Integer primary key of the data source
-    experiment_name : str
-        The name of the current experiment
-    run_number : int
-        The most recent run number
+    experiment_pk : int
+        The primary key of the current experiment
+    run_pk : int
+        The primary key of the most recent run
 
     """
     try:
@@ -238,10 +238,10 @@ def organize_files_all_task(experiment_pk, run_pk):
 
     Parameters
     ----------
-    experiment_name : str
-        The name of the current experiment
-    run_number : int
-        The most recent run number
+    experiment_pk : int
+        The primary key of the current experiment
+    run_pk : int
+        The primary key of the most recent run
 
     """
     try:
@@ -257,6 +257,23 @@ def organize_files_all_task(experiment_pk, run_pk):
 
 @shared_task(soft_time_limit=30, time_limit=40)
 def backup_config_files_task(ecc_pk, experiment_pk, run_pk):
+    """Makes a backup copy of the config files for the most recent run.
+
+    Backups are stored in the directory specified in the ECC server's attribute
+    :attr:`~attpcdaq.daq.models.ECCServer.config_backup_root`. The backup is done using
+    the :class:`~attpcdaq.daq.workertasks.WorkerInterface` method
+    :meth:`~attpcdaq.daq.workertasks.WorkerInterface.backup_config_files`.
+
+    Parameters
+    ----------
+    ecc_pk : int
+        The primary key of the ECC server.
+    experiment_pk : int
+        The primary key of the current experiment.
+    run_pk : int
+        The primary key of the most recent run.
+
+    """
     try:
         experiment = Experiment.objects.get(pk=experiment_pk)
         run = RunMetadata.objects.get(pk=run_pk)
@@ -277,6 +294,18 @@ def backup_config_files_task(ecc_pk, experiment_pk, run_pk):
 
 @shared_task(soft_time_limit=30, time_limit=40)
 def backup_config_files_all_task(experiment_pk, run_pk):
+    """Backs up config files for all ECC servers.
+
+    This calls the task :func:`backup_config_files_task` for all ECC servers.
+
+    Parameters
+    ----------
+    experiment_pk : int
+        The primary key of the current experiment.
+    run_pk : int
+        The primary key of the most recent run.
+
+    """
     try:
         ecc_pks = ECCServer.objects.filter(experiment__pk=experiment_pk).values_list('pk', flat=True)
         if not ecc_pks.exists():

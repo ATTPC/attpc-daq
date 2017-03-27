@@ -305,12 +305,23 @@ def easy_setup(experiment, num_cobos, one_ecc_server, first_cobo_ecc_ip, first_c
 
 
 class EasySetupPage(LoginRequiredMixin, NeedsExperimentMixin, PanelTitleMixin, FormView):
+    """Renders the easy setup page, where the system can be set up in one step."""
     form_class = EasySetupForm
     success_url = reverse_lazy('daq/status')
     template_name = 'daq/generic_crispy_form.html'
     panel_title = 'Easy setup'
 
     def form_valid(self, form):
+        """Checks that the form data is valid, and then performs the setup.
+
+        This calls :func:`easy_setup` to do the actual setup work.
+
+        Parameters
+        ----------
+        form : django.Forms.Form
+            The form data.
+
+        """
         response = super().form_valid(form)
         easy_setup(
             experiment=self.request.experiment,

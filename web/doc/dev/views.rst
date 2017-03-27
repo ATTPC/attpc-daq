@@ -31,7 +31,7 @@ which contacts a remote computer, fetches the end of a log file, and renders a p
     choose_config
     experiment_settings
     show_log_page
-    easy_setup_page
+    EasySetupPage
 
 ..  rubric:: Backend functions
 
