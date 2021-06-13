@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from django.views.generic import RedirectView
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable
 from ..models import ECCError

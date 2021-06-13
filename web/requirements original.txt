@@ -1,0 +1,10 @@
+celery==4.0.2
+flower
+Django==1.10
+django-crispy-forms==1.6.0
+gunicorn==19.6.0
+paramiko==2.7.2
+psycopg2==2.6.1
+Sphinx==1.4.3
+sphinx-rtd-theme==0.1.9
+zeep==0.14.0

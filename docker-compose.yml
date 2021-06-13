@@ -14,7 +14,7 @@
 #
 # Since this environment file has passwords and secret tokens in it, **NEVER PUT IT ON GITHUB!**
 
-version: "2"
+version: "3"
 
 services:
   # This container holds the PostgreSQL database where the DAQ GUI's internal configuration is stored.

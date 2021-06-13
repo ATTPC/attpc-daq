@@ -41,7 +41,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+#    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'attpcdaq.daq.middleware.CurrentExperimentMiddleware',
@@ -119,7 +119,7 @@ if IS_PRODUCTION:
     SECRET_KEY = os.environ['DAQ_SECRET_KEY']
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ['POSTGRES_DB'],
             'USER': os.environ['POSTGRES_USER'],
             'PASSWORD': os.environ['POSTGRES_PASSWORD'],
