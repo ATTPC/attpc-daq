@@ -18,15 +18,17 @@ from django.urls import reverse_lazy
 from ..models import DataSource, ECCServer, DataRouter, RunMetadata, Experiment, Observable
 from ..models import ECCError
 from ..forms import DataSourceForm, ECCServerForm, RunMetadataForm, DataRouterForm, ObservableForm, NewExperimentForm
-from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task
+from ..tasks import eccserver_change_state_task, organize_files_all_task, backup_config_files_all_task, eccserver_refresh_state_task
 from .helpers import get_status, calculate_overall_state
 from ..middleware import needs_experiment, NeedsExperimentMixin
 
+import requests
 import json
 
 import logging
 logger = logging.getLogger(__name__)
 
+import time
 
 @login_required
 @needs_experiment
@@ -172,6 +174,8 @@ def source_change_state_all(request):
         logger.exception('Invalid or missing target_state')
         return HttpResponseBadRequest('Invalid or missing target_state')
 
+    experiment = request.experiment
+
     # Handle "reset" case
     if target_state == ECCServer.RESET:
         overall_state, _ = calculate_overall_state(request)
@@ -188,13 +192,88 @@ def source_change_state_all(request):
             logger.error('Data routers are not ready')
             return HttpResponseBadRequest('Data routers are not ready')
 
-    for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
-        try:
-            ecc_server.is_transitioning = True
-            ecc_server.save()
-            eccserver_change_state_task.delay(ecc_server.pk, target_state)
-        except (ECCError, ValueError):
-            logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
+    # The following code assumes that the ECCServer of the Mutants has been hacked to not perform these transitions on the CoBos
+    # Handle "prepare" case: first do the Mutants
+    if target_state == ECCServer.PREPARED or (target_state == ECCServer.READY and experiment.is_running):
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            try:
+                if ecc_server.name.find('Mutant') != -1:
+                    ecc_server.is_transitioning = True
+                    ecc_server.save()
+                    eccserver_change_state_task.delay(ecc_server.pk, target_state)
+                    #eccserver_refresh_state_task(ecc_server.pk)
+                    #r = requests.get('http://localhost:8080/daq/sources/refresh_state_all')
+            except (ECCError, ValueError):
+                logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
+    # Wait for them to be done (maximum 60 s)
+        t = 0
+        test = 0
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            if ecc_server.name.find('Mutant') != -1 and ecc_server.is_transitioning == True:
+                test += 1
+        while test > 0 and t <= 60:
+            time.sleep(1)
+            t += 1
+            test = 0
+            for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+                if ecc_server.name.find('Mutant') != -1 and ecc_server.is_transitioning == True:
+                    test += 1
+    # Finally do the CoBos
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            try:
+                if ecc_server.name.find('Mutant') == -1:
+                    ecc_server.is_transitioning = True
+                    ecc_server.save()
+                    eccserver_change_state_task.delay(ecc_server.pk, target_state)
+            except (ECCError, ValueError):
+                logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
+    
+    # The following code assumes that the ECCServer of the Mutants has been hacked to not perform these transitions on the CoBos
+    # Handle "configure" and "describe" cases: first do the CoBos
+    # Added "running" case so that the CoBos are started before the Mutant to avoid the "shelf not ready" error
+    elif (target_state == ECCServer.READY and not experiment.is_running) or target_state == ECCServer.DESCRIBED or target_state == ECCServer.RUNNING:
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            try:
+                if ecc_server.name.find('Mutant') == -1:
+                    ecc_server.is_transitioning = True
+                    ecc_server.save()
+                    eccserver_change_state_task.delay(ecc_server.pk, target_state)
+                    #eccserver_refresh_state_task(ecc_server.pk)
+                    #r = requests.get('http://localhost:8080/daq/sources/refresh_state_all')
+            except (ECCError, ValueError):
+                logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
+    # Wait for them to be done (maximum 60 s)
+        t = 0
+        test = 0
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            if ecc_server.name.find('Mutant') == -1 and ecc_server.is_transitioning == True:
+                test += 1
+        while test > 0 and t <= 60:
+            time.sleep(1)
+            t += 1
+            test = 0
+            for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+                if ecc_server.name.find('Mutant') == -1 and ecc_server.is_transitioning == True:
+                    test += 1
+    # Finally do the Mutants
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            try:
+                if ecc_server.name.find('Mutant') != -1:
+                    ecc_server.is_transitioning = True
+                    ecc_server.save()
+                    eccserver_change_state_task.delay(ecc_server.pk, target_state)
+            except (ECCError, ValueError):
+                logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
+    
+    # Other state transitions
+    else:
+        for ecc_server in ECCServer.objects.filter(experiment=request.experiment):
+            try:
+                ecc_server.is_transitioning = True
+                ecc_server.save()
+                eccserver_change_state_task.delay(ecc_server.pk, target_state)
+            except (ECCError, ValueError):
+                logger.exception('Failed to submit change_state task for ECC server %s', ecc_server.name)
 
     experiment = request.experiment
 

@@ -10,7 +10,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 import xml.etree.ElementTree as ET
-from zeep.client import Client as SoapClient
+from zeep import Client as SoapClient
 import os
 from datetime import datetime
 
@@ -64,6 +64,8 @@ class EccClient(object):
         wsdl_url = os.path.join(settings.BASE_DIR, 'attpcdaq', 'daq', 'ecc.wsdl')
         client = SoapClient(wsdl_url)  # Loads the service definition from ecc.wsdl
         self.service = client.create_service('{urn:ecc}ecc', ecc_url)  # This overrides the default URL from the file
+# This line prevents zeep from writing the namespace in the xml code. BUG BUG BUG
+        client.set_ns_prefix(None, 'urn:ecc')
 
         # This is a list of valid operations which is used in __getattr__ below.
         self.operations = ['GetState',
